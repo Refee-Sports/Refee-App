@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "Refee",
+    "slug": "refee",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "refee",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#08111C",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.refee.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#08111C"
+      },
+      "package": "com.refee.app"
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-apple-authentication",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Refee needs photo access so you can upload a headshot for your public profile."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Refee uses your location to show jobs near you."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

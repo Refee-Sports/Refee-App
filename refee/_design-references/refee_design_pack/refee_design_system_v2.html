@@ -1,0 +1,2002 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>REFEE / SYSTEM v0.2 — Sport-Tech</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Array:wght@700;800;900&family=JetBrains+Mono:wght@400;500;700;800&family=Inter+Tight:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ============== TOKENS ============== */
+  :root {
+    /* Surfaces */
+    --bg: #05080D;
+    --bg-2: #0A0F18;
+    --bg-3: #0F1622;
+    --surface: #131B28;
+    --surface-2: #1A2435;
+    --line: rgba(255,255,255,0.06);
+    --line-2: rgba(255,255,255,0.12);
+    --line-3: rgba(255,255,255,0.22);
+
+    /* Brand */
+    --signal: #4F8CFF;
+    --signal-2: #6FA0FF;
+    --signal-deep: #1F4FCC;
+    --signal-glow: rgba(79,140,255,0.45);
+
+    /* Accents — sport-tech telemetry palette */
+    --hi-vis: #D4FF3A;       /* hi-vis lime — eject/alert/live action */
+    --whistle: #FFD24A;      /* warning / caution */
+    --court: #00D982;        /* confirmed / paid */
+    --foul: #FF4757;         /* red — decline/error */
+    --ink: #FFFFFF;
+    --ink-80: rgba(255,255,255,0.78);
+    --ink-60: rgba(255,255,255,0.54);
+    --ink-40: rgba(255,255,255,0.32);
+    --ink-20: rgba(255,255,255,0.14);
+
+    /* Type */
+    --display: 'Array', 'Arial Black', sans-serif;
+    --display-fallback: 'Inter Tight', sans-serif;
+    --body: 'Inter Tight', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'DM Mono', monospace;
+  }
+
+  /* Array isn't on Google Fonts — fallback chain to Inter Tight 900 (close visual) */
+  .display, .stat-num, .scoreboard, .pay-num, .doc-title, .app-logo {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-stretch: 125%;
+    letter-spacing: -0.02em;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink-80);
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============== BACKGROUND ATMOSPHERE ============== */
+  body {
+    background:
+      radial-gradient(ellipse 1000px 500px at 15% 0%, rgba(79,140,255,0.08), transparent 60%),
+      radial-gradient(ellipse 800px 600px at 90% 40%, rgba(212,255,58,0.04), transparent 60%),
+      var(--bg);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  /* Scanlines */
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 2px,
+      rgba(255,255,255,0.012) 2px,
+      rgba(255,255,255,0.012) 3px
+    );
+  }
+  /* Grain */
+  body::after {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    opacity: 0.06;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    mix-blend-mode: overlay;
+  }
+
+  .wrap {
+    position: relative;
+    z-index: 3;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 48px 32px 120px;
+  }
+
+  /* ============== HEADER ============== */
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+    border-bottom: 1px dashed var(--line-2);
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+  }
+  .topbar-left { display: flex; gap: 18px; align-items: center; }
+  .pulse-mark {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: var(--hi-vis);
+  }
+  .pulse-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--hi-vis);
+    box-shadow: 0 0 8px var(--hi-vis);
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ============== ZEBRA RULE ============== */
+  .zebra-rule {
+    height: 14px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--ink) 0,
+      var(--ink) 14px,
+      var(--bg) 14px,
+      var(--bg) 28px
+    );
+    margin: 24px 0;
+    position: relative;
+  }
+  .zebra-rule.thin {
+    height: 6px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--ink) 0,
+      var(--ink) 8px,
+      transparent 8px,
+      transparent 16px
+    );
+  }
+  .zebra-rule.signal {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 14px,
+      var(--bg) 14px,
+      var(--bg) 28px
+    );
+  }
+
+  /* ============== HERO BANNER ============== */
+  .hero {
+    position: relative;
+    padding: 32px 0 24px;
+    margin-bottom: 64px;
+    overflow: hidden;
+  }
+  .hero-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 32px;
+  }
+  .doc-title {
+    font-size: clamp(80px, 14vw, 200px);
+    line-height: 0.82;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+  .doc-title .stroke {
+    -webkit-text-stroke: 2.5px var(--signal);
+    color: transparent;
+  }
+  .hero-meta {
+    text-align: right;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-60);
+    line-height: 1.9;
+    padding-bottom: 16px;
+  }
+  .hero-meta strong { color: var(--ink); font-weight: 500; }
+  .hero-tag {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--hi-vis);
+    color: var(--bg);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .hero-strip {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 24px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+  }
+  .hero-strip span:nth-child(2n) { color: var(--ink); }
+
+  /* ============== SECTION ============== */
+  .section { margin-bottom: 96px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-40);
+    letter-spacing: 0.2em;
+    padding: 4px 8px;
+    border: 1px solid var(--line-2);
+  }
+  .section-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 44px;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    line-height: 0.95;
+  }
+  .section-desc {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-60);
+    max-width: 320px;
+    line-height: 1.7;
+    letter-spacing: 0.04em;
+  }
+
+  /* ============== COLOR ============== */
+  .swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0;
+    border: 1px solid var(--line-2);
+  }
+  .swatch {
+    border-right: 1px solid var(--line-2);
+    padding: 16px;
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+  .swatch:last-child { border-right: none; }
+  .swatch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-40);
+  }
+  .swatch-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 36px;
+    line-height: 0.9;
+    color: var(--ink-20);
+  }
+  .swatch-info {
+    margin-top: auto;
+  }
+  .swatch-name {
+    font-family: var(--mono);
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .swatch-hex {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-60);
+    letter-spacing: 0.06em;
+    margin-top: 2px;
+  }
+
+  /* ============== TYPE ============== */
+  .type-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border-top: 1px solid var(--line-2);
+  }
+  .type-row {
+    display: grid;
+    grid-template-columns: 220px 1fr auto;
+    gap: 32px;
+    padding: 32px 0;
+    border-bottom: 1px solid var(--line-2);
+    align-items: center;
+  }
+  .type-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-60);
+    line-height: 1.7;
+  }
+  .type-tag strong { color: var(--signal); }
+  .type-spec {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-40);
+    text-align: right;
+  }
+
+  /* ============== COMPONENTS ============== */
+  .comp-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1px;
+    background: var(--line-2);
+    border: 1px solid var(--line-2);
+  }
+  .comp-cell {
+    background: var(--bg);
+    padding: 28px;
+  }
+  .comp-cell-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed var(--line-2);
+  }
+  .comp-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .comp-id {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-40);
+    letter-spacing: 0.14em;
+  }
+  .comp-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .comp-row:last-child { margin-bottom: 0; }
+
+  /* Buttons — sport-tech / squared */
+  .btn {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 14px 22px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: var(--signal);
+    color: var(--bg);
+  }
+  .btn-primary:hover {
+    background: var(--ink);
+    box-shadow: 4px 4px 0 var(--signal);
+    transform: translate(-2px, -2px);
+  }
+  .btn-hi {
+    background: var(--hi-vis);
+    color: var(--bg);
+  }
+  .btn-hi:hover {
+    background: var(--ink);
+    box-shadow: 4px 4px 0 var(--hi-vis);
+    transform: translate(-2px, -2px);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--line-3);
+  }
+  .btn-secondary:hover {
+    border-color: var(--signal);
+    color: var(--signal);
+  }
+  .btn-arrow::after {
+    content: "→";
+    font-size: 14px;
+    margin-left: 2px;
+  }
+  .btn-icon-end::after {
+    content: "[ ↗ ]";
+    font-size: 10px;
+    color: var(--bg);
+    opacity: 0.5;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    padding: 5px 9px;
+    font-weight: 700;
+    border: 1px solid currentColor;
+    background: transparent;
+  }
+  .badge-live { color: var(--hi-vis); }
+  .badge-confirmed { color: var(--court); }
+  .badge-signal { color: var(--signal); }
+  .badge-warn { color: var(--whistle); }
+  .badge-foul { color: var(--foul); }
+  .badge-neutral { color: var(--ink-80); }
+  .badge-fill {
+    background: currentColor;
+    border-color: currentColor;
+  }
+  .badge-fill > * { color: var(--bg); }
+  .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor;
+  }
+  .dot-pulse {
+    animation: pulse 1.4s infinite;
+  }
+
+  /* Inputs */
+  .input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .input-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+    display: flex;
+    justify-content: space-between;
+  }
+  .input-label span { color: var(--ink-40); }
+  .input {
+    background: var(--bg-2);
+    border: 1px solid var(--line-2);
+    padding: 14px 16px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 13px;
+    transition: border 0.15s;
+    border-radius: 0;
+  }
+  .input::placeholder { color: var(--ink-40); }
+  .input:focus {
+    outline: none;
+    border-color: var(--signal);
+    box-shadow: inset 0 0 0 1px var(--signal);
+  }
+
+  /* ============== PHONE FRAMES ============== */
+  .phone-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 32px;
+  }
+  .phone-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 64px;
+    justify-items: center;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .phone-caption {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .phone-caption strong {
+    color: var(--bg);
+    background: var(--signal);
+    padding: 3px 7px;
+    font-weight: 700;
+  }
+  .phone {
+    width: 380px;
+    height: 800px;
+    background: #000;
+    border-radius: 50px;
+    padding: 12px;
+    box-shadow:
+      0 60px 120px -30px rgba(0,0,0,0.8),
+      0 0 0 2px rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    border-radius: 38px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 28px;
+    background: #000;
+    border-radius: 14px;
+    z-index: 100;
+  }
+  .status-bar {
+    height: 50px;
+    padding: 16px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .status-icons { display: flex; gap: 5px; align-items: center; }
+  .signal-icon { display: flex; gap: 2px; align-items: flex-end; }
+  .signal-icon span { width: 3px; background: var(--ink); border-radius: 1px; }
+  .signal-icon span:nth-child(1) { height: 4px; }
+  .signal-icon span:nth-child(2) { height: 6px; }
+  .signal-icon span:nth-child(3) { height: 8px; }
+  .signal-icon span:nth-child(4) { height: 10px; }
+  .battery {
+    width: 24px; height: 11px;
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    position: relative;
+    padding: 1px;
+  }
+  .battery::after {
+    content: ""; position: absolute;
+    right: -3px; top: 3px;
+    width: 2px; height: 5px;
+    background: var(--ink);
+    border-radius: 0 1px 1px 0;
+  }
+  .battery-fill {
+    height: 100%; width: 80%;
+    background: var(--ink);
+    border-radius: 1px;
+  }
+
+  /* App header */
+  .app-header {
+    padding: 4px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .app-logo {
+    font-size: 24px;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+  .app-logo .stroke {
+    -webkit-text-stroke: 1.5px var(--signal);
+    color: transparent;
+  }
+  .app-icon-btn {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--line-2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    cursor: pointer;
+    position: relative;
+  }
+  .notif-dot {
+    position: absolute;
+    top: 5px; right: 6px;
+    width: 7px; height: 7px;
+    background: var(--hi-vis);
+    border: 2px solid var(--bg);
+  }
+
+  /* Telemetry strip — sub-header in app */
+  .telemetry {
+    padding: 0 20px 14px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-40);
+    flex-shrink: 0;
+  }
+  .telemetry strong { color: var(--ink-80); font-weight: 500; }
+  .telemetry .sep { color: var(--ink-20); margin: 0 4px; }
+
+  /* Mini zebra inside phone */
+  .mini-zebra {
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--ink) 0,
+      var(--ink) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    margin: 0 20px 16px;
+    flex-shrink: 0;
+  }
+  .mini-zebra.signal {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  }
+
+  /* Scroll area */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 100px;
+  }
+  .scroll-area::-webkit-scrollbar { width: 0; }
+
+  /* ============== PROFILE ============== */
+  .profile-id-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .profile-id-cell {
+    border: 1px solid var(--line-2);
+    padding: 10px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-40);
+  }
+  .profile-id-cell strong {
+    display: block;
+    color: var(--ink);
+    font-size: 11px;
+    margin-top: 2px;
+    letter-spacing: 0.1em;
+    font-weight: 500;
+  }
+
+  /* Hero block — broken grid, big jersey number */
+  .ref-hero {
+    position: relative;
+    padding: 24px 0 24px;
+    margin-bottom: 8px;
+    border-top: 1px solid var(--line-2);
+    border-bottom: 1px solid var(--line-2);
+    overflow: hidden;
+  }
+  .ref-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 20px,
+      rgba(255,255,255,0.015) 20px,
+      rgba(255,255,255,0.015) 21px
+    );
+    pointer-events: none;
+  }
+  .jersey-number {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 280px;
+    line-height: 0.8;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--line-3);
+    letter-spacing: -0.06em;
+    pointer-events: none;
+    user-select: none;
+  }
+  .ref-name {
+    position: relative;
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 38px;
+    line-height: 0.9;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .ref-name .last { color: var(--signal); }
+  .ref-handle {
+    position: relative;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+    margin-bottom: 16px;
+  }
+  .ref-rating-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink);
+  }
+  .ref-rating-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--surface);
+    position: relative;
+    max-width: 120px;
+  }
+  .ref-rating-fill {
+    height: 100%;
+    width: 98.4%;
+    background: var(--hi-vis);
+  }
+
+  /* Scoreboard data-block — signature unit */
+  .scoreboard-block {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1.5px solid var(--line-3);
+    background: var(--bg-2);
+    margin-top: 18px;
+    position: relative;
+  }
+  .scoreboard-block::before {
+    content: "SCORECARD / 2026";
+    position: absolute;
+    top: -7px;
+    left: 12px;
+    background: var(--bg);
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+  }
+  .sb-cell {
+    padding: 16px 10px 12px;
+    border-right: 1px solid var(--line-2);
+    text-align: center;
+  }
+  .sb-cell:last-child { border-right: none; }
+  .sb-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ink-40);
+    margin-bottom: 4px;
+  }
+  .sb-val {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 28px;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+  }
+  .sb-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-60);
+    margin-top: 4px;
+  }
+
+  /* Avatar pill — sport tech */
+  .avatar-pill {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    position: relative;
+  }
+  .avatar {
+    width: 64px; height: 64px;
+    background: var(--surface);
+    border: 1px solid var(--line-3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 26px;
+    color: var(--ink);
+    flex-shrink: 0;
+    position: relative;
+    letter-spacing: -0.02em;
+  }
+  .avatar::after {
+    content: "";
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 14px; height: 14px;
+    background: var(--court);
+    border: 2px solid var(--bg);
+  }
+
+  /* Stats row — telemetry */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line-2);
+    margin-bottom: 16px;
+  }
+  .stat-cell {
+    padding: 12px 12px 14px;
+    border-right: 1px solid var(--line-2);
+    position: relative;
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-cell-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-40);
+    margin-bottom: 4px;
+  }
+  .stat-num {
+    font-size: 32px;
+    line-height: 0.9;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+  }
+  .stat-num .unit {
+    font-size: 14px;
+    color: var(--signal);
+    margin-left: 1px;
+  }
+  .stat-trend {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--court);
+    letter-spacing: 0.1em;
+    margin-top: 2px;
+  }
+  .stat-trend.flat { color: var(--ink-40); }
+
+  /* Availability block */
+  .avail {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: var(--hi-vis);
+    color: var(--bg);
+    margin-bottom: 16px;
+  }
+  .avail-l {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .avail-status {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--bg);
+  }
+  .avail-sub {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(0,0,0,0.6);
+    margin-top: 1px;
+  }
+  /* Toggle that matches the aesthetic */
+  .toggle {
+    width: 44px;
+    height: 24px;
+    background: var(--bg);
+    position: relative;
+    cursor: pointer;
+  }
+  .toggle::after {
+    content: "";
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 18px; height: 18px;
+    background: var(--hi-vis);
+  }
+
+  /* Section heads inside phone */
+  .p-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-top: 18px;
+  }
+  .p-section-l {
+    display: flex; align-items: baseline; gap: 8px;
+  }
+  .p-section-num {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--ink-40);
+    letter-spacing: 0.14em;
+  }
+  .p-section-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+  .p-section-action {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--signal);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    cursor: pointer;
+  }
+
+  /* Cred chips */
+  .cred-row {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+  .cred-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid var(--line-3);
+    padding: 6px 10px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+  }
+  .cred-chip svg { color: var(--court); }
+
+  /* Game items */
+  .game-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .game-item:last-child { border-bottom: none; }
+  .game-date-stack {
+    text-align: center;
+    font-family: var(--mono);
+    width: 38px;
+  }
+  .game-month {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-40);
+  }
+  .game-day {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .game-info { min-width: 0; }
+  .game-title {
+    font-size: 13px;
+    color: var(--ink);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 2px;
+  }
+  .game-meta {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .game-pay {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--court);
+    letter-spacing: -0.02em;
+  }
+
+  /* ============== JOBS FEED ============== */
+  .feed-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line-2);
+    margin-bottom: 16px;
+  }
+  .feed-tab {
+    padding: 11px 8px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-60);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    text-align: center;
+    cursor: pointer;
+    border-right: 1px solid var(--line-2);
+    position: relative;
+  }
+  .feed-tab:last-child { border-right: none; }
+  .feed-tab.active {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .feed-tab .count {
+    color: var(--signal);
+    margin-left: 4px;
+  }
+  .feed-tab.active .count {
+    color: var(--signal-deep);
+  }
+
+  .filter-row {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    margin-bottom: 18px;
+    padding-bottom: 4px;
+  }
+  .filter-row::-webkit-scrollbar { height: 0; }
+  .filter-chip {
+    flex-shrink: 0;
+    padding: 7px 10px;
+    border: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-80);
+    background: transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    display: flex; align-items: center; gap: 4px;
+    cursor: pointer;
+    font-weight: 500;
+  }
+  .filter-chip.active {
+    background: var(--signal);
+    border-color: var(--signal);
+    color: var(--bg);
+  }
+
+  /* JOB CARD — broken grid, big pay */
+  .job-list { display: flex; flex-direction: column; gap: 10px; }
+  .job-card {
+    border: 1px solid var(--line-2);
+    background: var(--bg-2);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .job-card:hover { border-color: var(--line-3); }
+  .job-card.featured {
+    background:
+      linear-gradient(135deg, rgba(79,140,255,0.10), transparent 50%),
+      var(--bg-2);
+    border-color: var(--signal);
+  }
+  /* Zebra stripe top edge for featured */
+  .job-card.featured::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 10px,
+      var(--bg) 10px,
+      var(--bg) 20px
+    );
+  }
+  .job-card.hot::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--hi-vis) 0,
+      var(--hi-vis) 10px,
+      var(--bg) 10px,
+      var(--bg) 20px
+    );
+  }
+  .job-card.hot {
+    border-color: var(--hi-vis);
+    background:
+      linear-gradient(135deg, rgba(212,255,58,0.06), transparent 50%),
+      var(--bg-2);
+  }
+
+  .job-tag-row {
+    padding: 10px 14px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .job-id { color: var(--ink-40); }
+
+  .job-main {
+    padding: 8px 14px 12px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 12px;
+  }
+  .job-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin-bottom: 4px;
+  }
+  .job-org {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .job-org-verified::after {
+    content: "✓";
+    color: var(--court);
+    margin-left: 4px;
+  }
+  .pay-block {
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .pay-num {
+    font-size: 38px;
+    line-height: 0.9;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+  }
+  .pay-num .dollar {
+    font-size: 16px;
+    color: var(--ink-60);
+    vertical-align: top;
+    margin-right: 1px;
+  }
+  .pay-unit {
+    font-family: var(--mono);
+    font-size: 8px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 2px;
+  }
+
+  .job-data-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--line-2);
+  }
+  .job-data-cell {
+    padding: 8px 10px;
+    border-right: 1px solid var(--line-2);
+    font-family: var(--mono);
+  }
+  .job-data-cell:last-child { border-right: none; }
+  .job-data-label {
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-40);
+    margin-bottom: 2px;
+  }
+  .job-data-value {
+    font-size: 10px;
+    color: var(--ink);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 500;
+  }
+  .job-data-value .accent { color: var(--hi-vis); }
+
+  .job-footer {
+    padding: 8px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--line);
+  }
+  .job-tags { display: flex; gap: 4px; }
+
+  /* ============== TAB BAR ============== */
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    background: rgba(5,8,13,0.94);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line-2);
+    padding: 10px 8px 28px;
+    display: flex;
+    justify-content: space-around;
+  }
+  .tab-bar::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+  }
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    color: var(--ink-40);
+    cursor: pointer;
+    padding: 4px 12px;
+    transition: color 0.15s;
+  }
+  .tab-item.active { color: var(--signal); }
+  .tab-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+  }
+
+  /* ============== FOOTER ============== */
+  .doc-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 24px;
+    margin-top: 80px;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-40);
+  }
+  .doc-foot .left { display: flex; gap: 16px; align-items: center; }
+  .doc-foot strong { color: var(--ink); font-weight: 500; }
+
+  @media (max-width: 1100px) {
+    .swatch-grid { grid-template-columns: repeat(4, 1fr); }
+    .swatch:nth-child(4) { border-right: none; }
+  }
+  @media (max-width: 900px) {
+    .phone-grid { grid-template-columns: 1fr; }
+    .swatch-grid { grid-template-columns: repeat(2, 1fr); }
+    .comp-grid { grid-template-columns: 1fr; }
+    .type-row { grid-template-columns: 1fr; gap: 8px; }
+    .type-spec { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ============== TOPBAR ============== -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <span class="pulse-mark"><span class="pulse-dot"></span>SYS / ONLINE</span>
+      <span>REFEE / DESIGN.SYS</span>
+      <span>v0.2 — SPORT-TECH</span>
+    </div>
+    <div>2026.04.30 · 09:41 CT</div>
+  </div>
+
+  <!-- ============== HERO ============== -->
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <span class="hero-tag" style="font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.16em;">REF / 001</span>
+        <div class="doc-title">REF<span class="stroke">EE</span></div>
+      </div>
+      <div class="hero-meta">
+        <div><strong>BUILD</strong> 2026.04.30</div>
+        <div><strong>STACK</strong> RN / iOS · ANDROID</div>
+        <div><strong>THEME</strong> COURT-AT-NIGHT</div>
+        <div><strong>STATUS</strong> <span style="color: var(--hi-vis);">● IN_REVIEW</span></div>
+      </div>
+    </div>
+    <div class="hero-strip">
+      <span>OFFICIAL</span><span>·</span>
+      <span>ON-DEMAND</span><span>·</span>
+      <span>ON-COURT</span><span>·</span>
+      <span>SPORT-AGNOSTIC</span><span>·</span>
+      <span>BUILT FOR REFS</span>
+    </div>
+    <div class="zebra-rule"></div>
+  </div>
+
+  <!-- ============== 01 — COLOR ============== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">01 / FOUNDATION</span>
+      <h2 class="section-title">Palette</h2>
+      <div class="section-desc">Eight tokens. Signal Blue carries the brand. Hi-vis lime is the moment of action — earned, never decorative.</div>
+    </div>
+
+    <div class="swatch-grid">
+      <div class="swatch" style="background: var(--bg);">
+        <div class="swatch-header"><span>00 / BASE</span><span style="color: var(--signal);">●</span></div>
+        <div class="swatch-num">01</div>
+        <div class="swatch-info">
+          <div class="swatch-name">CANVAS</div>
+          <div class="swatch-hex">#05080D</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--bg-2);">
+        <div class="swatch-header"><span>00 / SURFACE</span><span style="color: var(--signal);">●</span></div>
+        <div class="swatch-num">02</div>
+        <div class="swatch-info">
+          <div class="swatch-name">SUB-FLOOR</div>
+          <div class="swatch-hex">#0A0F18</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--surface);">
+        <div class="swatch-header"><span>00 / ELEVATED</span><span style="color: var(--signal);">●</span></div>
+        <div class="swatch-num">03</div>
+        <div class="swatch-info">
+          <div class="swatch-name">CARD</div>
+          <div class="swatch-hex">#131B28</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--signal); position: relative;">
+        <div style="position:absolute; inset:0; background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.25), transparent 60%);"></div>
+        <div class="swatch-header" style="position:relative; color: rgba(0,0,0,0.5);"><span>BRAND / 01</span><span>●</span></div>
+        <div class="swatch-num" style="position:relative; color: rgba(0,0,0,0.18);">04</div>
+        <div class="swatch-info" style="position:relative;">
+          <div class="swatch-name" style="color: var(--bg);">SIGNAL</div>
+          <div class="swatch-hex" style="color: rgba(0,0,0,0.6);">#4F8CFF</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--hi-vis);">
+        <div class="swatch-header" style="color: rgba(0,0,0,0.5);"><span>STATUS / LIVE</span><span>●</span></div>
+        <div class="swatch-num" style="color: rgba(0,0,0,0.18);">05</div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color: var(--bg);">HI-VIS</div>
+          <div class="swatch-hex" style="color: rgba(0,0,0,0.6);">#D4FF3A</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--court);">
+        <div class="swatch-header" style="color: rgba(0,0,0,0.5);"><span>STATUS / OK</span><span>●</span></div>
+        <div class="swatch-num" style="color: rgba(0,0,0,0.18);">06</div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color: var(--bg);">COURT</div>
+          <div class="swatch-hex" style="color: rgba(0,0,0,0.6);">#00D982</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--whistle);">
+        <div class="swatch-header" style="color: rgba(0,0,0,0.5);"><span>STATUS / WARN</span><span>●</span></div>
+        <div class="swatch-num" style="color: rgba(0,0,0,0.18);">07</div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color: var(--bg);">WHISTLE</div>
+          <div class="swatch-hex" style="color: rgba(0,0,0,0.6);">#FFD24A</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: var(--foul);">
+        <div class="swatch-header" style="color: rgba(255,255,255,0.6);"><span>STATUS / STOP</span><span>●</span></div>
+        <div class="swatch-num" style="color: rgba(255,255,255,0.2);">08</div>
+        <div class="swatch-info">
+          <div class="swatch-name" style="color: var(--ink);">FOUL</div>
+          <div class="swatch-hex" style="color: rgba(255,255,255,0.7);">#FF4757</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== 02 — TYPE ============== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">02 / FOUNDATION</span>
+      <h2 class="section-title">Typography</h2>
+      <div class="section-desc">Wide, weighty display for scoreboard energy. Mono carries every piece of metadata, rate, and timestamp — Refee speaks in data.</div>
+    </div>
+
+    <div class="type-stack">
+      <div class="type-row">
+        <div class="type-tag"><strong>DISPLAY</strong><br>Inter Tight Black<br>Wide / -0.03em</div>
+        <div>
+          <div style="font-family: var(--display-fallback); font-weight: 900; font-size: 88px; line-height: 0.85; color: var(--ink); letter-spacing: -0.04em; text-transform: uppercase;">REF<span style="-webkit-text-stroke: 2px var(--signal); color: transparent;">EE</span></div>
+        </div>
+        <div class="type-spec">USAGE / WORDMARK<br>SCALE / 64–200<br>WEIGHT / 900</div>
+      </div>
+
+      <div class="type-row">
+        <div class="type-tag"><strong>NUMERAL</strong><br>Display, tabular<br>Scoreboard / Stats</div>
+        <div>
+          <div style="font-family: var(--display-fallback); font-weight: 900; font-size: 100px; line-height: 0.85; color: var(--ink); letter-spacing: -0.05em;">$<span style="color: var(--signal);">185</span><span style="font-family: var(--mono); font-size: 14px; color: var(--ink-60); vertical-align: super; margin-left: 8px;">/GAME</span></div>
+        </div>
+        <div class="type-spec">USAGE / PAY · STATS<br>SCALE / 32–120<br>WEIGHT / 900</div>
+      </div>
+
+      <div class="type-row">
+        <div class="type-tag"><strong>HEADING</strong><br>Inter Tight Bold<br>Body display</div>
+        <div>
+          <div style="font-family: var(--body); font-weight: 800; font-size: 32px; line-height: 1; color: var(--ink); letter-spacing: -0.02em; text-transform: uppercase;">SPRING AAU SHOWCASE</div>
+          <div style="font-family: var(--body); font-size: 16px; color: var(--ink-80); margin-top: 8px; max-width: 500px;">Clean, working type for cards, lists, and screen titles. Reads well at 14–32px.</div>
+        </div>
+        <div class="type-spec">USAGE / TITLES<br>SCALE / 14–48<br>WEIGHT / 600–800</div>
+      </div>
+
+      <div class="type-row">
+        <div class="type-tag"><strong>MONO</strong><br>JetBrains Mono<br>Telemetry / Data</div>
+        <div>
+          <div style="font-family: var(--mono); font-size: 16px; color: var(--hi-vis); letter-spacing: 0.04em; margin-bottom: 6px;">SAT 2026.05.04 · 09:00 CT</div>
+          <div style="font-family: var(--mono); font-size: 13px; color: var(--ink-60); letter-spacing: 0.06em;">JOB#28110-A · 3-PERSON · CREW LOCKED · 12.4 MI</div>
+        </div>
+        <div class="type-spec">USAGE / DATA · IDS<br>SCALE / 9–16<br>WEIGHT / 400–700</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============== 03 — COMPONENTS ============== -->
+  <section class="section">
+    <div class="section-head">
+      <span class="section-num">03 / SYSTEM</span>
+      <h2 class="section-title">Components</h2>
+      <div class="section-desc">Squared corners. Mono labels. Brutalist hover (offset shadow). Buttons feel mechanical, like equipment, not iOS.</div>
+    </div>
+
+    <div class="comp-grid">
+      <div class="comp-cell">
+        <div class="comp-cell-head">
+          <span class="comp-name">Buttons</span>
+          <span class="comp-id">CMP / 01</span>
+        </div>
+        <div class="comp-row">
+          <button class="btn btn-primary btn-arrow">Accept Job</button>
+          <button class="btn btn-secondary">Details</button>
+        </div>
+        <div class="comp-row">
+          <button class="btn btn-hi btn-arrow">Go Live</button>
+          <button class="btn btn-secondary" style="color: var(--foul); border-color: rgba(255,71,87,0.4);">Decline</button>
+        </div>
+      </div>
+
+      <div class="comp-cell">
+        <div class="comp-cell-head">
+          <span class="comp-name">Status / Badges</span>
+          <span class="comp-id">CMP / 02</span>
+        </div>
+        <div class="comp-row">
+          <span class="badge badge-live"><span class="dot dot-pulse"></span>LIVE</span>
+          <span class="badge badge-confirmed"><span class="dot"></span>CONFIRMED</span>
+          <span class="badge badge-signal">FEATURED</span>
+          <span class="badge badge-warn">PENDING</span>
+        </div>
+        <div class="comp-row">
+          <span class="badge badge-neutral">USAB CERTIFIED</span>
+          <span class="badge badge-foul">DECLINED</span>
+          <span class="badge badge-fill" style="color: var(--hi-vis);"><span style="color: var(--bg); font-weight: 700;">2 SLOTS LEFT</span></span>
+        </div>
+      </div>
+
+      <div class="comp-cell" style="grid-column: 1 / -1;">
+        <div class="comp-cell-head">
+          <span class="comp-name">Inputs</span>
+          <span class="comp-id">CMP / 03</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;">
+          <div class="input-group">
+            <label class="input-label"><span>Search</span><span>01</span></label>
+            <input class="input" placeholder="AAU · WEEKEND · U16..." />
+          </div>
+          <div class="input-group">
+            <label class="input-label"><span>Distance</span><span>02</span></label>
+            <input class="input" value="< 25 MI" />
+          </div>
+          <div class="input-group">
+            <label class="input-label"><span>Min Pay</span><span>03</span></label>
+            <input class="input" placeholder="$ 80 / GAME" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="zebra-rule signal"></div>
+
+  <!-- ============== 04 — SCREENS ============== -->
+  <section class="section">
+    <div class="phone-section-head">
+      <div class="section-head" style="margin-bottom: 0;">
+        <span class="section-num">04 / SURFACES</span>
+        <h2 class="section-title">Referee<br>Surfaces</h2>
+      </div>
+      <div class="section-desc" style="text-align: right; max-width: 280px;">Profile and Jobs Feed — designed like a working tool, not a feed app. Telemetry, scoreboard, and live status are the through-line.</div>
+    </div>
+
+    <div class="phone-grid">
+
+      <!-- ============ PROFILE ============ -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+                <span style="font-size:11px; margin-left:4px;">5G</span>
+                <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+              </div>
+            </div>
+
+            <div class="app-header">
+              <div class="app-logo">REF<span class="stroke">EE</span></div>
+              <div style="display:flex; gap: 8px;">
+                <div class="app-icon-btn">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <div class="app-icon-btn">
+                  <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <span class="notif-dot"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="telemetry">
+              <span><strong>PROFILE</strong> · ID 28110</span>
+              <span>SYNC <strong>OK</strong></span>
+            </div>
+            <div class="mini-zebra signal"></div>
+
+            <div class="scroll-area">
+
+              <!-- Avatar pill -->
+              <div class="avatar-pill">
+                <div class="avatar">BM</div>
+                <div style="flex: 1;">
+                  <div style="font-family: var(--mono); font-size: 9px; color: var(--ink-40); text-transform: uppercase; letter-spacing: 0.16em;">REF / ACTIVE</div>
+                  <div style="font-family: var(--mono); font-size: 11px; color: var(--ink-80); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 2px;">MEMBER 2024</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-family: var(--mono); font-size: 8px; color: var(--ink-40); text-transform: uppercase; letter-spacing: 0.18em; margin-bottom: 2px;">REF ID</div>
+                  <div style="font-family: var(--display-fallback); font-weight: 900; font-size: 18px; color: var(--signal); letter-spacing: -0.02em;">28110</div>
+                </div>
+              </div>
+
+              <!-- Hero -->
+              <div class="ref-hero">
+                <div class="ref-name">BINIAM<br><span class="last">M.</span></div>
+                <div class="ref-handle">REF / AUSTIN, TX</div>
+
+                <!-- Scoreboard data-block: signature unit -->
+                <div class="scoreboard-block">
+                  <div class="sb-cell">
+                    <div class="sb-label">RATING</div>
+                    <div class="sb-val">4.92</div>
+                    <div class="sb-sub">/ 5.00</div>
+                  </div>
+                  <div class="sb-cell">
+                    <div class="sb-label">REVIEWS</div>
+                    <div class="sb-val">187</div>
+                    <div class="sb-sub">ALL-TIME</div>
+                  </div>
+                  <div class="sb-cell">
+                    <div class="sb-label">RANK</div>
+                    <div class="sb-val">A+</div>
+                    <div class="sb-sub" style="color: var(--hi-vis);">TOP 5%</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Stat strip -->
+              <div class="stat-strip">
+                <div class="stat-cell">
+                  <div class="stat-cell-label">GAMES / YTD</div>
+                  <div class="stat-num">214</div>
+                  <div class="stat-trend">↑ 12% MoM</div>
+                </div>
+                <div class="stat-cell">
+                  <div class="stat-cell-label">SHOW RATE</div>
+                  <div class="stat-num">98<span class="unit">%</span></div>
+                  <div class="stat-trend flat">— STABLE</div>
+                </div>
+                <div class="stat-cell">
+                  <div class="stat-cell-label">EARNED</div>
+                  <div class="stat-num">8.4<span class="unit">k</span></div>
+                  <div class="stat-trend">↑ $1.2k</div>
+                </div>
+              </div>
+
+              <!-- Availability -->
+              <div class="avail">
+                <div class="avail-l">
+                  <div>
+                    <div class="avail-status">● AVAILABLE</div>
+                    <div class="avail-sub">< 25 MI · WEEKENDS</div>
+                  </div>
+                </div>
+                <div class="toggle"></div>
+              </div>
+
+              <!-- Credentials -->
+              <div class="p-section">
+                <div class="p-section-l">
+                  <span class="p-section-num">01</span>
+                  <span class="p-section-title">Credentials</span>
+                </div>
+                <span class="p-section-action">[ MANAGE ]</span>
+              </div>
+              <div class="cred-row">
+                <div class="cred-chip"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>USAB</div>
+                <div class="cred-chip"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>IAABO 12</div>
+                <div class="cred-chip"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>BG CHECK</div>
+                <div class="cred-chip"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>CPR / 1ST AID</div>
+              </div>
+
+              <!-- Recent Games -->
+              <div class="p-section">
+                <div class="p-section-l">
+                  <span class="p-section-num">02</span>
+                  <span class="p-section-title">Recent Games</span>
+                </div>
+                <span class="p-section-action">[ ALL ]</span>
+              </div>
+              <div>
+                <div class="game-item">
+                  <div class="game-date-stack">
+                    <div class="game-month">APR</div>
+                    <div class="game-day">27</div>
+                  </div>
+                  <div class="game-info">
+                    <div class="game-title">Spring AAU Showcase</div>
+                    <div class="game-meta">U16 · ROUND ROCK · 3-PERSON</div>
+                  </div>
+                  <div class="game-pay">$185</div>
+                </div>
+                <div class="game-item">
+                  <div class="game-date-stack">
+                    <div class="game-month">APR</div>
+                    <div class="game-day">24</div>
+                  </div>
+                  <div class="game-info">
+                    <div class="game-title">Austin Pro-Am · CT 3</div>
+                    <div class="game-meta">PRO-AM · AUSTIN · 2-PERSON</div>
+                  </div>
+                  <div class="game-pay">$240</div>
+                </div>
+                <div class="game-item">
+                  <div class="game-date-stack">
+                    <div class="game-month">APR</div>
+                    <div class="game-day">20</div>
+                  </div>
+                  <div class="game-info">
+                    <div class="game-title">Westlake Rec League</div>
+                    <div class="game-meta">ADULT · WESTLAKE · 2-PERSON</div>
+                  </div>
+                  <div class="game-pay">$85</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span class="tab-label">Home</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+                <span class="tab-label">Jobs</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="tab-label">Inbox</span>
+              </div>
+              <div class="tab-item active">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                <span class="tab-label">Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption"><strong>4.1</strong>PROFILE / SCREEN</div>
+      </div>
+
+      <!-- ============ JOBS FEED ============ -->
+      <div class="phone-wrap">
+        <div class="phone">
+          <div class="phone-notch"></div>
+          <div class="phone-screen">
+            <div class="status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+                <span style="font-size:11px; margin-left:4px;">5G</span>
+                <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+              </div>
+            </div>
+
+            <div class="app-header">
+              <div>
+                <div style="font-family: var(--mono); font-size: 9px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-60); margin-bottom: 3px;">SAT · 2026.04.30</div>
+                <div style="font-family: var(--display-fallback); font-weight: 900; font-size: 26px; color: var(--ink); line-height: 1; letter-spacing: -0.03em; text-transform: uppercase;">JOBS<span style="color: var(--signal);">/</span>FEED</div>
+              </div>
+              <div class="app-icon-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              </div>
+            </div>
+
+            <div class="telemetry">
+              <span><strong>14</strong> NEW · <strong>3</strong> INVITED</span>
+              <span>RADIUS <strong>25 MI</strong></span>
+            </div>
+            <div class="mini-zebra signal"></div>
+
+            <div class="scroll-area">
+
+              <div class="feed-tabs">
+                <div class="feed-tab active">Available <span class="count">14</span></div>
+                <div class="feed-tab">Invited <span class="count">3</span></div>
+                <div class="feed-tab">Saved <span class="count">2</span></div>
+              </div>
+
+              <div class="filter-row">
+                <div class="filter-chip active">📍 25 MI</div>
+                <div class="filter-chip">THIS WK</div>
+                <div class="filter-chip">$100+</div>
+                <div class="filter-chip">3-CREW</div>
+                <div class="filter-chip">U18+</div>
+              </div>
+
+              <div class="job-list">
+
+                <!-- HOT — 2 slots left -->
+                <div class="job-card hot">
+                  <div class="job-tag-row">
+                    <span style="color: var(--hi-vis); display: flex; align-items: center; gap: 4px;"><span class="dot dot-pulse" style="background: var(--hi-vis);"></span>2 SLOTS LEFT</span>
+                    <span class="job-id">JOB#28110-A</span>
+                  </div>
+                  <div class="job-main">
+                    <div>
+                      <div class="job-title">Spring AAU<br>Showcase</div>
+                      <div class="job-org job-org-verified">TEXAS HOOPS ORG</div>
+                    </div>
+                    <div class="pay-block">
+                      <div class="pay-num"><span class="dollar">$</span>185</div>
+                      <div class="pay-unit">/ GAME</div>
+                    </div>
+                  </div>
+                  <div class="job-data-grid">
+                    <div class="job-data-cell">
+                      <div class="job-data-label">DATE</div>
+                      <div class="job-data-value">SAT 5/4</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">TIME</div>
+                      <div class="job-data-value">9 AM · <span class="accent">4H</span></div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">CREW</div>
+                      <div class="job-data-value">3-PERSON</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">DIST</div>
+                      <div class="job-data-value">12.4 MI</div>
+                    </div>
+                  </div>
+                  <div class="job-footer">
+                    <div class="job-tags">
+                      <span class="badge badge-neutral">U16</span>
+                      <span class="badge badge-neutral">BOYS</span>
+                    </div>
+                    <span style="font-family: var(--mono); font-size: 9px; color: var(--hi-vis); letter-spacing: 0.14em; font-weight: 700;">ACCEPT →</span>
+                  </div>
+                </div>
+
+                <!-- FEATURED — Lakeway -->
+                <div class="job-card featured">
+                  <div class="job-tag-row">
+                    <span style="color: var(--signal);">FEATURED · MULTI-DAY</span>
+                    <span class="job-id">JOB#28114-D2</span>
+                  </div>
+                  <div class="job-main">
+                    <div>
+                      <div class="job-title">Lakeway<br>Tournament</div>
+                      <div class="job-org job-org-verified">LAKEWAY SPORTS GRP</div>
+                    </div>
+                    <div class="pay-block">
+                      <div class="pay-num"><span class="dollar">$</span>420</div>
+                      <div class="pay-unit">/ DAY</div>
+                    </div>
+                  </div>
+                  <div class="job-data-grid">
+                    <div class="job-data-cell">
+                      <div class="job-data-label">DATE</div>
+                      <div class="job-data-value">SUN 5/5</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">TIME</div>
+                      <div class="job-data-value">8 AM · FULL</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">CREW</div>
+                      <div class="job-data-value">3-PERSON</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">DIST</div>
+                      <div class="job-data-value">18.7 MI</div>
+                    </div>
+                  </div>
+                  <div class="job-footer">
+                    <div class="job-tags">
+                      <span class="badge badge-neutral">U18</span>
+                      <span class="badge badge-neutral">GIRLS</span>
+                    </div>
+                    <span style="font-family: var(--mono); font-size: 9px; color: var(--signal); letter-spacing: 0.14em; font-weight: 700;">VIEW →</span>
+                  </div>
+                </div>
+
+                <!-- Standard -->
+                <div class="job-card">
+                  <div class="job-tag-row">
+                    <span style="color: var(--ink-60);">REC · WEEKNIGHT</span>
+                    <span class="job-id">JOB#28119-R</span>
+                  </div>
+                  <div class="job-main">
+                    <div>
+                      <div class="job-title">Austin Rec<br>Court 3</div>
+                      <div class="job-org">AUSTIN PARKS &amp; REC</div>
+                    </div>
+                    <div class="pay-block">
+                      <div class="pay-num"><span class="dollar">$</span>85</div>
+                      <div class="pay-unit">/ GAME</div>
+                    </div>
+                  </div>
+                  <div class="job-data-grid">
+                    <div class="job-data-cell">
+                      <div class="job-data-label">DATE</div>
+                      <div class="job-data-value">TUE 5/7</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">TIME</div>
+                      <div class="job-data-value">6 PM · 1.5H</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">CREW</div>
+                      <div class="job-data-value">2-PERSON</div>
+                    </div>
+                    <div class="job-data-cell">
+                      <div class="job-data-label">DIST</div>
+                      <div class="job-data-value">3.1 MI</div>
+                    </div>
+                  </div>
+                  <div class="job-footer">
+                    <div class="job-tags">
+                      <span class="badge badge-neutral">ADULT</span>
+                      <span class="badge badge-neutral">CO-ED</span>
+                    </div>
+                    <span style="font-family: var(--mono); font-size: 9px; color: var(--ink-60); letter-spacing: 0.14em; font-weight: 700;">VIEW →</span>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <div class="tab-bar">
+              <div class="tab-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                <span class="tab-label">Home</span>
+              </div>
+              <div class="tab-item active">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M8 2v4M16 2v4M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/></svg>
+                <span class="tab-label">Jobs</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span class="tab-label">Inbox</span>
+              </div>
+              <div class="tab-item">
+                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                <span class="tab-label">Profile</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="phone-caption"><strong>4.2</strong>JOBS / FEED</div>
+      </div>
+
+    </div>
+  </section>
+
+  <div class="zebra-rule"></div>
+
+  <div class="doc-foot">
+    <div class="left">
+      <span><strong>REFEE</strong> / DESIGN.SYS</span>
+      <span>v0.2</span>
+      <span>SPORT-TECH</span>
+    </div>
+    <div>EOF · 2026.04.30</div>
+  </div>
+
+</div>
+</body>
+</html>

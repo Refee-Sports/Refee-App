@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>REFEE / JOB DETAIL — Light + Dark</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter+Tight:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ============== SHARED TOKENS ============== */
+  :root {
+    --display-fallback: 'Inter Tight', sans-serif;
+    --body: 'Inter Tight', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  /* LIGHT */
+  .light {
+    --paper: #E5E1D6;
+    --paper-2: #D8D3C5;
+    --chalk: #F5F2EA;
+    --line: rgba(8,12,18,0.10);
+    --line-2: rgba(8,12,18,0.18);
+    --line-3: rgba(8,12,18,0.32);
+    --signal: #1F4FCC;
+    --signal-tint: rgba(31,79,204,0.08);
+    --hi-vis: #C9F031;
+    --whistle: #F5B90B;
+    --court: #00A85C;
+    --foul: #E63946;
+    --ink: #08111C;
+    --ink-80: rgba(8,17,28,0.78);
+    --ink-60: rgba(8,17,28,0.56);
+    --ink-40: rgba(8,17,28,0.36);
+    --ink-20: rgba(8,17,28,0.18);
+    --ink-10: rgba(8,17,28,0.08);
+    --bg: var(--paper);
+    --surface: var(--chalk);
+    --notch: #2A2D33;
+  }
+
+  /* DARK */
+  .dark {
+    --paper: #05080D;
+    --paper-2: #0A0F18;
+    --chalk: #131B28;
+    --line: rgba(255,255,255,0.06);
+    --line-2: rgba(255,255,255,0.12);
+    --line-3: rgba(255,255,255,0.22);
+    --signal: #4F8CFF;
+    --signal-tint: rgba(79,140,255,0.10);
+    --hi-vis: #D4FF3A;
+    --whistle: #FFD24A;
+    --court: #00D982;
+    --foul: #FF4757;
+    --ink: #FFFFFF;
+    --ink-80: rgba(255,255,255,0.78);
+    --ink-60: rgba(255,255,255,0.54);
+    --ink-40: rgba(255,255,255,0.32);
+    --ink-20: rgba(255,255,255,0.14);
+    --ink-10: rgba(255,255,255,0.08);
+    --bg: var(--paper);
+    --surface: var(--paper-2);
+    --notch: #000;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #1A1A1A;
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  body {
+    background:
+      radial-gradient(ellipse 1200px 600px at 50% 0%, #2A2D33, #0F0F12);
+    padding: 56px 24px 100px;
+  }
+
+  /* ============== PAGE FRAME ============== */
+  .wrap {
+    max-width: 1280px;
+    margin: 0 auto;
+  }
+
+  .page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    padding-bottom: 24px;
+    margin-bottom: 48px;
+    border-bottom: 1px dashed rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.7);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+  .page-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .page-title .stroke {
+    -webkit-text-stroke: 2px #4F8CFF;
+    color: transparent;
+  }
+  .page-meta { text-align: right; line-height: 1.8; }
+  .page-meta strong { color: #fff; font-weight: 500; }
+
+  /* ============== PHONE PAIR ============== */
+  .phone-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    justify-items: center;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .phone-cap {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.7);
+    display: flex; gap: 12px; align-items: center;
+  }
+  .phone-cap strong {
+    background: #4F8CFF;
+    color: #08111C;
+    padding: 3px 8px;
+    font-weight: 700;
+  }
+
+  /* ============== PHONE FRAME ============== */
+  .phone {
+    width: 380px;
+    height: 800px;
+    background: #2A2D33;
+    border-radius: 50px;
+    padding: 12px;
+    box-shadow:
+      0 60px 120px -30px rgba(0,0,0,0.6),
+      0 0 0 2px rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    border-radius: 38px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 12px; left: 50%;
+    transform: translateX(-50%);
+    width: 100px; height: 28px;
+    background: var(--notch);
+    border-radius: 14px;
+    z-index: 100;
+  }
+  .status-bar {
+    height: 50px;
+    padding: 16px 28px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .status-icons { display: flex; gap: 5px; align-items: center; }
+  .signal-icon { display: flex; gap: 2px; align-items: flex-end; }
+  .signal-icon span { width: 3px; background: var(--ink); border-radius: 1px; }
+  .signal-icon span:nth-child(1) { height: 4px; }
+  .signal-icon span:nth-child(2) { height: 6px; }
+  .signal-icon span:nth-child(3) { height: 8px; }
+  .signal-icon span:nth-child(4) { height: 10px; }
+  .battery {
+    width: 24px; height: 11px;
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    position: relative;
+    padding: 1px;
+  }
+  .battery::after {
+    content: ""; position: absolute;
+    right: -3px; top: 3px;
+    width: 2px; height: 5px;
+    background: var(--ink);
+    border-radius: 0 1px 1px 0;
+  }
+  .battery-fill { height: 100%; width: 80%; background: var(--ink); border-radius: 1px; }
+
+  /* ============== APP HEADER (job detail) ============== */
+  .app-header {
+    padding: 4px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .back-btn {
+    width: 36px; height: 36px;
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .dark .back-btn { background: var(--chalk); border-color: var(--line-2); }
+
+  .header-center {
+    flex: 1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+    padding: 0 12px;
+  }
+  .header-center strong { color: var(--ink); display: block; font-size: 11px; margin-top: 2px; font-weight: 600; }
+
+  .header-actions { display: flex; gap: 6px; }
+  .header-actions .back-btn { width: 36px; height: 36px; }
+
+  /* Telemetry sub-bar */
+  .telemetry {
+    padding: 0 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-60);
+    flex-shrink: 0;
+  }
+  .telemetry strong { color: var(--ink); font-weight: 600; }
+  .telemetry .live {
+    color: var(--ink);
+    background: var(--hi-vis);
+    padding: 2px 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .dark .telemetry .live { color: var(--paper); }
+  .live-dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* Mini zebra */
+  .mini-zebra {
+    height: 3px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 6px,
+      transparent 6px,
+      transparent 12px
+    );
+    margin: 0 20px 16px;
+    flex-shrink: 0;
+  }
+
+  /* ============== SCROLL AREA ============== */
+  .scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 20px 130px;
+  }
+  .scroll-area::-webkit-scrollbar { width: 0; }
+
+  /* ============== HERO BLOCK — the money + title ============== */
+  .job-hero {
+    border: 1.5px solid var(--ink);
+    background: var(--surface);
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .dark .job-hero { background: var(--chalk); border-color: var(--line-3); }
+
+  .job-hero-tagstrip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .dark .job-hero-tagstrip { background: var(--ink); color: var(--paper); border-color: var(--line-3); }
+  .job-hero-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+  .job-hero-tag.hot {
+    color: var(--ink);
+    background: var(--hi-vis);
+    padding: 3px 7px;
+    margin: -3px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .job-hero-id { font-family: var(--mono); font-size: 9px; opacity: 0.6; letter-spacing: 0.14em; }
+
+  .job-hero-body {
+    padding: 18px 16px 16px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: end;
+  }
+  .job-hero-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 30px;
+    color: var(--ink);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .job-hero-org {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .job-hero-org::after {
+    content: "✓";
+    color: var(--court);
+    margin-left: 4px;
+    font-weight: 700;
+  }
+
+  .pay-block { text-align: right; }
+  .pay-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    line-height: 0.85;
+    color: var(--ink);
+    letter-spacing: -0.05em;
+  }
+  .pay-num .dollar {
+    font-size: 22px;
+    color: var(--ink-60);
+    vertical-align: top;
+    margin-right: 1px;
+  }
+  .pay-num .accent { color: var(--signal); }
+  .pay-unit {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    margin-top: 4px;
+  }
+
+  /* Pay breakdown row */
+  .pay-breakdown {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--ink);
+    background: var(--bg);
+  }
+  .dark .pay-breakdown { border-color: var(--line-3); background: var(--paper); }
+  .pay-cell {
+    padding: 10px 12px;
+    border-right: 1px solid var(--ink);
+    font-family: var(--mono);
+  }
+  .dark .pay-cell { border-color: var(--line-3); }
+  .pay-cell:last-child { border-right: none; }
+  .pay-cell-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+    margin-bottom: 2px;
+  }
+  .pay-cell-val {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .pay-cell-val.court { color: var(--court); }
+
+  /* ============== SECTION CARD (used for date/loc/crew/etc) ============== */
+  .data-card {
+    border: 1px solid var(--ink);
+    background: var(--surface);
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .dark .data-card { background: var(--chalk); border-color: var(--line-2); }
+  .data-card-tab {
+    position: absolute;
+    top: -7px;
+    left: 12px;
+    background: var(--bg);
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+  }
+
+  /* WHEN / WHERE block */
+  .when-where {
+    padding: 18px 14px 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+  .ww-cell {
+    padding: 0 12px;
+    border-right: 1px solid var(--line-2);
+  }
+  .dark .ww-cell { border-color: var(--line-2); }
+  .ww-cell:last-child { border-right: none; }
+  .ww-cell:first-child { padding-left: 0; }
+  .ww-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ink-60);
+    margin-bottom: 4px;
+  }
+  .ww-primary {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 20px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+  .ww-secondary {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-80);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+  }
+  .ww-tertiary {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-top: 4px;
+  }
+
+  /* Map preview */
+  .map-preview {
+    height: 140px;
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--ink);
+    position: relative;
+    overflow: hidden;
+  }
+  .dark .map-preview { background: var(--paper-2); border-color: var(--line-2); }
+  /* Court line geometry as decorative map */
+  .map-preview svg { display: block; width: 100%; height: 100%; }
+  .map-pin {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px; height: 24px;
+    background: var(--signal);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    z-index: 2;
+  }
+  .map-pin::before {
+    content: "";
+    position: absolute;
+    inset: 5px;
+    background: var(--ink);
+    border-radius: 50%;
+  }
+  .map-pulse {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px; height: 60px;
+    border: 1.5px solid var(--signal);
+    border-radius: 50%;
+    z-index: 1;
+    animation: mapPulse 2s infinite;
+    opacity: 0;
+  }
+  @keyframes mapPulse {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+  }
+
+  /* CREW block */
+  .crew-block { padding: 18px 14px 14px; }
+  .crew-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .crew-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .crew-row:last-child { border-bottom: none; }
+  .crew-avatar {
+    width: 36px; height: 36px;
+    background: var(--ink);
+    color: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 14px;
+    letter-spacing: -0.02em;
+  }
+  .crew-avatar.empty {
+    background: transparent;
+    border: 1.5px dashed var(--line-3);
+    color: var(--ink-40);
+  }
+  .crew-info { min-width: 0; }
+  .crew-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-bottom: 1px;
+    text-transform: uppercase;
+    letter-spacing: -0.01em;
+  }
+  .crew-name.empty { color: var(--ink-40); font-weight: 500; font-style: italic; }
+  .crew-role {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .crew-status {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+  }
+  .crew-status.locked { color: var(--court); }
+  .crew-status.open { color: var(--ink); background: var(--hi-vis); padding: 3px 7px; }
+  .dark .crew-status.open { color: var(--paper); }
+
+  /* GAME BLOCKS — list of games in the assignment */
+  .games-block { padding: 18px 14px 14px; }
+  .game-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .game-row:last-child { border-bottom: none; }
+  .game-num {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    letter-spacing: 0.14em;
+    width: 24px;
+  }
+  .game-info { min-width: 0; }
+  .game-time {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .game-matchup {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-80);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .game-pay {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--court);
+    letter-spacing: -0.02em;
+  }
+
+  /* DETAILS list */
+  .details-list { padding: 18px 14px 14px; }
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-label { color: var(--ink-60); font-size: 10px; letter-spacing: 0.16em; }
+  .detail-val { color: var(--ink); font-weight: 600; }
+
+  /* HIRER NOTE */
+  .hirer-note {
+    padding: 16px 14px 18px;
+    background: var(--signal-tint);
+    border-left: 3px solid var(--signal);
+  }
+  .hirer-note-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--signal);
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .hirer-note-body {
+    font-size: 13px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .hirer-note-body em {
+    font-style: normal;
+    background: var(--hi-vis);
+    color: var(--ink);
+    padding: 0 3px;
+  }
+  .dark .hirer-note-body em { color: var(--paper); }
+
+  /* ============== STICKY ACTION BAR ============== */
+  .action-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0; right: 0;
+    background: var(--bg);
+    border-top: 1.5px solid var(--ink);
+    padding: 14px 16px 32px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+  }
+  .dark .action-bar { background: var(--paper); border-color: var(--line-3); }
+  .action-bar::before {
+    content: "";
+    position: absolute;
+    top: -1.5px; left: 0; right: 0;
+    height: 1.5px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 8px,
+      var(--bg) 8px,
+      var(--bg) 16px
+    );
+  }
+  .btn {
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 16px 18px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-decline {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+  }
+  .btn-decline:hover { background: var(--foul); color: #fff; border-color: var(--foul); }
+  .dark .btn-decline { color: var(--ink); border-color: var(--ink); }
+  .btn-accept {
+    background: var(--ink);
+    color: var(--bg);
+  }
+  .btn-accept::after { content: "→"; font-size: 16px; }
+  .btn-accept:hover {
+    background: var(--signal);
+    color: #fff;
+  }
+
+  @media (max-width: 900px) {
+    .phone-grid { grid-template-columns: 1fr; }
+    .page-head { flex-direction: column; align-items: start; gap: 16px; }
+    .page-meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <div>
+      <div class="page-title">JOB DETAIL<span class="stroke">.</span></div>
+      <div>SURFACE / 4.3 — DECISION SCREEN</div>
+    </div>
+    <div class="page-meta">
+      <div><strong>BUILD</strong> 2026.04.30</div>
+      <div><strong>CONTEXT</strong> REF TAPS A JOB CARD</div>
+      <div><strong>GOAL</strong> ACCEPT OR DECLINE IN ≤ 1 SCROLL</div>
+    </div>
+  </header>
+
+  <div class="phone-grid">
+
+    <!-- ============ LIGHT ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen light">
+
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="app-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="header-center">
+              JOB DETAIL
+              <strong>JOB#28110-A</strong>
+            </div>
+            <div class="header-actions">
+              <div class="back-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="back-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="telemetry">
+            <span class="live"><span class="live-dot"></span>2 SLOTS LEFT · CLOSES IN 4H 22M</span>
+            <span><strong>LIVE</strong></span>
+          </div>
+          <div class="mini-zebra"></div>
+
+          <div class="scroll-area">
+
+            <!-- HERO -->
+            <div class="job-hero">
+              <div class="job-hero-tagstrip">
+                <span class="job-hero-tag">FEATURED · TOURNAMENT</span>
+                <span class="job-hero-id">#28110-A</span>
+              </div>
+              <div class="job-hero-body">
+                <div>
+                  <div class="job-hero-title">Spring AAU<br>Showcase</div>
+                  <div class="job-hero-org">TEXAS HOOPS ORG</div>
+                </div>
+                <div class="pay-block">
+                  <div class="pay-num"><span class="dollar">$</span><span class="accent">740</span></div>
+                  <div class="pay-unit">TOTAL EST.</div>
+                </div>
+              </div>
+              <div class="pay-breakdown">
+                <div class="pay-cell">
+                  <div class="pay-cell-label">PER GAME</div>
+                  <div class="pay-cell-val">$185</div>
+                </div>
+                <div class="pay-cell">
+                  <div class="pay-cell-label">GAMES</div>
+                  <div class="pay-cell-val">4</div>
+                </div>
+                <div class="pay-cell">
+                  <div class="pay-cell-label">PAYOUT</div>
+                  <div class="pay-cell-val court">48H</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- WHEN / WHERE -->
+            <div class="data-card">
+              <span class="data-card-tab">SCHEDULE</span>
+              <div class="when-where">
+                <div class="ww-cell">
+                  <div class="ww-label">WHEN</div>
+                  <div class="ww-primary">SAT 5/4</div>
+                  <div class="ww-secondary">9:00 AM CT</div>
+                  <div class="ww-tertiary">~ 4 HR BLOCK</div>
+                </div>
+                <div class="ww-cell">
+                  <div class="ww-label">WHERE</div>
+                  <div class="ww-primary">ROUND ROCK</div>
+                  <div class="ww-secondary">EASTSIDE COMPLEX</div>
+                  <div class="ww-tertiary">12.4 MI · ~22 MIN</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- MAP / LOCATION -->
+            <div class="data-card" style="overflow: hidden;">
+              <div class="map-preview">
+                <svg viewBox="0 0 380 140" preserveAspectRatio="xMidYMid slice">
+                  <defs>
+                    <pattern id="grid-lt" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(8,17,28,0.07)" stroke-width="1"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid-lt)"/>
+                  <!-- Roads -->
+                  <path d="M 0 70 L 380 70" stroke="rgba(8,17,28,0.12)" stroke-width="6" fill="none"/>
+                  <path d="M 190 0 L 190 140" stroke="rgba(8,17,28,0.12)" stroke-width="4" fill="none"/>
+                  <path d="M 60 0 Q 100 70 80 140" stroke="rgba(8,17,28,0.10)" stroke-width="3" fill="none"/>
+                  <path d="M 280 0 Q 320 50 340 140" stroke="rgba(8,17,28,0.10)" stroke-width="3" fill="none"/>
+                  <!-- Court line ornament -->
+                  <circle cx="190" cy="70" r="40" fill="none" stroke="rgba(31,79,204,0.25)" stroke-width="1" stroke-dasharray="3 3"/>
+                </svg>
+                <div class="map-pulse"></div>
+                <div class="map-pin"></div>
+              </div>
+              <div style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;">EASTSIDE SPORTS COMPLEX</div>
+                  <div style="font-family: var(--mono); font-size: 9px; color: var(--ink-60); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 2px;">2400 MAYS ST · ROUND ROCK, TX</div>
+                </div>
+                <span style="font-family: var(--mono); font-size: 9px; color: var(--signal); letter-spacing: 0.16em; font-weight: 700;">DIRECTIONS →</span>
+              </div>
+            </div>
+
+            <!-- CREW -->
+            <div class="data-card">
+              <span class="data-card-tab">CREW · 3-PERSON</span>
+              <div class="crew-block">
+                <div class="crew-list">
+                  <div class="crew-row">
+                    <div class="crew-avatar">JT</div>
+                    <div class="crew-info">
+                      <div class="crew-name">JEREMY T.</div>
+                      <div class="crew-role">CREW CHIEF · 4.94 ★</div>
+                    </div>
+                    <span class="crew-status locked">● LOCKED</span>
+                  </div>
+                  <div class="crew-row">
+                    <div class="crew-avatar empty">?</div>
+                    <div class="crew-info">
+                      <div class="crew-name empty">Open slot</div>
+                      <div class="crew-role">UMPIRE 1 · APPLY</div>
+                    </div>
+                    <span class="crew-status open">YOUR SPOT</span>
+                  </div>
+                  <div class="crew-row">
+                    <div class="crew-avatar empty">?</div>
+                    <div class="crew-info">
+                      <div class="crew-name empty">Open slot</div>
+                      <div class="crew-role">UMPIRE 2</div>
+                    </div>
+                    <span class="crew-status" style="color: var(--ink-60);">OPEN</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GAMES -->
+            <div class="data-card">
+              <span class="data-card-tab">GAMES · 4 SCHEDULED</span>
+              <div class="games-block">
+                <div class="game-row">
+                  <span class="game-num">G1</span>
+                  <div class="game-info">
+                    <div class="game-time">9:00 AM</div>
+                    <div class="game-matchup">U16 BOYS · POOL A</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+                <div class="game-row">
+                  <span class="game-num">G2</span>
+                  <div class="game-info">
+                    <div class="game-time">10:30 AM</div>
+                    <div class="game-matchup">U16 BOYS · POOL B</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+                <div class="game-row">
+                  <span class="game-num">G3</span>
+                  <div class="game-info">
+                    <div class="game-time">12:00 PM</div>
+                    <div class="game-matchup">U16 BOYS · POOL A</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+                <div class="game-row">
+                  <span class="game-num">G4</span>
+                  <div class="game-info">
+                    <div class="game-time">1:30 PM</div>
+                    <div class="game-matchup">U16 BOYS · BRACKET</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DETAILS -->
+            <div class="data-card">
+              <span class="data-card-tab">SPECS</span>
+              <div class="details-list">
+                <div class="detail-row">
+                  <span class="detail-label">SPORT</span>
+                  <span class="detail-val">BASKETBALL</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">LEVEL</span>
+                  <span class="detail-val">U16 · BOYS</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">RULESET</span>
+                  <span class="detail-val">NFHS</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">GAME LENGTH</span>
+                  <span class="detail-val">4 × 8 MIN</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">UNIFORM</span>
+                  <span class="detail-val">BLACK / WHITE STRIPE</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">PARKING</span>
+                  <span class="detail-val">FREE · ON-SITE</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- HIRER NOTE -->
+            <div class="data-card" style="border: none; background: transparent; padding: 0;">
+              <div class="hirer-note">
+                <div class="hirer-note-label">▸ NOTE FROM ORGANIZER</div>
+                <div class="hirer-note-body">Crew arrives <em>15 min early</em> for pre-game review. Concessions onsite. Reach the organizer at the score table for any questions during the day.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- STICKY ACTION BAR -->
+          <div class="action-bar">
+            <button class="btn btn-decline">DECLINE</button>
+            <button class="btn btn-accept">ACCEPT JOB</button>
+          </div>
+
+        </div>
+      </div>
+      <div class="phone-cap"><strong>4.3a</strong>JOB DETAIL / LIGHT</div>
+    </div>
+
+    <!-- ============ DARK ============ -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen dark">
+
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="app-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="header-center">
+              JOB DETAIL
+              <strong>JOB#28110-A</strong>
+            </div>
+            <div class="header-actions">
+              <div class="back-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="back-btn">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="telemetry">
+            <span class="live"><span class="live-dot"></span>2 SLOTS LEFT · CLOSES IN 4H 22M</span>
+            <span><strong>LIVE</strong></span>
+          </div>
+          <div class="mini-zebra"></div>
+
+          <div class="scroll-area">
+
+            <div class="job-hero">
+              <div class="job-hero-tagstrip">
+                <span class="job-hero-tag">FEATURED · TOURNAMENT</span>
+                <span class="job-hero-id">#28110-A</span>
+              </div>
+              <div class="job-hero-body">
+                <div>
+                  <div class="job-hero-title">Spring AAU<br>Showcase</div>
+                  <div class="job-hero-org">TEXAS HOOPS ORG</div>
+                </div>
+                <div class="pay-block">
+                  <div class="pay-num"><span class="dollar">$</span><span class="accent">740</span></div>
+                  <div class="pay-unit">TOTAL EST.</div>
+                </div>
+              </div>
+              <div class="pay-breakdown">
+                <div class="pay-cell">
+                  <div class="pay-cell-label">PER GAME</div>
+                  <div class="pay-cell-val">$185</div>
+                </div>
+                <div class="pay-cell">
+                  <div class="pay-cell-label">GAMES</div>
+                  <div class="pay-cell-val">4</div>
+                </div>
+                <div class="pay-cell">
+                  <div class="pay-cell-label">PAYOUT</div>
+                  <div class="pay-cell-val court">48H</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="data-card">
+              <span class="data-card-tab">SCHEDULE</span>
+              <div class="when-where">
+                <div class="ww-cell">
+                  <div class="ww-label">WHEN</div>
+                  <div class="ww-primary">SAT 5/4</div>
+                  <div class="ww-secondary">9:00 AM CT</div>
+                  <div class="ww-tertiary">~ 4 HR BLOCK</div>
+                </div>
+                <div class="ww-cell">
+                  <div class="ww-label">WHERE</div>
+                  <div class="ww-primary">ROUND ROCK</div>
+                  <div class="ww-secondary">EASTSIDE COMPLEX</div>
+                  <div class="ww-tertiary">12.4 MI · ~22 MIN</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="data-card" style="overflow: hidden;">
+              <div class="map-preview">
+                <svg viewBox="0 0 380 140" preserveAspectRatio="xMidYMid slice">
+                  <defs>
+                    <pattern id="grid-dk" width="20" height="20" patternUnits="userSpaceOnUse">
+                      <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+                    </pattern>
+                  </defs>
+                  <rect width="100%" height="100%" fill="url(#grid-dk)"/>
+                  <path d="M 0 70 L 380 70" stroke="rgba(255,255,255,0.10)" stroke-width="6" fill="none"/>
+                  <path d="M 190 0 L 190 140" stroke="rgba(255,255,255,0.10)" stroke-width="4" fill="none"/>
+                  <path d="M 60 0 Q 100 70 80 140" stroke="rgba(255,255,255,0.07)" stroke-width="3" fill="none"/>
+                  <path d="M 280 0 Q 320 50 340 140" stroke="rgba(255,255,255,0.07)" stroke-width="3" fill="none"/>
+                  <circle cx="190" cy="70" r="40" fill="none" stroke="rgba(79,140,255,0.35)" stroke-width="1" stroke-dasharray="3 3"/>
+                </svg>
+                <div class="map-pulse"></div>
+                <div class="map-pin"></div>
+              </div>
+              <div style="padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-family: var(--mono); font-size: 10px; color: var(--ink); text-transform: uppercase; letter-spacing: 0.12em; font-weight: 600;">EASTSIDE SPORTS COMPLEX</div>
+                  <div style="font-family: var(--mono); font-size: 9px; color: var(--ink-60); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 2px;">2400 MAYS ST · ROUND ROCK, TX</div>
+                </div>
+                <span style="font-family: var(--mono); font-size: 9px; color: var(--signal); letter-spacing: 0.16em; font-weight: 700;">DIRECTIONS →</span>
+              </div>
+            </div>
+
+            <div class="data-card">
+              <span class="data-card-tab">CREW · 3-PERSON</span>
+              <div class="crew-block">
+                <div class="crew-list">
+                  <div class="crew-row">
+                    <div class="crew-avatar">JT</div>
+                    <div class="crew-info">
+                      <div class="crew-name">JEREMY T.</div>
+                      <div class="crew-role">CREW CHIEF · 4.94 ★</div>
+                    </div>
+                    <span class="crew-status locked">● LOCKED</span>
+                  </div>
+                  <div class="crew-row">
+                    <div class="crew-avatar empty">?</div>
+                    <div class="crew-info">
+                      <div class="crew-name empty">Open slot</div>
+                      <div class="crew-role">UMPIRE 1 · APPLY</div>
+                    </div>
+                    <span class="crew-status open">YOUR SPOT</span>
+                  </div>
+                  <div class="crew-row">
+                    <div class="crew-avatar empty">?</div>
+                    <div class="crew-info">
+                      <div class="crew-name empty">Open slot</div>
+                      <div class="crew-role">UMPIRE 2</div>
+                    </div>
+                    <span class="crew-status" style="color: var(--ink-60);">OPEN</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="data-card">
+              <span class="data-card-tab">GAMES · 4 SCHEDULED</span>
+              <div class="games-block">
+                <div class="game-row">
+                  <span class="game-num">G1</span>
+                  <div class="game-info">
+                    <div class="game-time">9:00 AM</div>
+                    <div class="game-matchup">U16 BOYS · POOL A</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+                <div class="game-row">
+                  <span class="game-num">G2</span>
+                  <div class="game-info">
+                    <div class="game-time">10:30 AM</div>
+                    <div class="game-matchup">U16 BOYS · POOL B</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+                <div class="game-row">
+                  <span class="game-num">G3</span>
+                  <div class="game-info">
+                    <div class="game-time">12:00 PM</div>
+                    <div class="game-matchup">U16 BOYS · POOL A</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+                <div class="game-row">
+                  <span class="game-num">G4</span>
+                  <div class="game-info">
+                    <div class="game-time">1:30 PM</div>
+                    <div class="game-matchup">U16 BOYS · BRACKET</div>
+                  </div>
+                  <span class="game-pay">$185</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="data-card">
+              <span class="data-card-tab">SPECS</span>
+              <div class="details-list">
+                <div class="detail-row">
+                  <span class="detail-label">SPORT</span>
+                  <span class="detail-val">BASKETBALL</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">LEVEL</span>
+                  <span class="detail-val">U16 · BOYS</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">RULESET</span>
+                  <span class="detail-val">NFHS</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">GAME LENGTH</span>
+                  <span class="detail-val">4 × 8 MIN</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">UNIFORM</span>
+                  <span class="detail-val">BLACK / WHITE STRIPE</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">PARKING</span>
+                  <span class="detail-val">FREE · ON-SITE</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="data-card" style="border: none; background: transparent; padding: 0;">
+              <div class="hirer-note">
+                <div class="hirer-note-label">▸ NOTE FROM ORGANIZER</div>
+                <div class="hirer-note-body">Crew arrives <em>15 min early</em> for pre-game review. Concessions onsite. Reach the organizer at the score table for any questions during the day.</div>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="action-bar">
+            <button class="btn btn-decline">DECLINE</button>
+            <button class="btn btn-accept">ACCEPT JOB</button>
+          </div>
+
+        </div>
+      </div>
+      <div class="phone-cap"><strong>4.3b</strong>JOB DETAIL / DARK</div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

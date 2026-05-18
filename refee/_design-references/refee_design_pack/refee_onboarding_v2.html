@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>REFEE / ONBOARDING v0.3 — Role-Aware Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter+Tight:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #E5E1D6;
+    --paper-2: #D8D3C5;
+    --chalk: #F5F2EA;
+    --line: rgba(8,12,18,0.10);
+    --line-2: rgba(8,12,18,0.18);
+    --line-3: rgba(8,12,18,0.32);
+    --signal: #1F4FCC;
+    --signal-tint: rgba(31,79,204,0.08);
+    --hi-vis: #C9F031;
+    --court: #00A85C;
+    --foul: #E63946;
+    --ink: #08111C;
+    --ink-80: rgba(8,17,28,0.78);
+    --ink-60: rgba(8,17,28,0.56);
+    --ink-40: rgba(8,17,28,0.36);
+    --ink-20: rgba(8,17,28,0.18);
+    --display-fallback: 'Inter Tight', sans-serif;
+    --body: 'Inter Tight', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #1A1A1A;
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  body {
+    background: radial-gradient(ellipse 1400px 700px at 50% 0%, #2A2D33, #0F0F12);
+    padding: 56px 24px 100px;
+  }
+
+  .wrap { max-width: 1480px; margin: 0 auto; }
+
+  .page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    border-bottom: 1px dashed rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.7);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+  .page-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .page-title .stroke { -webkit-text-stroke: 2px var(--signal); color: transparent; }
+  .page-meta { text-align: right; line-height: 1.8; }
+  .page-meta strong { color: #fff; font-weight: 500; }
+
+  /* Flow strip */
+  .flow-strip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 0 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    overflow-x: auto;
+  }
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.03);
+  }
+  .flow-step.shown {
+    color: var(--ink);
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+  }
+  .flow-step.branch {
+    color: var(--ink);
+    background: var(--signal);
+    border-color: var(--signal);
+    color: #fff;
+  }
+  .flow-step strong {
+    font-weight: 700;
+    font-size: 10px;
+    color: inherit;
+    opacity: 0.7;
+  }
+  .flow-step.shown strong { opacity: 0.6; color: var(--ink); }
+  .flow-step.branch strong { opacity: 0.7; color: #fff; }
+  .flow-arrow { color: rgba(255,255,255,0.3); font-family: var(--mono); }
+  .flow-fork {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 4px;
+  }
+
+  .phone-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 56px 32px;
+    justify-items: center;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .phone-cap {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.7);
+    display: flex; gap: 12px; align-items: center;
+    text-align: center;
+  }
+  .phone-cap strong {
+    background: var(--signal);
+    color: #fff;
+    padding: 3px 8px;
+    font-weight: 700;
+  }
+  .phone-cap .new {
+    background: var(--hi-vis);
+    color: var(--ink);
+    padding: 2px 6px;
+    font-weight: 700;
+    font-size: 9px;
+    margin-left: 6px;
+  }
+
+  .phone {
+    width: 360px;
+    height: 760px;
+    background: #2A2D33;
+    border-radius: 48px;
+    padding: 11px;
+    box-shadow: 0 50px 100px -25px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: var(--paper);
+    border-radius: 38px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 11px; left: 50%;
+    transform: translateX(-50%);
+    width: 95px; height: 26px;
+    background: #2A2D33;
+    border-radius: 13px;
+    z-index: 100;
+  }
+  .status-bar {
+    height: 50px;
+    padding: 16px 26px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .status-icons { display: flex; gap: 5px; align-items: center; }
+  .signal-icon { display: flex; gap: 2px; align-items: flex-end; }
+  .signal-icon span { width: 3px; background: var(--ink); border-radius: 1px; }
+  .signal-icon span:nth-child(1) { height: 4px; }
+  .signal-icon span:nth-child(2) { height: 6px; }
+  .signal-icon span:nth-child(3) { height: 8px; }
+  .signal-icon span:nth-child(4) { height: 10px; }
+  .battery {
+    width: 22px; height: 11px;
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    position: relative;
+    padding: 1px;
+  }
+  .battery::after {
+    content: ""; position: absolute; right: -3px; top: 3px;
+    width: 2px; height: 5px; background: var(--ink); border-radius: 0 1px 1px 0;
+  }
+  .battery-fill { height: 100%; width: 80%; background: var(--ink); border-radius: 1px; }
+
+  .ob-header {
+    padding: 8px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .back-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--ink);
+    background: var(--chalk);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .step-indicator {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+  }
+  .step-indicator strong { color: var(--ink); font-weight: 700; }
+
+  .progress-strip {
+    padding: 0 20px 18px;
+    flex-shrink: 0;
+  }
+  .progress {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 3px;
+    height: 4px;
+  }
+  .progress-seg { background: var(--ink-20); }
+  .progress-seg.done { background: var(--ink); }
+  .progress-seg.active { background: var(--signal); }
+
+  .ob-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px 100px;
+  }
+  .ob-body::-webkit-scrollbar { width: 0; }
+
+  .ob-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--signal);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .ob-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 36px;
+    color: var(--ink);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .ob-title .accent { color: var(--signal); }
+  .ob-sub {
+    font-size: 14px;
+    color: var(--ink-80);
+    line-height: 1.45;
+    margin-bottom: 24px;
+  }
+
+  .ob-footer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--paper);
+    border-top: 1.5px solid var(--ink);
+    padding: 14px 16px 28px;
+  }
+  .ob-footer::before {
+    content: "";
+    position: absolute;
+    top: -1.5px; left: 0; right: 0;
+    height: 1.5px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 8px,
+      var(--paper) 8px,
+      var(--paper) 16px
+    );
+  }
+  .btn-primary {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary::after { content: "→"; font-size: 16px; }
+
+  /* ============================================ */
+  /* === SCREEN: ROLE SELECT (NEW)            === */
+  /* ============================================ */
+  .role-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .role-card {
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    padding: 18px 16px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .role-card.selected {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .role-card.selected .role-meta { color: rgba(245,242,234,0.7); }
+  .role-card.selected .role-icon {
+    background: var(--hi-vis);
+    color: var(--ink);
+    border-color: var(--hi-vis);
+  }
+  .role-icon {
+    width: 44px; height: 44px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .role-content { flex: 1; }
+  .role-label {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 18px;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-bottom: 6px;
+    color: inherit;
+  }
+  .role-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-60);
+    line-height: 1.4;
+  }
+  .role-check {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    display: none;
+  }
+  .role-card.selected .role-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+  }
+  .role-card.selected .role-check::after {
+    content: "✓";
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+
+  .helper-callout {
+    background: var(--signal-tint);
+    border-left: 3px solid var(--signal);
+    padding: 12px 14px;
+    margin-top: 8px;
+  }
+  .helper-callout-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--signal);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .helper-callout-body {
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+
+  /* ============================================ */
+  /* === SCREEN: LEVELS OF PLAY (NEW)         === */
+  /* ============================================ */
+  .level-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .level-row {
+    border: 1px solid var(--ink);
+    background: var(--chalk);
+    padding: 14px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    position: relative;
+  }
+  .level-row.selected {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .level-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    width: 32px;
+    line-height: 1;
+  }
+  .level-row.selected .level-num { color: var(--hi-vis); }
+  .level-info { flex: 1; }
+  .level-label {
+    font-size: 14px;
+    color: inherit;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .level-tier {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-60);
+  }
+  .level-row.selected .level-tier { color: rgba(245,242,234,0.6); }
+  .level-check {
+    width: 20px; height: 20px;
+    border: 1.5px solid currentColor;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .level-row.selected .level-check {
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+    color: var(--ink);
+  }
+  .level-row.selected .level-check::after {
+    content: "✓";
+    font-weight: 900;
+    font-size: 13px;
+  }
+
+  .level-section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-top: 6px;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed var(--line-2);
+  }
+  .level-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .level-section-meta {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+
+  /* ============================================ */
+  /* === SCREEN: CERTIFICATIONS (NEW)         === */
+  /* ============================================ */
+  .cert-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .cert-card {
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    padding: 14px 12px;
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 100px;
+    justify-content: space-between;
+  }
+  .cert-card.selected {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .cert-acronym {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 26px;
+    color: var(--ink);
+    letter-spacing: -0.03em;
+    line-height: 0.9;
+  }
+  .cert-card.selected .cert-acronym { color: var(--hi-vis); }
+  .cert-fullname {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-60);
+    line-height: 1.4;
+  }
+  .cert-card.selected .cert-fullname { color: rgba(245,242,234,0.7); }
+  .cert-mark {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    display: none;
+  }
+  .cert-card.selected .cert-mark {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+  }
+  .cert-card.selected .cert-mark::after {
+    content: "✓";
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+
+  .cert-add-block {
+    border: 1px dashed var(--line-3);
+    background: transparent;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-60);
+    margin-bottom: 16px;
+  }
+  .cert-add-block strong {
+    color: var(--signal);
+    font-weight: 700;
+  }
+
+  .field-helper {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 1200px) {
+    .phone-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 800px) {
+    .phone-grid { grid-template-columns: 1fr; }
+    .page-head { flex-direction: column; align-items: start; gap: 16px; }
+    .page-meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <div>
+      <div class="page-title">ROLE-AWARE<span class="stroke">.</span></div>
+      <div>FLOW / 5.1 — UPDATED ONBOARDING WITH ROLES</div>
+    </div>
+    <div class="page-meta">
+      <div><strong>BUILD</strong> 2026.05.07</div>
+      <div><strong>NEW SCREENS</strong> ROLE · LEVELS · CERTS</div>
+      <div><strong>SUPPORTS</strong> REF · ASSIGNOR · DIRECTOR</div>
+    </div>
+  </header>
+
+  <!-- Updated flow strip showing the branch -->
+  <div class="flow-strip">
+    <div class="flow-step"><strong>01</strong>WELCOME</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>02</strong>VERIFY</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step branch"><strong>03</strong>ROLE</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>04</strong>ID</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>05</strong>PROFILE</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-fork">
+      <div class="flow-step shown"><strong>06a</strong>SPORTS · LEVELS · CERTS (REF)</div>
+      <div class="flow-step"><strong>06b</strong>ORG INFO (DIRECTOR / ASSIGNOR)</div>
+    </div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>07</strong>AVAIL / ORG</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>08</strong>PAYOUT</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>09</strong>YOU'RE IN</div>
+  </div>
+
+  <div class="phone-grid">
+
+    <!-- ================================== -->
+    <!-- ===== SCREEN 3: ROLE SELECT  ===== -->
+    <!-- ================================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>03</strong> / 09</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">ROLE · STEP 3</div>
+            <div class="ob-title">WHAT BRINGS<br>YOU <span class="accent">HERE?</span></div>
+            <div class="ob-sub">Pick the one that fits best. You can do more than one role on Refee — we'll let you add others later.</div>
+
+            <div class="role-list">
+
+              <div class="role-card selected">
+                <span class="role-check"></span>
+                <div class="role-icon">
+                  <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" viewBox="0 0 24 24">
+                    <!-- Whistle body (chamber) -->
+                    <path d="M3 12.5a5.5 5.5 0 0 1 5.5-5.5h7l4 -2v15l-4 -2h-7a5.5 5.5 0 0 1 -5.5 -5.5z"/>
+                    <!-- Mouthpiece tip on left -->
+                    <path d="M3 11v3"/>
+                    <!-- Pea hole / blow indicator -->
+                    <circle cx="9" cy="12.5" r="1.6" fill="currentColor"/>
+                    <!-- Lanyard ring on top -->
+                    <circle cx="19.5" cy="5.5" r="1.5"/>
+                  </svg>
+                </div>
+                <div class="role-content">
+                  <div class="role-label">REFEREE</div>
+                  <div class="role-meta">I work games. I want to find jobs and get paid.</div>
+                </div>
+              </div>
+
+              <div class="role-card">
+                <span class="role-check"></span>
+                <div class="role-icon">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M9 14h6M9 18h4"/></svg>
+                </div>
+                <div class="role-content">
+                  <div class="role-label">ASSIGNOR</div>
+                  <div class="role-meta">I assign refs for a league, association, or board.</div>
+                </div>
+              </div>
+
+              <div class="role-card">
+                <span class="role-check"></span>
+                <div class="role-icon">
+                  <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                </div>
+                <div class="role-content">
+                  <div class="role-label">TOURNAMENT DIRECTOR</div>
+                  <div class="role-meta">I run tournaments or events that need officials.</div>
+                </div>
+              </div>
+
+            </div>
+
+            <div class="helper-callout">
+              <div class="helper-callout-label">▸ NOT SURE?</div>
+              <div class="helper-callout-body">If you officiate games AND assign your own crew (common for indie tournament directors), pick <strong>Tournament Director</strong> first — you can add Referee later in your profile.</div>
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.3</strong>ROLE SELECT<span class="new">NEW</span></div>
+    </div>
+
+    <!-- ================================== -->
+    <!-- ===== SCREEN 6a: LEVELS      ===== -->
+    <!-- ================================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>06</strong> / 09 · REF</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">EXPERIENCE · STEP 6</div>
+            <div class="ob-title">WHAT LEVELS<br>HAVE YOU <span class="accent">CALLED?</span></div>
+            <div class="ob-sub">Pick all that apply. We'll match you with jobs at your level.</div>
+
+            <div class="level-section-head">
+              <span class="level-section-title">▸ AMATEUR / DEV</span>
+              <span class="level-section-meta">PICK ALL</span>
+            </div>
+
+            <div class="level-grid">
+              <div class="level-row selected">
+                <span class="level-num">01</span>
+                <div class="level-info">
+                  <div class="level-label">Youth League / Rec</div>
+                  <div class="level-tier">U6–U18 · CLUB · AAU</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+              <div class="level-row selected">
+                <span class="level-num">02</span>
+                <div class="level-info">
+                  <div class="level-label">High School</div>
+                  <div class="level-tier">NFHS · MS / HS · VARSITY</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+            </div>
+
+            <div class="level-section-head">
+              <span class="level-section-title">▸ COLLEGE</span>
+              <span class="level-section-meta">PICK ALL</span>
+            </div>
+
+            <div class="level-grid">
+              <div class="level-row">
+                <span class="level-num">03</span>
+                <div class="level-info">
+                  <div class="level-label">JUCO</div>
+                  <div class="level-tier">JUNIOR COLLEGE · NJCAA</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+              <div class="level-row">
+                <span class="level-num">04</span>
+                <div class="level-info">
+                  <div class="level-label">NAIA</div>
+                  <div class="level-tier">SMALL COLLEGE</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+              <div class="level-row selected">
+                <span class="level-num">05</span>
+                <div class="level-info">
+                  <div class="level-label">NCAA Men's College</div>
+                  <div class="level-tier">D1 · D2 · D3</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+              <div class="level-row">
+                <span class="level-num">06</span>
+                <div class="level-info">
+                  <div class="level-label">NCAA Women's College</div>
+                  <div class="level-tier">D1 · D2 · D3</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+            </div>
+
+            <div class="level-section-head">
+              <span class="level-section-title">▸ PROFESSIONAL</span>
+              <span class="level-section-meta">PICK ALL</span>
+            </div>
+
+            <div class="level-grid">
+              <div class="level-row">
+                <span class="level-num">07</span>
+                <div class="level-info">
+                  <div class="level-label">Pro-Am</div>
+                  <div class="level-tier">SUMMER · EXHIBITION</div>
+                </div>
+                <div class="level-check"></div>
+              </div>
+            </div>
+
+            <div class="field-helper">
+              ▸ MORE LEVELS COMING (G LEAGUE · OVERSEAS · WNBA · NBA)
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.6a</strong>LEVELS OF PLAY<span class="new">NEW</span></div>
+    </div>
+
+    <!-- ================================== -->
+    <!-- ===== SCREEN 6b: CERTS       ===== -->
+    <!-- ================================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>06</strong> / 09 · REF</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">CERTIFICATIONS · STEP 6</div>
+            <div class="ob-title">VERIFIED<br><span class="accent">CREDENTIALS.</span></div>
+            <div class="ob-sub">Pick the bodies you're certified through. We'll verify with each org. Skip if none apply.</div>
+
+            <div class="cert-grid">
+
+              <div class="cert-card selected">
+                <span class="cert-mark"></span>
+                <div class="cert-acronym">IAABO</div>
+                <div class="cert-fullname">International Assoc. of Approved Basketball Officials</div>
+              </div>
+
+              <div class="cert-card selected">
+                <span class="cert-mark"></span>
+                <div class="cert-acronym">NFHS</div>
+                <div class="cert-fullname">National Federation of State HS Assocs.</div>
+              </div>
+
+              <div class="cert-card">
+                <span class="cert-mark"></span>
+                <div class="cert-acronym">NCAA</div>
+                <div class="cert-fullname">College Officials Program</div>
+              </div>
+
+              <div class="cert-card">
+                <span class="cert-mark"></span>
+                <div class="cert-acronym">FIBA</div>
+                <div class="cert-fullname">International / Olympic-style rules</div>
+              </div>
+
+            </div>
+
+            <div class="cert-add-block">
+              ▸ HAVE ANOTHER? <strong>ADD CUSTOM</strong>
+            </div>
+
+            <div class="helper-callout">
+              <div class="helper-callout-label">▸ HOW VERIFICATION WORKS</div>
+              <div class="helper-callout-body">After you finish onboarding, you'll be prompted to upload proof (member card, license #, or annual cert). A verified ✓ shows on your public profile within 48 hours.</div>
+            </div>
+
+            <div class="field-helper" style="margin-top: 14px;">
+              NO CERTIFICATIONS? THAT'S OK — YOU CAN STILL FIND JOBS AT YOUTH / REC LEVEL.
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.6b</strong>CERTIFICATIONS<span class="new">NEW</span></div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>REFEE / ONBOARDING — Referee Flow</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700;800&family=Inter+Tight:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ============== TOKENS ============== */
+  :root {
+    --paper: #E5E1D6;
+    --paper-2: #D8D3C5;
+    --chalk: #F5F2EA;
+    --line: rgba(8,12,18,0.10);
+    --line-2: rgba(8,12,18,0.18);
+    --line-3: rgba(8,12,18,0.32);
+
+    --signal: #1F4FCC;
+    --signal-tint: rgba(31,79,204,0.08);
+    --hi-vis: #C9F031;
+    --court: #00A85C;
+    --foul: #E63946;
+
+    --ink: #08111C;
+    --ink-80: rgba(8,17,28,0.78);
+    --ink-60: rgba(8,17,28,0.56);
+    --ink-40: rgba(8,17,28,0.36);
+    --ink-20: rgba(8,17,28,0.18);
+
+    --display-fallback: 'Inter Tight', sans-serif;
+    --body: 'Inter Tight', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: #1A1A1A;
+    font-family: var(--body);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  body {
+    background: radial-gradient(ellipse 1400px 700px at 50% 0%, #2A2D33, #0F0F12);
+    padding: 56px 24px 100px;
+  }
+
+  .wrap { max-width: 1480px; margin: 0 auto; }
+
+  /* ============== PAGE HEADER ============== */
+  .page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    padding-bottom: 24px;
+    margin-bottom: 32px;
+    border-bottom: 1px dashed rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.7);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+  }
+  .page-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    color: #fff;
+    letter-spacing: -0.03em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .page-title .stroke { -webkit-text-stroke: 2px var(--signal); color: transparent; }
+  .page-meta { text-align: right; line-height: 1.8; }
+  .page-meta strong { color: #fff; font-weight: 500; }
+
+  /* Flow strip — visual map of the whole flow */
+  .flow-strip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 16px 0 32px;
+    margin-bottom: 32px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    overflow-x: auto;
+  }
+  .flow-step {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 12px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(255,255,255,0.03);
+  }
+  .flow-step.shown {
+    color: var(--ink);
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+  }
+  .flow-step strong {
+    font-weight: 700;
+    font-size: 10px;
+    color: inherit;
+    opacity: 0.7;
+  }
+  .flow-step.shown strong { opacity: 0.6; color: var(--ink); }
+  .flow-arrow { color: rgba(255,255,255,0.3); font-family: var(--mono); }
+
+  /* ============== PHONE GRID ============== */
+  .phone-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 56px 32px;
+    justify-items: center;
+  }
+  .phone-wrap { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+  .phone-cap {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: rgba(255,255,255,0.7);
+    display: flex; gap: 12px; align-items: center;
+    text-align: center;
+  }
+  .phone-cap strong {
+    background: var(--signal);
+    color: #fff;
+    padding: 3px 8px;
+    font-weight: 700;
+  }
+
+  /* PHONE FRAME */
+  .phone {
+    width: 360px;
+    height: 760px;
+    background: #2A2D33;
+    border-radius: 48px;
+    padding: 11px;
+    box-shadow: 0 50px 100px -25px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.06);
+    position: relative;
+  }
+  .phone-screen {
+    width: 100%; height: 100%;
+    background: var(--paper);
+    border-radius: 38px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .phone-notch {
+    position: absolute;
+    top: 11px; left: 50%;
+    transform: translateX(-50%);
+    width: 95px; height: 26px;
+    background: #2A2D33;
+    border-radius: 13px;
+    z-index: 100;
+  }
+  .status-bar {
+    height: 50px;
+    padding: 16px 26px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .status-icons { display: flex; gap: 5px; align-items: center; }
+  .signal-icon { display: flex; gap: 2px; align-items: flex-end; }
+  .signal-icon span { width: 3px; background: var(--ink); border-radius: 1px; }
+  .signal-icon span:nth-child(1) { height: 4px; }
+  .signal-icon span:nth-child(2) { height: 6px; }
+  .signal-icon span:nth-child(3) { height: 8px; }
+  .signal-icon span:nth-child(4) { height: 10px; }
+  .battery {
+    width: 22px; height: 11px;
+    border: 1px solid var(--ink);
+    border-radius: 3px;
+    position: relative;
+    padding: 1px;
+  }
+  .battery::after {
+    content: ""; position: absolute; right: -3px; top: 3px;
+    width: 2px; height: 5px; background: var(--ink); border-radius: 0 1px 1px 0;
+  }
+  .battery-fill { height: 100%; width: 80%; background: var(--ink); border-radius: 1px; }
+
+  /* ============== ONBOARDING HEADER (shared across screens) ============== */
+  .ob-header {
+    padding: 8px 20px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .back-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--ink);
+    background: var(--chalk);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .step-indicator {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+  }
+  .step-indicator strong { color: var(--ink); font-weight: 700; }
+  .skip-link {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-60);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  /* Progress bar — segmented */
+  .progress-strip {
+    padding: 0 20px 18px;
+    flex-shrink: 0;
+  }
+  .progress {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 3px;
+    height: 4px;
+  }
+  .progress-seg {
+    background: var(--ink-20);
+  }
+  .progress-seg.done { background: var(--ink); }
+  .progress-seg.active { background: var(--signal); }
+
+  /* ============== SCREEN BODY ============== */
+  .ob-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 20px 100px;
+  }
+  .ob-body::-webkit-scrollbar { width: 0; }
+
+  .ob-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--signal);
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .ob-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 36px;
+    color: var(--ink);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .ob-title .accent { color: var(--signal); }
+  .ob-sub {
+    font-size: 14px;
+    color: var(--ink-80);
+    line-height: 1.45;
+    margin-bottom: 24px;
+  }
+
+  /* ============== INPUT STYLES ============== */
+  .field-group {
+    margin-bottom: 16px;
+  }
+  .field-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .field-label .req { color: var(--signal); }
+  .field-label .priv {
+    color: var(--ink-60);
+    background: var(--ink-20);
+    padding: 1px 5px;
+    font-size: 8px;
+  }
+  .input {
+    width: 100%;
+    background: var(--chalk);
+    border: 1.5px solid var(--ink);
+    padding: 14px 14px;
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 0;
+    letter-spacing: 0.02em;
+  }
+  .input::placeholder { color: var(--ink-40); }
+  .input:focus {
+    outline: none;
+    box-shadow: 4px 4px 0 var(--signal);
+  }
+  .input.with-prefix {
+    display: flex;
+    padding: 0;
+    align-items: stretch;
+  }
+  .input-prefix {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 14px 14px;
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+  }
+  .input-field {
+    flex: 1;
+    border: none;
+    padding: 14px 14px;
+    background: var(--chalk);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+  }
+  .input-field:focus { outline: none; }
+  .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .field-helper {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    margin-top: 6px;
+  }
+
+  /* ============== STICKY BOTTOM BUTTON ============== */
+  .ob-footer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: var(--paper);
+    border-top: 1.5px solid var(--ink);
+    padding: 14px 16px 28px;
+  }
+  .ob-footer::before {
+    content: "";
+    position: absolute;
+    top: -1.5px; left: 0; right: 0;
+    height: 1.5px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 8px,
+      var(--paper) 8px,
+      var(--paper) 16px
+    );
+  }
+  .btn-primary {
+    width: 100%;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary::after { content: "→"; font-size: 16px; }
+  .btn-primary:hover { background: var(--signal); }
+  .btn-primary:disabled {
+    background: var(--ink-20);
+    color: var(--ink-40);
+    cursor: not-allowed;
+  }
+  .btn-primary:disabled::after { color: var(--ink-40); }
+
+  /* =============================================== */
+  /* ============== SCREEN 1: WELCOME ============== */
+  /* =============================================== */
+
+  .welcome-screen {
+    background: var(--ink);
+    color: var(--paper);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .welcome-screen .status-bar { color: var(--paper); }
+  .welcome-screen .signal-icon span { background: var(--paper); }
+  .welcome-screen .battery { border-color: var(--paper); }
+  .welcome-screen .battery::after { background: var(--paper); }
+  .welcome-screen .battery-fill { background: var(--paper); }
+
+  /* Background grid */
+  .welcome-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+  }
+  .welcome-zebra {
+    height: 18px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--paper) 0,
+      var(--paper) 14px,
+      var(--ink) 14px,
+      var(--ink) 28px
+    );
+    flex-shrink: 0;
+  }
+  .welcome-zebra.signal {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 14px,
+      var(--ink) 14px,
+      var(--ink) 28px
+    );
+  }
+  .welcome-content {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 40px 24px 0;
+  }
+  .welcome-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--hi-vis);
+    margin-bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .welcome-tag::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: var(--hi-vis);
+    border-radius: 50%;
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .welcome-headline {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 64px;
+    color: var(--paper);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  .welcome-headline .stroke { -webkit-text-stroke: 2px var(--signal); color: transparent; }
+  .welcome-headline .accent { color: var(--signal); }
+  .welcome-sub {
+    font-size: 15px;
+    color: rgba(245,242,234,0.7);
+    line-height: 1.5;
+    margin-bottom: 32px;
+    max-width: 280px;
+  }
+
+  .value-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid rgba(245,242,234,0.18);
+    margin-bottom: 32px;
+  }
+  .value-cell {
+    padding: 12px 10px;
+    border-right: 1px solid rgba(245,242,234,0.18);
+    text-align: center;
+  }
+  .value-cell:last-child { border-right: none; }
+  .value-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--paper);
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+  .value-num .accent { color: var(--hi-vis); }
+  .value-label {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: rgba(245,242,234,0.5);
+    margin-top: 4px;
+  }
+
+  .welcome-actions {
+    margin-top: auto;
+    padding-bottom: 28px;
+  }
+  .welcome-cta {
+    width: 100%;
+    background: var(--hi-vis);
+    color: var(--ink);
+    border: none;
+    padding: 18px;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .welcome-cta::after { content: "→"; font-size: 16px; }
+  .welcome-cta-secondary {
+    width: 100%;
+    background: transparent;
+    color: var(--paper);
+    border: 1px solid rgba(245,242,234,0.3);
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    cursor: pointer;
+    text-align: center;
+  }
+  .welcome-cta-secondary span { color: var(--hi-vis); }
+
+  .welcome-foot-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 18px;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: rgba(245,242,234,0.4);
+  }
+
+  /* ============================================================ */
+  /* ============== SCREEN 2: SMS / PHONE VERIFY ============== */
+  /* ============================================================ */
+  .otp-row {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+  .otp-cell {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 26px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .otp-cell.filled { background: var(--ink); color: var(--paper); }
+  .otp-cell.active { box-shadow: 4px 4px 0 var(--signal); }
+  .resend-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    border-top: 1px solid var(--line-2);
+    border-bottom: 1px solid var(--line-2);
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-60);
+  }
+  .resend-row strong { color: var(--ink); }
+  .resend-row a { color: var(--signal); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+  /* ============================================================ */
+  /* ============== SCREEN 4: PUBLIC PROFILE SETUP ============== */
+  /* ============================================================ */
+  .privacy-callout {
+    background: var(--signal-tint);
+    border-left: 3px solid var(--signal);
+    padding: 12px 14px;
+    margin-bottom: 24px;
+  }
+  .privacy-callout-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--signal);
+    font-weight: 700;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .privacy-callout-body {
+    font-size: 12px;
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  .privacy-callout-body em {
+    font-style: normal;
+    background: var(--hi-vis);
+    padding: 0 3px;
+  }
+
+  .photo-uploader {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  .avatar-zone {
+    width: 76px; height: 76px;
+    border: 1.5px dashed var(--line-3);
+    background: var(--chalk);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-60);
+    text-align: center;
+    line-height: 1.2;
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .avatar-zone svg { color: var(--ink-40); }
+  .uploader-text {
+    flex: 1;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-80);
+    line-height: 1.5;
+  }
+  .uploader-text strong {
+    color: var(--ink);
+    font-size: 12px;
+    display: block;
+    margin-bottom: 2px;
+  }
+  .uploader-action {
+    color: var(--signal);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  /* Display name preview card */
+  .preview-card {
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    margin-top: 20px;
+    margin-bottom: 8px;
+    position: relative;
+  }
+  .preview-card-tab {
+    position: absolute;
+    top: -7px;
+    left: 12px;
+    background: var(--paper);
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+  }
+  .preview-card-body {
+    padding: 16px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .preview-avatar {
+    width: 52px; height: 52px;
+    background: var(--ink);
+    color: var(--paper);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 20px;
+    letter-spacing: -0.02em;
+    flex-shrink: 0;
+  }
+  .preview-name {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .preview-meta {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+  }
+  .preview-meta-line { margin-top: 2px; }
+
+  /* ============================================================ */
+  /* ============== SCREEN 5: CREDENTIALS / SPORTS ============== */
+  /* ============================================================ */
+  .multi-select {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .ms-option {
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    padding: 16px 12px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    position: relative;
+  }
+  .ms-option.selected {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .ms-option.selected .ms-icon { color: var(--hi-vis); }
+  .ms-option.selected .ms-meta { color: rgba(245,242,234,0.6); }
+  .ms-icon {
+    color: var(--ink);
+    width: 24px; height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ms-label {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 15px;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .ms-meta {
+    font-family: var(--mono);
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-60);
+  }
+  .ms-option.selected .ms-meta { color: rgba(245,242,234,0.6); }
+  .ms-check {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 16px; height: 16px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper);
+    display: none;
+  }
+  .ms-option.selected .ms-check {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+  }
+  .ms-option.selected .ms-check::after {
+    content: "✓";
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--ink);
+  }
+
+  .cert-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .cert-row {
+    border: 1px solid var(--ink);
+    background: var(--chalk);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .cert-row.selected {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .cert-info { display: flex; align-items: center; gap: 10px; }
+  .cert-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .cert-row.selected .cert-check {
+    background: var(--hi-vis);
+    border-color: var(--hi-vis);
+    color: var(--ink);
+  }
+  .cert-row.selected .cert-check::after { content: "✓"; font-weight: 900; font-size: 12px; }
+  .cert-name {
+    font-size: 13px;
+    color: inherit;
+    font-weight: 600;
+  }
+  .cert-org {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--ink-60);
+  }
+  .cert-row.selected .cert-org { color: rgba(245,242,234,0.6); }
+
+  /* ============================================================ */
+  /* ============== SCREEN 6: AVAILABILITY ============== */
+  /* ============================================================ */
+  .day-picker {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+  .day-btn {
+    aspect-ratio: 1;
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: var(--mono);
+    gap: 2px;
+  }
+  .day-btn .dow {
+    font-size: 8px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+  }
+  .day-btn .dn {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .day-btn.selected {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .day-btn.selected .dow { color: var(--hi-vis); }
+  .day-btn.selected .dn { color: var(--paper); }
+
+  .radius-block {
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    padding: 18px 16px;
+    margin-bottom: 24px;
+    position: relative;
+  }
+  .radius-tab {
+    position: absolute;
+    top: -7px; left: 12px;
+    background: var(--paper);
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+  }
+  .radius-display {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    margin-bottom: 14px;
+  }
+  .radius-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .radius-num .accent { color: var(--signal); }
+  .radius-unit {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+  }
+  .radius-slider {
+    height: 6px;
+    background: var(--ink-20);
+    position: relative;
+    cursor: pointer;
+  }
+  .radius-fill {
+    height: 100%;
+    background: var(--ink);
+    width: 50%;
+  }
+  .radius-handle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 18px; height: 18px;
+    background: var(--hi-vis);
+    border: 2px solid var(--ink);
+    cursor: pointer;
+  }
+  .radius-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--ink-60);
+    letter-spacing: 0.14em;
+  }
+
+  .min-pay-block {
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    padding: 18px 16px;
+    position: relative;
+  }
+  .min-pay-display {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+  .min-pay-dollar {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--ink-60);
+    font-weight: 700;
+  }
+  .min-pay-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .min-pay-num .accent { color: var(--signal); }
+  .min-pay-unit {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-60);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-left: 4px;
+  }
+  .pay-quick-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-top: 14px;
+  }
+  .pay-quick {
+    border: 1px solid var(--ink);
+    background: var(--paper);
+    padding: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+  .pay-quick.selected {
+    background: var(--ink);
+    color: var(--hi-vis);
+  }
+
+  /* ============================================================ */
+  /* ============== SCREEN 8: SUCCESS ============== */
+  /* ============================================================ */
+  .success-screen {
+    background: var(--paper);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+  .success-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(8,17,28,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(8,17,28,0.04) 1px, transparent 1px);
+    background-size: 30px 30px;
+    pointer-events: none;
+  }
+
+  .success-content {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 60px 24px 0;
+  }
+  .success-stamp {
+    width: 100px; height: 100px;
+    background: var(--hi-vis);
+    border: 2px solid var(--ink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    transform: rotate(-4deg);
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .success-stamp svg { width: 56px; height: 56px; color: var(--ink); }
+  .success-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--court);
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .success-eyebrow::before {
+    content: "";
+    width: 6px; height: 6px;
+    background: var(--court);
+    border-radius: 50%;
+  }
+  .success-title {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 56px;
+    color: var(--ink);
+    line-height: 0.85;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .success-title .accent { color: var(--signal); }
+  .success-sub {
+    font-size: 14px;
+    color: var(--ink-80);
+    line-height: 1.5;
+    max-width: 280px;
+    margin-bottom: 32px;
+  }
+  .success-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    border: 1.5px solid var(--ink);
+    background: var(--chalk);
+    margin-bottom: auto;
+    position: relative;
+  }
+  .success-stats::before {
+    content: "FIRST WEEK / NEAR YOU";
+    position: absolute;
+    top: -7px;
+    left: 12px;
+    background: var(--paper);
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-size: 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink);
+  }
+  .success-stat-cell {
+    padding: 16px 12px 14px;
+    border-right: 1px solid var(--ink);
+    text-align: center;
+  }
+  .success-stat-cell:last-child { border-right: none; }
+  .success-stat-num {
+    font-family: var(--display-fallback);
+    font-weight: 900;
+    font-size: 38px;
+    color: var(--ink);
+    letter-spacing: -0.04em;
+    line-height: 0.9;
+  }
+  .success-stat-num .accent { color: var(--signal); }
+  .success-stat-label {
+    font-family: var(--mono);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ink-60);
+    margin-top: 6px;
+  }
+
+  @media (max-width: 1200px) {
+    .phone-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 800px) {
+    .phone-grid { grid-template-columns: 1fr; }
+    .page-head { flex-direction: column; align-items: start; gap: 16px; }
+    .page-meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="page-head">
+    <div>
+      <div class="page-title">ONBOARDING<span class="stroke">.</span></div>
+      <div>FLOW / 5.0 — REFEREE SIGN-UP</div>
+    </div>
+    <div class="page-meta">
+      <div><strong>BUILD</strong> 2026.04.30</div>
+      <div><strong>STEPS</strong> 8 SCREENS · ≤4 MIN</div>
+      <div><strong>GOAL</strong> SIGNED-UP REF READY TO ACCEPT JOBS</div>
+    </div>
+  </header>
+
+  <!-- Flow strip — visual map of full sequence -->
+  <div class="flow-strip">
+    <div class="flow-step shown"><strong>01</strong>WELCOME</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step shown"><strong>02</strong>VERIFY</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>03</strong>ID</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step shown"><strong>04</strong>PROFILE</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step shown"><strong>05</strong>CREDENTIALS</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step shown"><strong>06</strong>AVAILABILITY</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step"><strong>07</strong>PAYOUT</div>
+    <span class="flow-arrow">→</span>
+    <div class="flow-step shown"><strong>08</strong>YOU'RE IN</div>
+  </div>
+
+  <div class="phone-grid">
+
+    <!-- ============================== -->
+    <!-- ===== SCREEN 1: WELCOME ====== -->
+    <!-- ============================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="welcome-screen">
+            <div class="welcome-bg"></div>
+
+            <div class="status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+                <span style="font-size:11px; margin-left:4px;">5G</span>
+                <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+              </div>
+            </div>
+
+            <div class="welcome-zebra signal"></div>
+
+            <div class="welcome-content">
+              <div class="welcome-tag">CALLED UP · LIVE ROSTER</div>
+              <div class="welcome-headline">REF<span class="stroke">EE</span><br>EARN ON<br>YOUR <span class="accent">CALL.</span></div>
+              <div class="welcome-sub">The on-demand marketplace for officials. Find games, set your rate, get paid in 48 hours.</div>
+
+              <div class="value-strip">
+                <div class="value-cell">
+                  <div class="value-num">48<span class="accent">H</span></div>
+                  <div class="value-label">PAYOUT</div>
+                </div>
+                <div class="value-cell">
+                  <div class="value-num">0<span class="accent">%</span></div>
+                  <div class="value-label">REF FEES</div>
+                </div>
+                <div class="value-cell">
+                  <div class="value-num">YOU<span class="accent">.</span></div>
+                  <div class="value-label">SET RATE</div>
+                </div>
+              </div>
+
+              <div class="welcome-actions">
+                <button class="welcome-cta">GET STARTED</button>
+                <button class="welcome-cta-secondary">ALREADY A REF? <span>SIGN IN</span></button>
+                <div class="welcome-foot-meta">
+                  <span>v1.0</span>
+                  <span>● BUILT BY OFFICIALS</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.1</strong>WELCOME</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ===== SCREEN 2: VERIFY ====== -->
+    <!-- ============================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>02</strong> / 08</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">VERIFY · STEP 2</div>
+            <div class="ob-title">CHECK YOUR<br><span class="accent">PHONE.</span></div>
+            <div class="ob-sub">We sent a 6-digit code to <strong style="color: var(--ink);">+1 (512) ••• 8429</strong>. Enter it below.</div>
+
+            <div class="otp-row">
+              <div class="otp-cell filled">2</div>
+              <div class="otp-cell filled">8</div>
+              <div class="otp-cell filled">1</div>
+              <div class="otp-cell filled">1</div>
+              <div class="otp-cell active">_</div>
+              <div class="otp-cell"></div>
+            </div>
+
+            <div class="resend-row">
+              <span>RESEND IN <strong>0:42</strong></span>
+              <a>WRONG NUMBER?</a>
+            </div>
+
+            <div style="margin-top: 24px; padding: 14px; border: 1px dashed var(--line-3); display: flex; gap: 10px; align-items: flex-start;">
+              <div style="font-family: var(--mono); font-size: 16px; color: var(--signal);">▸</div>
+              <div style="flex: 1;">
+                <div style="font-family: var(--mono); font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink); margin-bottom: 4px;">WHY PHONE FIRST?</div>
+                <div style="font-size: 11px; color: var(--ink-80); line-height: 1.5;">No passwords. We text you a code each time you sign in on a new device. Refs verify each other are real humans.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">VERIFY &amp; CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.2</strong>SMS VERIFY</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ===== SCREEN 4: PUBLIC PROFILE ====== -->
+    <!-- ============================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>04</strong> / 08</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">PROFILE · STEP 4</div>
+            <div class="ob-title">PUBLIC<br>IDENTITY.</div>
+
+            <div class="privacy-callout">
+              <div class="privacy-callout-label">▸ PRIVACY-FIRST</div>
+              <div class="privacy-callout-body">Organizers and other refs only see your <em>first name + last initial</em> and headshot. Your full legal name is never displayed publicly.</div>
+            </div>
+
+            <div class="photo-uploader">
+              <div class="avatar-zone">
+                <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              </div>
+              <div class="uploader-text">
+                <strong>Add headshot</strong>
+                Recent photo, face clear. <span class="uploader-action">UPLOAD</span>
+              </div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label"><span>FIRST NAME</span><span class="req">REQUIRED</span></label>
+              <input class="input" value="Biniam" />
+            </div>
+
+            <div class="field-group">
+              <label class="field-label"><span>LAST INITIAL</span><span class="req">REQUIRED</span></label>
+              <input class="input" value="M." style="text-transform: uppercase;" />
+              <div class="field-helper">JUST THE LETTER. EXAMPLE: SARAH J. · MIKE T.</div>
+            </div>
+
+            <div class="field-group">
+              <label class="field-label"><span>HOME CITY</span><span class="req">REQUIRED</span></label>
+              <input class="input" value="Austin, TX" />
+            </div>
+
+            <!-- Live preview -->
+            <div class="preview-card">
+              <span class="preview-card-tab">HOW OTHERS SEE YOU</span>
+              <div class="preview-card-body">
+                <div class="preview-avatar">BM</div>
+                <div>
+                  <div class="preview-name">BINIAM M.</div>
+                  <div class="preview-meta">REF / AUSTIN, TX</div>
+                  <div class="preview-meta preview-meta-line">VERIFIED ✓</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.4</strong>PUBLIC PROFILE</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ===== SCREEN 5: CREDENTIALS ====== -->
+    <!-- ============================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>05</strong> / 08</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">CREDENTIALS · STEP 5</div>
+            <div class="ob-title">WHAT DO YOU<br><span class="accent">CALL?</span></div>
+            <div class="ob-sub">Pick the sports you officiate. You can add more later.</div>
+
+            <div class="multi-select">
+              <div class="ms-option selected">
+                <span class="ms-check"></span>
+                <div class="ms-icon">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M4.93 4.93a14.5 14.5 0 0 1 14.14 14.14M19.07 4.93a14.5 14.5 0 0 0-14.14 14.14M2 12h20M12 2v20"/></svg>
+                </div>
+                <div>
+                  <div class="ms-label">BASKETBALL</div>
+                  <div class="ms-meta">YOUTH · HS · ADULT</div>
+                </div>
+              </div>
+              <div class="ms-option">
+                <span class="ms-check"></span>
+                <div class="ms-icon">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2 L6 12 L12 22 L18 12 Z M2 12 L22 12"/></svg>
+                </div>
+                <div>
+                  <div class="ms-label">SOCCER</div>
+                  <div class="ms-meta">YOUTH · ADULT</div>
+                </div>
+              </div>
+              <div class="ms-option">
+                <span class="ms-check"></span>
+                <div class="ms-icon">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="10" ry="6"/><path d="M2 12 L22 12"/></svg>
+                </div>
+                <div>
+                  <div class="ms-label">FOOTBALL</div>
+                  <div class="ms-meta">FLAG · YOUTH · HS</div>
+                </div>
+              </div>
+              <div class="ms-option">
+                <span class="ms-check"></span>
+                <div class="ms-icon">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12h18M12 3v18"/><circle cx="12" cy="12" r="9"/></svg>
+                </div>
+                <div>
+                  <div class="ms-label">VOLLEYBALL</div>
+                  <div class="ms-meta">YOUTH · ADULT</div>
+                </div>
+              </div>
+              <div class="ms-option">
+                <span class="ms-check"></span>
+                <div class="ms-icon">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 8 L16 16 M16 8 L8 16"/></svg>
+                </div>
+                <div>
+                  <div class="ms-label">BASEBALL</div>
+                  <div class="ms-meta">LL · HS</div>
+                </div>
+              </div>
+              <div class="ms-option">
+                <span class="ms-check"></span>
+                <div class="ms-icon">
+                  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 19l14-14M9 5L5 9l4 4M19 15l-4 4-4-4"/></svg>
+                </div>
+                <div>
+                  <div class="ms-label">+ MORE</div>
+                  <div class="ms-meta">15 SPORTS</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-60); margin-bottom: 10px; font-weight: 700;">CERTIFICATIONS</div>
+
+            <div class="cert-list">
+              <div class="cert-row selected">
+                <div class="cert-info">
+                  <div class="cert-check"></div>
+                  <div>
+                    <div class="cert-name">USA Basketball</div>
+                    <div class="cert-org">USAB · LICENSE #</div>
+                  </div>
+                </div>
+                <span style="font-family: var(--mono); font-size: 9px; color: var(--hi-vis); letter-spacing: 0.14em; font-weight: 700;">ADD →</span>
+              </div>
+              <div class="cert-row">
+                <div class="cert-info">
+                  <div class="cert-check"></div>
+                  <div>
+                    <div class="cert-name">IAABO</div>
+                    <div class="cert-org">BOARD MEMBERSHIP</div>
+                  </div>
+                </div>
+                <span style="font-family: var(--mono); font-size: 9px; color: var(--ink-60); letter-spacing: 0.14em; font-weight: 700;">ADD →</span>
+              </div>
+              <div class="cert-row">
+                <div class="cert-info">
+                  <div class="cert-check"></div>
+                  <div>
+                    <div class="cert-name">NFHS Officials</div>
+                    <div class="cert-org">STATE-LEVEL</div>
+                  </div>
+                </div>
+                <span style="font-family: var(--mono); font-size: 9px; color: var(--ink-60); letter-spacing: 0.14em; font-weight: 700;">ADD →</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.5</strong>CREDENTIALS</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ===== SCREEN 6: AVAILABILITY ====== -->
+    <!-- ============================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="status-bar">
+            <span>9:41</span>
+            <div class="status-icons">
+              <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+              <span style="font-size:11px; margin-left:4px;">5G</span>
+              <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+            </div>
+          </div>
+
+          <div class="ob-header">
+            <div class="back-btn">
+              <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="step-indicator"><strong>06</strong> / 08</div>
+            <div style="width: 34px;"></div>
+          </div>
+
+          <div class="progress-strip">
+            <div class="progress">
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg done"></div>
+              <div class="progress-seg active"></div>
+              <div class="progress-seg"></div>
+              <div class="progress-seg"></div>
+            </div>
+          </div>
+
+          <div class="ob-body">
+            <div class="ob-eyebrow">AVAILABILITY · STEP 6</div>
+            <div class="ob-title">WHEN &amp;<br>HOW <span class="accent">FAR.</span></div>
+            <div class="ob-sub">Set your defaults. You can change anytime.</div>
+
+            <div style="font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ink-60); margin-bottom: 10px; font-weight: 700;">USUAL DAYS</div>
+
+            <div class="day-picker">
+              <div class="day-btn"><span class="dow">SUN</span><span class="dn">S</span></div>
+              <div class="day-btn"><span class="dow">MON</span><span class="dn">M</span></div>
+              <div class="day-btn"><span class="dow">TUE</span><span class="dn">T</span></div>
+              <div class="day-btn"><span class="dow">WED</span><span class="dn">W</span></div>
+              <div class="day-btn selected"><span class="dow">THU</span><span class="dn">T</span></div>
+              <div class="day-btn selected"><span class="dow">FRI</span><span class="dn">F</span></div>
+              <div class="day-btn selected"><span class="dow">SAT</span><span class="dn">S</span></div>
+            </div>
+
+            <div class="radius-block">
+              <span class="radius-tab">TRAVEL RADIUS</span>
+              <div class="radius-display">
+                <div class="radius-num"><span class="accent">25</span></div>
+                <div class="radius-unit">MILES</div>
+              </div>
+              <div class="radius-slider">
+                <div class="radius-fill"></div>
+                <div class="radius-handle"></div>
+              </div>
+              <div class="radius-scale">
+                <span>5MI</span>
+                <span>25MI</span>
+                <span>50MI</span>
+                <span>100+</span>
+              </div>
+            </div>
+
+            <div class="min-pay-block">
+              <span class="radius-tab">MIN PAY · PER GAME</span>
+              <div class="min-pay-display">
+                <span class="min-pay-dollar">$</span>
+                <span class="min-pay-num"><span class="accent">85</span></span>
+                <span class="min-pay-unit">/ GAME</span>
+              </div>
+              <div class="pay-quick-row">
+                <div class="pay-quick">$50</div>
+                <div class="pay-quick selected">$85</div>
+                <div class="pay-quick">$120</div>
+                <div class="pay-quick">$180</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="ob-footer">
+            <button class="btn-primary">CONTINUE</button>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.6</strong>AVAILABILITY</div>
+    </div>
+
+    <!-- ============================== -->
+    <!-- ===== SCREEN 8: SUCCESS ====== -->
+    <!-- ============================== -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="success-screen">
+            <div class="success-bg"></div>
+
+            <div class="status-bar">
+              <span>9:41</span>
+              <div class="status-icons">
+                <div class="signal-icon"><span></span><span></span><span></span><span></span></div>
+                <span style="font-size:11px; margin-left:4px;">5G</span>
+                <div class="battery" style="margin-left:4px;"><div class="battery-fill"></div></div>
+              </div>
+            </div>
+
+            <div class="success-content">
+              <div class="success-stamp">
+                <svg fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+
+              <div class="success-eyebrow">VERIFIED · ACTIVE</div>
+              <div class="success-title">YOU'RE ON<br>THE <span class="accent">ROSTER.</span></div>
+              <div class="success-sub">Welcome aboard, Biniam. We've got jobs near you ready to call.</div>
+
+              <div class="success-stats">
+                <div class="success-stat-cell">
+                  <div class="success-stat-num"><span class="accent">14</span></div>
+                  <div class="success-stat-label">JOBS NEAR YOU</div>
+                </div>
+                <div class="success-stat-cell">
+                  <div class="success-stat-num">$<span class="accent">2.1</span>K</div>
+                  <div class="success-stat-label">EST. WEEKLY</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="ob-footer">
+              <button class="btn-primary">SEE JOBS NEAR YOU</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-cap"><strong>5.8</strong>YOU'RE IN</div>
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,8 @@
+-- =============================================================
+-- Design pack: role-aware onboarding + tournaments / assignors
+-- Canonical migration (apply via CLI):
+--   refee/supabase/migrations/0004_roles_levels_tournaments_assignors.sql
+--
+-- From `refee/`:  supabase db push
+-- After: 0001, 0002, 0003_hirers_one_user_unique
+-- =============================================================
