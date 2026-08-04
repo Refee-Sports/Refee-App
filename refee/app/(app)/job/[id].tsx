@@ -1,39 +1,141 @@
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { JobDetailActionBar } from "@/components/job/JobDetailActionBar";
+import { JobDetailCrew } from "@/components/job/JobDetailCrew";
+import { JobDetailGames } from "@/components/job/JobDetailGames";
+import { JobDetailHeader } from "@/components/job/JobDetailHeader";
+import { JobDetailHero } from "@/components/job/JobDetailHero";
+import { JobDetailHirerNote } from "@/components/job/JobDetailHirerNote";
+import { JobDetailMapCard } from "@/components/job/JobDetailMapCard";
+import { JobDetailScheduleCard } from "@/components/job/JobDetailScheduleCard";
+import { JobDetailSpecs } from "@/components/job/JobDetailSpecs";
+import { JobDetailTelemetry } from "@/components/job/JobDetailTelemetry";
+import { useJobAssignment } from "@/hooks/useJobAssignment";
 import { useJobDetail } from "@/hooks/useJobsFeed";
+import { supabase } from "@/lib/supabase";
+import { getOrCreateCrewConversation } from "@/lib/messages/queries";
+import { withdrawFromJob, isLateWithdrawal } from "@/lib/jobs/queries";
 
-const ACTION_BAR = 88;
+const ACTION_BAR_HEIGHT = 88;
 
-export default function JobDetail() {
+export default function JobDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ id: string | string[] }>();
   const id = Array.isArray(params.id) ? params.id[0] : params.id;
+
   const { job, loading, error } = useJobDetail(id);
+  const {
+    status: assignmentStatus,
+    crewMembers,
+    loading: assignmentLoading,
+    actionLoading,
+    error: assignmentError,
+    accept,
+    decline,
+    canMutate,
+  } = useJobAssignment(id);
 
-  const onAccept = () => {
+  const handleAccept = async () => {
+    if (!canMutate) {
+      Alert.alert(
+        "Cannot accept",
+        assignmentError ?? "Sign in again after resetting the local database."
+      );
+      return;
+    }
+    const { error: acceptError } = await accept();
+    if (acceptError) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Could not accept job", acceptError.message);
+      return;
+    }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    Alert.alert("Accept job", "Wire-up: create job_assignments row + notify hirer.");
+    router.replace("/(app)/(tabs)");
   };
 
-  const onDecline = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert("Decline", "Wire-up: update assignment or dismiss invite.");
+  const handleMessageCrew = async () => {
+    Haptics.selectionAsync();
+    if (!id) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const { conversationId, error: convoErr } = await getOrCreateCrewConversation(
+      session.user.id,
+      id
+    );
+    if (convoErr || !conversationId) {
+      Alert.alert("Error", convoErr?.message ?? "Could not open crew chat");
+      return;
+    }
+    router.push(`/(app)/conversation/${conversationId}` as any);
   };
 
-  if (loading) {
+  const handleWithdraw = () => {
+    if (!id || !job) return;
+    Haptics.selectionAsync();
+    const late = job.startsAtIso ? isLateWithdrawal(job.startsAtIso) : false;
+    Alert.alert(
+      "Withdraw from this game?",
+      late
+        ? "⚠ Tip-off is less than 24 hours away. Withdrawing now counts against your reliability record."
+        : "You're more than 24 hours out, so this won't affect your rating. The slot reopens for other refs.",
+      [
+        { text: "Stay On Crew", style: "cancel" },
+        {
+          text: late ? "Withdraw Anyway" : "Withdraw",
+          style: "destructive",
+          onPress: async () => {
+            const { error: wErr } = await withdrawFromJob(supabase, id);
+            if (wErr) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Could not withdraw", wErr.message);
+              return;
+            }
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.replace("/(app)/(tabs)");
+          },
+        },
+      ]
+    );
+  };
+
+  const handleDecline = () => {
+    if (!canMutate) {
+      Alert.alert(
+        "Cannot decline",
+        assignmentError ?? "Sign in again after resetting the local database."
+      );
+      return;
+    }
+    Alert.alert(
+      "Decline this job?",
+      "You can still browse other open assignments.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Decline",
+          style: "destructive",
+          onPress: async () => {
+            const { error: declineError } = await decline();
+            if (declineError) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Could not decline", declineError.message);
+              return;
+            }
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.back();
+          },
+        },
+      ]
+    );
+  };
+
+  if (loading || assignmentLoading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center">
         <StatusBar style="dark" />
@@ -60,7 +162,10 @@ export default function JobDetail() {
           >
             <Feather name="chevron-left" size={20} color="#08111C" />
           </Pressable>
-          <Text className="text-ink font-display uppercase" style={{ fontSize: 22, letterSpacing: -0.5 }}>
+          <Text
+            className="text-ink font-display uppercase"
+            style={{ fontSize: 22, letterSpacing: -0.5 }}
+          >
             JOB NOT FOUND
           </Text>
           <Text className="text-ink-60 font-mono text-xs uppercase mt-3">
@@ -71,395 +176,48 @@ export default function JobDetail() {
     );
   }
 
-  const liveRight = job.telemetryRight === "LIVE";
-
   return (
     <View className="flex-1 bg-paper">
       <StatusBar style="dark" />
       <View style={{ height: insets.top }} />
 
-      <View className="flex-row items-center justify-between px-4 py-2 border-b border-ink">
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.back();
-          }}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Feather name="chevron-left" size={20} color="#08111C" />
-        </Pressable>
-        <View className="items-center flex-1 px-2">
-          <Text
-            className="text-ink-60 font-mono-bold text-[8px] uppercase"
-            style={{ letterSpacing: 2 }}
-          >
-            JOB DETAIL
-          </Text>
-          <Text
-            className="text-ink font-mono-bold text-[11px] uppercase mt-0.5"
-            style={{ letterSpacing: 1 }}
-          >
-            JOB{job.jobCode}
-          </Text>
-        </View>
-        <View className="flex-row gap-2">
-          <Pressable
-            onPress={() => Haptics.selectionAsync()}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-          >
-            <Feather name="bookmark" size={14} color="#08111C" />
-          </Pressable>
-          <Pressable
-            onPress={() => Haptics.selectionAsync()}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-          >
-            <Feather name="share-2" size={14} color="#08111C" />
-          </Pressable>
-        </View>
+      <JobDetailHeader jobCode={job.jobCode} onBack={() => router.back()} />
+      <JobDetailTelemetry job={job} />
+      <View className="px-5">
+        <ZebraRule variant="signal" thin noMargin />
       </View>
-
-      <View className="flex-row justify-between px-4 py-2 border-b border-ink items-center">
-        <View className="flex-row items-center gap-2 flex-1 pr-2">
-          {liveRight ? <View className="w-1.5 h-1.5 bg-hi-vis" /> : null}
-          <Text
-            className="text-ink font-mono-bold text-[9px] uppercase flex-shrink"
-            style={{ letterSpacing: 1.2 }}
-            numberOfLines={2}
-          >
-            {job.telemetryLeft}
-          </Text>
-        </View>
-        <Text
-          className="text-ink font-mono-bold text-[9px] uppercase"
-          style={{ letterSpacing: 1.4 }}
-        >
-          {job.telemetryRight}
-        </Text>
-      </View>
-
-      <ZebraRule variant="ink" thin />
 
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingBottom: insets.bottom + ACTION_BAR + 16,
+          paddingHorizontal: 20,
+          paddingBottom: insets.bottom + ACTION_BAR_HEIGHT + 24,
         }}
         showsVerticalScrollIndicator={false}
       >
-        <View className="border border-ink bg-chalk mb-4">
-          <View className="flex-row justify-between px-3 pt-3 pb-2 border-b border-ink">
-            <Text
-              className="text-signal font-mono-bold text-[9px] uppercase flex-1 pr-2"
-              style={{ letterSpacing: 1.2 }}
-            >
-              {job.heroTag}
-            </Text>
-            <Text
-              className="text-ink-40 font-mono text-[9px] uppercase"
-              style={{ letterSpacing: 1.2 }}
-            >
-              {job.jobCode}
-            </Text>
-          </View>
-          <View className="flex-row justify-between items-end px-3 py-3 gap-3">
-            <View className="flex-1">
-              <Text
-                className="text-ink font-display uppercase"
-                style={{ fontSize: 22, lineHeight: 24, letterSpacing: -0.5 }}
-              >
-                {job.title}
-              </Text>
-              <Text
-                className="text-signal font-mono-bold text-[9px] uppercase mt-2"
-                style={{ letterSpacing: 1.2 }}
-              >
-                {job.org}
-              </Text>
-            </View>
-            <View className="items-end">
-              <View className="flex-row items-baseline">
-                <Text className="text-signal font-display text-lg">$</Text>
-                <Text
-                  className="text-ink font-display"
-                  style={{ fontSize: 32, lineHeight: 32, letterSpacing: -1 }}
-                >
-                  {job.payTotal}
-                </Text>
-              </View>
-              <Text
-                className="text-ink-60 font-mono-bold text-[8px] uppercase mt-0.5"
-                style={{ letterSpacing: 1.5 }}
-              >
-                TOTAL EST.
-              </Text>
-            </View>
-          </View>
-          <View className="flex-row border-t border-ink">
-            {[
-              ["PER GAME", `$${job.payPerGame}`],
-              ["GAMES", String(job.numGames)],
-              ["PAYOUT", `${job.payoutHours}H`],
-            ].map(([lab, val], i) => (
-              <View
-                key={lab}
-                className={`flex-1 py-2.5 px-2 items-center border-ink ${i < 2 ? "border-r" : ""}`}
-              >
-                <Text
-                  className="text-ink-60 font-mono-bold text-[8px] uppercase mb-1"
-                  style={{ letterSpacing: 1.6 }}
-                >
-                  {lab}
-                </Text>
-                <Text
-                  className={`font-mono-bold text-sm uppercase ${
-                    lab === "PAYOUT" ? "text-court" : "text-ink"
-                  }`}
-                  style={{ letterSpacing: 0.5 }}
-                >
-                  {val}
-                </Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <View className="border border-ink bg-chalk mb-4">
-          <Text
-            className="text-ink font-mono-bold text-[9px] uppercase px-3 pt-3 pb-2 border-b border-ink"
-            style={{ letterSpacing: 1.4 }}
-          >
-            SCHEDULE
-          </Text>
-          <View className="flex-row">
-            <View className="flex-1 p-3 border-r border-ink">
-              <Text
-                className="text-ink-60 font-mono-bold text-[8px] uppercase mb-2"
-                style={{ letterSpacing: 1.6 }}
-              >
-                WHEN
-              </Text>
-              <Text className="text-ink font-mono-bold text-sm uppercase">{job.whenPrimary}</Text>
-              <Text className="text-ink-80 font-mono text-[11px] uppercase mt-1">{job.whenSecondary}</Text>
-              <Text className="text-ink-60 font-mono text-[10px] uppercase mt-1">{job.whenTertiary}</Text>
-            </View>
-            <View className="flex-1 p-3">
-              <Text
-                className="text-ink-60 font-mono-bold text-[8px] uppercase mb-2"
-                style={{ letterSpacing: 1.6 }}
-              >
-                WHERE
-              </Text>
-              <Text className="text-ink font-mono-bold text-sm uppercase">{job.wherePrimary}</Text>
-              <Text className="text-ink-80 font-mono text-[11px] uppercase mt-1">{job.whereSecondary}</Text>
-              <Text className="text-ink-60 font-mono text-[10px] uppercase mt-1">{job.whereTertiary}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View className="border border-ink bg-chalk mb-4 overflow-hidden">
-          <View className="h-[120px] bg-paper-2 border-b border-ink items-center justify-center">
-            <Feather name="map" size={28} color="rgba(8,17,28,0.25)" />
-            <Text
-              className="text-ink-40 font-mono-bold text-[9px] uppercase mt-2"
-              style={{ letterSpacing: 1.4 }}
-            >
-              MAP PREVIEW
-            </Text>
-          </View>
-          <View className="flex-row justify-between items-center p-3">
-            <View className="flex-1 pr-2">
-              <Text
-                className="text-ink font-mono-bold text-[10px] uppercase"
-                style={{ letterSpacing: 1.2 }}
-              >
-                {job.venueName}
-              </Text>
-              {job.venueAddress ? (
-                <Text
-                  className="text-ink-60 font-mono text-[9px] uppercase mt-1"
-                  style={{ letterSpacing: 1 }}
-                >
-                  {job.venueAddress}
-                </Text>
-              ) : null}
-            </View>
-            <Text
-              className="text-signal font-mono-bold text-[9px] uppercase"
-              style={{ letterSpacing: 1.4 }}
-            >
-              DIRECTIONS →
-            </Text>
-          </View>
-        </View>
-
-        <View className="border border-ink bg-chalk mb-4">
-          <Text
-            className="text-ink font-mono-bold text-[9px] uppercase px-3 pt-3 pb-2 border-b border-ink"
-            style={{ letterSpacing: 1.4 }}
-          >
-            CREW · {job.crewSize}-PERSON
-          </Text>
-          <View className="px-0 py-1">
-            <CrewRow initials="JT" name="JEREMY T." role="CREW CHIEF · 4.94 ★" status="● LOCKED" locked />
-            <CrewRow initials="?" name="OPEN SLOT" role="UMPIRE 1 · APPLY" status="YOUR SPOT" open />
-            {job.crewSize > 2 ? (
-              <CrewRow initials="?" name="OPEN SLOT" role="UMPIRE 2" status="OPEN" />
-            ) : null}
-          </View>
-        </View>
-
-        <View className="border border-ink bg-chalk mb-4">
-          <Text
-            className="text-ink font-mono-bold text-[9px] uppercase px-3 pt-3 pb-2 border-b border-ink"
-            style={{ letterSpacing: 1.4 }}
-          >
-            GAMES · {job.numGames} SCHEDULED
-          </Text>
-          {Array.from({ length: job.numGames }).map((_, i) => (
-            <View
-              key={i}
-              className="flex-row items-center justify-between px-3 py-2.5 border-b border-ink last:border-b-0"
-            >
-              <Text className="text-signal font-mono-bold text-xs w-8">G{i + 1}</Text>
-              <View className="flex-1 px-2">
-                <Text className="text-ink font-mono-bold text-[11px] uppercase">
-                  {i === 0 ? job.whenSecondary : `GAME ${i + 1}`}
-                </Text>
-                <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5">
-                  {job.levelLabel} · BLOCK {i + 1}
-                </Text>
-              </View>
-              <Text className="text-ink font-mono-bold text-xs">${job.payPerGame}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View className="border border-ink bg-chalk mb-4">
-          <Text
-            className="text-ink font-mono-bold text-[9px] uppercase px-3 pt-3 pb-2 border-b border-ink"
-            style={{ letterSpacing: 1.4 }}
-          >
-            SPECS
-          </Text>
-          {[
-            ["SPORT", job.sportLabel],
-            ["LEVEL", job.levelLabel],
-            ["RULESET", job.ruleset ?? "—"],
-            ["GAME LENGTH", job.gameLength],
-            ["UNIFORM", job.uniform ?? "—"],
-            ["PARKING", job.parking ?? "—"],
-          ].map(([k, v]) => (
-            <View
-              key={k}
-              className="flex-row justify-between px-3 py-2 border-b border-ink last:border-b-0"
-            >
-              <Text
-                className="text-ink-60 font-mono-bold text-[8px] uppercase"
-                style={{ letterSpacing: 1.4 }}
-              >
-                {k}
-              </Text>
-              <Text
-                className="text-ink font-mono-bold text-[9px] uppercase text-right flex-1 pl-4"
-                style={{ letterSpacing: 0.8 }}
-              >
-                {v}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        {job.hirerNote ? (
-          <View className="border border-dashed border-ink-40 p-3 mb-6">
-            <Text
-              className="text-ink font-mono-bold text-[9px] uppercase mb-2"
-              style={{ letterSpacing: 2 }}
-            >
-              ▸ NOTE FROM ORGANIZER
-            </Text>
-            <Text className="text-ink-80 text-[12px]" style={{ lineHeight: 18 }}>
-              {job.hirerNote}
-            </Text>
-          </View>
-        ) : (
-          <View className="h-4" />
-        )}
+        <JobDetailHero job={job} />
+        <JobDetailScheduleCard job={job} />
+        <JobDetailMapCard job={job} />
+        <JobDetailCrew
+          job={job}
+          assignmentStatus={assignmentStatus}
+          crewMembers={crewMembers}
+        />
+        <JobDetailGames job={job} />
+        <JobDetailSpecs job={job} />
+        {job.hirerNote ? <JobDetailHirerNote note={job.hirerNote} /> : <View className="h-2" />}
       </ScrollView>
 
-      <View
-        className="absolute left-0 right-0 border-t-[1.5px] border-ink bg-paper px-4 pt-3 flex-row gap-3"
-        style={{ bottom: 0, paddingBottom: insets.bottom + 12 }}
-      >
-        <Pressable
-          onPress={onDecline}
-          className="flex-1 border-[1.5px] border-ink py-4 items-center justify-center active:opacity-80 bg-transparent"
-        >
-          <Text className="text-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
-            DECLINE
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={onAccept}
-          className="flex-[1.4] bg-ink py-4 items-center justify-center active:opacity-90 flex-row gap-2"
-        >
-          <Text className="text-paper font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
-            ACCEPT JOB
-          </Text>
-          <Text className="text-paper font-mono-bold text-base">→</Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function CrewRow({
-  initials,
-  name,
-  role,
-  status,
-  locked,
-  open,
-}: {
-  initials: string;
-  name: string;
-  role: string;
-  status: string;
-  locked?: boolean;
-  open?: boolean;
-}) {
-  return (
-    <View className="flex-row items-center px-3 py-2.5 border-b border-ink">
-      <View
-        className={`w-10 h-10 border border-ink items-center justify-center mr-3 ${
-          initials === "?" ? "bg-paper-2" : "bg-ink"
-        }`}
-      >
-        <Text
-          className={`font-mono-bold text-[10px] uppercase ${initials === "?" ? "text-ink-40" : "text-paper"}`}
-        >
-          {initials}
-        </Text>
-      </View>
-      <View className="flex-1">
-        <Text
-          className={`font-mono-bold text-[10px] uppercase ${name.includes("OPEN") ? "text-ink-40" : "text-ink"}`}
-          style={{ letterSpacing: 1 }}
-        >
-          {name}
-        </Text>
-        <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 0.8 }}>
-          {role}
-        </Text>
-      </View>
-      <Text
-        className={`font-mono-bold text-[8px] uppercase ${
-          open ? "text-hi-vis" : locked ? "text-ink-60" : "text-ink-40"
-        }`}
-        style={{ letterSpacing: 1.2 }}
-      >
-        {status}
-      </Text>
+      <JobDetailActionBar
+        bottomInset={insets.bottom}
+        assignmentStatus={assignmentStatus}
+        actionLoading={actionLoading}
+        canMutate={canMutate}
+        onDecline={handleDecline}
+        onAccept={() => void handleAccept()}
+        onMessageCrew={() => void handleMessageCrew()}
+        onWithdraw={handleWithdraw}
+      />
     </View>
   );
 }

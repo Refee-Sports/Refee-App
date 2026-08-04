@@ -29,6 +29,7 @@
     "@expo-google-fonts/jetbrains-mono": "^0.2.3",
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "@stripe/stripe-react-native": "0.50.3",
     "@supabase/supabase-js": "^2.45.0",
     "expo": "~54.0.0",
     "expo-apple-authentication": "~8.0.8",
@@ -69,6 +70,8 @@
     "@types/react": "~19.1.10",
     "dotenv": "^17.4.2",
     "dotenv-cli": "^11.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~10.0.0",
     "supabase": "^2.98.2",
     "typescript": "~5.9.2"
   },

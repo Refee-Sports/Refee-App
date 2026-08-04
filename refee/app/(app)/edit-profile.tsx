@@ -47,6 +47,17 @@ const LEVELS = [
   { id: "pro_am",      label: "Pro-Am",               tier: "PRO" },
 ];
 
+const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+const RADIUS_PRESETS = [10, 25, 50, 100];
+
+function snapRadius(miles: number): string {
+  const nearest = RADIUS_PRESETS.reduce((best, r) =>
+    Math.abs(r - miles) < Math.abs(best - miles) ? r : best
+  );
+  return String(nearest);
+}
+
 type FormData = {
   firstName: string;
   lastInitial: string;
@@ -56,6 +67,7 @@ type FormData = {
   yearsExperience: string;
   minPay: string;
   travelRadius: string;
+  availableDays: number;
   certs: CertEntry[];
   levels: string[];
 };
@@ -77,6 +89,7 @@ export default function EditProfile() {
     yearsExperience: "",
     minPay: "35",
     travelRadius: "25",
+    availableDays: 0,
     certs: [],
     levels: [],
   });
@@ -109,7 +122,8 @@ export default function EditProfile() {
         sportId: sport?.sport_id ?? "basketball",
         yearsExperience: sport?.years_experience ? String(sport.years_experience) : "",
         minPay: av?.min_pay_per_game ? String(av.min_pay_per_game) : "35",
-        travelRadius: av?.travel_radius_miles ? String(av.travel_radius_miles) : "25",
+        travelRadius: snapRadius(av?.travel_radius_miles ?? 25),
+        availableDays: av?.available_days ?? 0,
         certs: rawCerts.map((c) => ({ bodyId: c.org_name, licenseNumber: c.license_number ?? "" })),
         levels: rawLevels.map((l) => l.level_id),
       });
@@ -136,6 +150,11 @@ export default function EditProfile() {
       ...f,
       certs: f.certs.map((c) => (c.bodyId === bodyId ? { ...c, licenseNumber } : c)),
     }));
+
+  const toggleDay = (dayIndex: number) => {
+    Haptics.selectionAsync();
+    setForm((f) => ({ ...f, availableDays: f.availableDays ^ (1 << dayIndex) }));
+  };
 
   const toggleLevel = (levelId: string) =>
     setForm((f) => ({
@@ -179,6 +198,7 @@ export default function EditProfile() {
       yearsExperience: parseInt(form.yearsExperience || "0", 10),
       minPayPerGame: parseInt(form.minPay, 10),
       travelRadiusMiles: parseInt(form.travelRadius, 10),
+      availableDays: form.availableDays,
       certs: form.certs,
       levelIds: form.levels,
     });
@@ -328,20 +348,71 @@ export default function EditProfile() {
             JOBS BELOW THIS RATE WON'T APPEAR IN YOUR FEED
           </Text>
 
-          <FieldLabel top>TRAVEL RADIUS (MILES)</FieldLabel>
-          <View className="flex-row border-[1.5px] border-ink">
-            <TextInput
-              value={form.travelRadius}
-              onChangeText={(v) => set("travelRadius")(v.replace(/\D/g, "").slice(0, 3))}
-              placeholder="25"
-              placeholderTextColor="rgba(8,17,28,0.36)"
-              keyboardType="number-pad"
-              className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
-              style={{ fontSize: 14 }}
-            />
-            <View className="bg-ink px-4 justify-center">
-              <Text className="text-paper font-mono-bold text-sm" style={{ letterSpacing: 0.5 }}>MI</Text>
-            </View>
+          <FieldLabel top>TRAVEL RADIUS</FieldLabel>
+          <View className="flex-row gap-1.5">
+            {["10", "25", "50", "100"].map((r) => {
+              const selected = form.travelRadius === r;
+              return (
+                <Pressable
+                  key={r}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    set("travelRadius")(r);
+                  }}
+                  className={`flex-1 py-3.5 items-center border-[1.5px] active:opacity-70 ${
+                    selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                  }`}
+                >
+                  <Text
+                    className={`font-display ${selected ? "text-signal" : "text-ink"}`}
+                    style={{ fontSize: 18, letterSpacing: -0.5 }}
+                  >
+                    {r}
+                  </Text>
+                  <Text
+                    className={`font-mono-bold text-[8px] uppercase ${
+                      selected ? "text-signal/70" : "text-ink-40"
+                    }`}
+                    style={{ letterSpacing: 1.5 }}
+                  >
+                    MILES
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </FormSection>
+
+        {/* ── Days available ────────────────────────────────────────── */}
+        <FormSection label="DAYS AVAILABLE">
+          <Text className="text-ink-60 font-mono text-xs mb-4" style={{ lineHeight: 16 }}>
+            Tap the days you're open to work. Directors see this on your profile.
+          </Text>
+          <View className="flex-row gap-1">
+            {DAYS.map((day, i) => {
+              const active = !!(form.availableDays & (1 << i));
+              return (
+                <Pressable
+                  key={day}
+                  onPress={() => toggleDay(i)}
+                  className={`flex-1 py-3 items-center border-[1.5px] active:opacity-70 ${
+                    active ? "bg-signal border-signal" : "bg-chalk border-ink-20"
+                  }`}
+                >
+                  <Text
+                    className={`font-mono-bold text-[9px] ${active ? "text-paper" : "text-ink-40"}`}
+                    style={{ letterSpacing: 0.5 }}
+                  >
+                    {day}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View className="flex-row gap-1.5 mt-2">
+            <QuickDays label="WEEKDAYS" mask={0b0111110} current={form.availableDays} onSet={(m) => setForm((f) => ({ ...f, availableDays: m }))} />
+            <QuickDays label="WEEKENDS" mask={0b1000001} current={form.availableDays} onSet={(m) => setForm((f) => ({ ...f, availableDays: m }))} />
+            <QuickDays label="ALL DAYS" mask={0b1111111} current={form.availableDays} onSet={(m) => setForm((f) => ({ ...f, availableDays: m }))} />
           </View>
         </FormSection>
 
@@ -445,6 +516,38 @@ export default function EditProfile() {
           <Text className="text-foul font-mono text-xs mx-5 mb-4 uppercase">{error}</Text>
         )}
     </ScrollScreen>
+  );
+}
+
+function QuickDays({
+  label,
+  mask,
+  current,
+  onSet,
+}: {
+  label: string;
+  mask: number;
+  current: number;
+  onSet: (mask: number) => void;
+}) {
+  const active = current === mask;
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync();
+        onSet(active ? 0 : mask);
+      }}
+      className={`flex-1 py-2 items-center border ${
+        active ? "bg-ink border-ink" : "bg-paper border-ink-20"
+      } active:opacity-70`}
+    >
+      <Text
+        className={`font-mono-bold text-[8px] uppercase ${active ? "text-hi-vis" : "text-ink-60"}`}
+        style={{ letterSpacing: 1 }}
+      >
+        {label}
+      </Text>
+    </Pressable>
   );
 }
 

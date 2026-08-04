@@ -17,10 +17,12 @@ import {
   JetBrainsMono_500Medium,
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
+import { StripeProvider } from "@stripe/stripe-react-native";
 import { supabase } from "@/lib/supabase";
+import { ensureValidSession } from "@/lib/auth/session";
 import { Session } from "@supabase/supabase-js";
-import { profileExists } from "@/lib/profile/queries";
-import { useOnboardingStore } from "@/lib/stores/onboarding-store";
+import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
+import { useOnboardingStore, type PrimaryRole } from "@/lib/stores/onboarding-store";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -39,37 +41,67 @@ export default function RootLayout() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
-  const { profileComplete, setProfileComplete } = useOnboardingStore();
+  const { profileComplete, setProfileComplete, setPrimaryRole } = useOnboardingStore();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (!session) {
+    (async () => {
+      const {
+        data: { session: initialSession },
+      } = await supabase.auth.getSession();
+
+      if (initialSession) {
+        const valid = await ensureValidSession();
+        if (!valid) {
+          setSession(null);
+          setProfileComplete(null);
+          setPrimaryRole(null);
+          setAuthReady(true);
+          return;
+        }
+      }
+
+      setSession(initialSession);
+      if (!initialSession) {
         setProfileComplete(null);
+        setPrimaryRole(null);
         setAuthReady(true);
       }
-    });
+    })();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (!session) setProfileComplete(null);
+      if (!session) {
+        setProfileComplete(null);
+        setPrimaryRole(null);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // When a session is established, check if the user has completed onboarding.
   useEffect(() => {
     if (!session) return;
-    profileExists(session.user.id).then((exists) => {
+    (async () => {
+      const exists = await profileExists(session.user.id);
       setProfileComplete(exists);
+      if (exists) {
+        const role = await fetchPrimaryRole(session.user.id);
+        setPrimaryRole(role as PrimaryRole);
+      }
       setAuthReady(true);
-    });
+    })();
   }, [session?.user.id]);
 
-  const splashReady = fontsLoaded && authReady && (session === null || profileComplete !== null);
+  const { primaryRole } = useOnboardingStore();
+
+  const splashReady =
+    fontsLoaded &&
+    authReady &&
+    (session === null ||
+      profileComplete !== true ||
+      primaryRole !== null);
 
   useEffect(() => {
     if (splashReady) SplashScreen.hideAsync();
@@ -79,33 +111,34 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <AuthGate session={session} profileComplete={profileComplete}>
-        <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
-          <Stack.Screen name="(auth)" />
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(app)" />
-        </Stack>
-      </AuthGate>
+      <StripeProvider
+        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""}
+        merchantIdentifier="merchant.app.refee"
+      >
+        <StatusBar style="dark" />
+        <AuthGate session={session} profileComplete={profileComplete} primaryRole={primaryRole}>
+          <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(onboarding)" />
+            <Stack.Screen name="(app)" />
+            <Stack.Screen name="(director)" />
+          </Stack>
+        </AuthGate>
+      </StripeProvider>
     </SafeAreaProvider>
   );
 }
 
-/**
- * AuthGate — routes the user to the correct part of the app based on session
- * and whether their public profile has been created.
- * - Not signed in               → /(auth)/welcome
- * - Signed in, no profile       → /(onboarding)
- * - Signed in, profile complete → /(app)
- */
 function AuthGate({
   children,
   session,
   profileComplete,
+  primaryRole,
 }: {
   children: React.ReactNode;
   session: Session | null;
   profileComplete: boolean | null;
+  primaryRole: PrimaryRole | null;
 }) {
   const segments = useSegments();
   const router = useRouter();
@@ -115,21 +148,36 @@ function AuthGate({
 
     const inAuthGroup = segments[0] === "(auth)";
     const inOnboardingGroup = segments[0] === "(onboarding)";
+    const inAppGroup = segments[0] === "(app)";
+    const inDirectorGroup = (segments[0] as string) === "(director)";
 
     if (!session) {
       if (!inAuthGroup) router.replace("/(auth)/welcome");
       return;
     }
 
-    // Session exists but profile check not resolved yet — wait.
+    // Wait until both profile and role are resolved
     if (profileComplete === null) return;
 
     if (!profileComplete) {
-      if (!inOnboardingGroup) router.replace("/(onboarding)");
-    } else {
-      if (inAuthGroup || inOnboardingGroup) router.replace("/(app)/(tabs)/jobs");
+      if (!inOnboardingGroup) router.replace("/(onboarding)/role-select" as any);
+      return;
     }
-  }, [session, profileComplete, segments]);
+
+    // Profile exists — wait until role is also fetched
+    if (primaryRole === null) return;
+
+    if (primaryRole === "director") {
+      if (inAuthGroup || inOnboardingGroup || inAppGroup) {
+        router.replace("/(director)/(tabs)/tournaments" as any);
+      }
+    } else {
+      // referee or assignor → main app
+      if (inAuthGroup || inOnboardingGroup || inDirectorGroup) {
+        router.replace("/(app)/(tabs)/jobs");
+      }
+    }
+  }, [session, profileComplete, primaryRole, segments]);
 
   return <>{children}</>;
 }

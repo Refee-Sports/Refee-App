@@ -39,6 +39,7 @@ export type JobDetail = {
   heroTag: string;
   title: string;
   org: string;
+  orgVerified?: boolean;
   payTotal: number;
   payPerGame: number;
   numGames: number;
@@ -62,6 +63,8 @@ export type JobDetail = {
   slotsOpen: number;
   closesInLabel: string | null;
   isFeatured: boolean;
+  /** Raw ISO start time — absent on mock rows */
+  startsAtIso?: string;
   /** For mock / UI-only rows */
   variant?: "hot" | "featured" | "default";
 };

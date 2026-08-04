@@ -19,3 +19,9 @@ npm-debug.*
 
 expo-env.d.ts
 # @end expo-cli
+
+# Stripe edge function secrets
+supabase/functions/.env
+
+# Redundant project archive
+refee-project.zip

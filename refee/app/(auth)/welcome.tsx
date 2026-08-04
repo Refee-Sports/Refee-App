@@ -7,7 +7,7 @@ import * as Haptics from "expo-haptics";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { signInWithAppleOAuth, signInWithGoogleOAuth } from "@/lib/oauth";
-import { getSupabaseSetupError } from "@/lib/supabase";
+import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 
 /**
  * Welcome / 5.1 — first impression.
@@ -39,8 +39,15 @@ export default function Welcome() {
     }
   };
 
-  const goToSignIn = () => {
+  const goToSignIn = async () => {
     Haptics.selectionAsync();
+    await supabase.auth.signOut();
+    router.push("/(auth)/sign-in");
+  };
+
+  const goToGetStarted = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    await supabase.auth.signOut();
     router.push("/(auth)/sign-in");
   };
 
@@ -57,11 +64,12 @@ export default function Welcome() {
         className="flex-1"
         style={{ flex: 1 }}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           flexGrow: 1,
           paddingHorizontal: 24,
           paddingTop: 40,
-          paddingBottom: insets.bottom + 20,
+          paddingBottom: 24,
         }}
       >
         {/* Live tag */}
@@ -138,82 +146,82 @@ export default function Welcome() {
             </Text>
           </View>
         </View>
-
-        {/* Actions */}
-        <View>
-          <SocialAuthButtons
-            variant="welcome"
-            loading={oauthLoading}
-            onGoogle={() => runOAuth("google")}
-            onApple={() => runOAuth("apple")}
-          />
-
-          {oauthError ? (
-            <Text
-              className="text-foul font-mono text-[11px] mt-3 uppercase"
-              style={{ letterSpacing: 0.5 }}
-            >
-              {oauthError}
-            </Text>
-          ) : null}
-
-          <View className="flex-row items-center gap-3 my-5">
-            <View className="flex-1 h-px bg-paper/25" />
-            <Text
-              className="text-paper/45 font-mono-bold text-[10px] uppercase"
-              style={{ letterSpacing: 3 }}
-            >
-              or phone
-            </Text>
-            <View className="flex-1 h-px bg-paper/25" />
-          </View>
-
-          <Pressable
-            onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              router.push("/(auth)/sign-in");
-            }}
-            className="bg-hi-vis py-5 mb-2.5 active:opacity-80"
-          >
-            <View className="flex-row justify-center items-center gap-2">
-              <Text
-                className="text-ink font-mono-bold"
-                style={{ fontSize: 13, letterSpacing: 2 }}
-              >
-                GET STARTED
-              </Text>
-              <Text className="text-ink font-mono-bold text-base">→</Text>
-            </View>
-          </Pressable>
-
-          <Pressable
-            onPress={goToSignIn}
-            className="border border-paper/30 py-4 active:opacity-70"
-          >
-            <Text
-              className="text-paper text-center font-mono-bold uppercase"
-              style={{ fontSize: 11, letterSpacing: 2 }}
-            >
-              ALREADY A REF? <Text className="text-hi-vis">SIGN IN</Text>
-            </Text>
-          </Pressable>
-
-          <View className="flex-row justify-between mt-5">
-            <Text
-              className="text-paper/40 font-mono-bold text-[9px] uppercase"
-              style={{ letterSpacing: 1.5 }}
-            >
-              v0.1
-            </Text>
-            <Text
-              className="text-paper/40 font-mono-bold text-[9px] uppercase"
-              style={{ letterSpacing: 1.5 }}
-            >
-              ● BUILT BY OFFICIALS
-            </Text>
-          </View>
-        </View>
       </ScrollView>
+
+      {/* Sticky footer — outside ScrollView so taps always register */}
+      <View
+        className="border-t border-paper/15 px-6 pt-4 bg-ink"
+        style={{ paddingBottom: insets.bottom + 20 }}
+      >
+        <SocialAuthButtons
+          variant="welcome"
+          loading={oauthLoading}
+          onGoogle={() => runOAuth("google")}
+          onApple={() => runOAuth("apple")}
+        />
+
+        {oauthError ? (
+          <Text
+            className="text-foul font-mono text-[11px] mt-3 uppercase"
+            style={{ letterSpacing: 0.5 }}
+          >
+            {oauthError}
+          </Text>
+        ) : null}
+
+        <View className="flex-row items-center gap-3 my-5">
+          <View className="flex-1 h-px bg-paper/25" />
+          <Text
+            className="text-paper/45 font-mono-bold text-[10px] uppercase"
+            style={{ letterSpacing: 3 }}
+          >
+            or phone
+          </Text>
+          <View className="flex-1 h-px bg-paper/25" />
+        </View>
+
+        <Pressable
+          onPress={goToGetStarted}
+          className="bg-hi-vis py-5 mb-2.5 active:opacity-80"
+        >
+          <View className="flex-row justify-center items-center gap-2">
+            <Text
+              className="text-ink font-mono-bold"
+              style={{ fontSize: 13, letterSpacing: 2 }}
+            >
+              GET STARTED
+            </Text>
+            <Text className="text-ink font-mono-bold text-base">→</Text>
+          </View>
+        </Pressable>
+
+        <Pressable
+          onPress={goToSignIn}
+          className="border border-paper/30 py-4 active:opacity-70"
+        >
+          <Text
+            className="text-paper text-center font-mono-bold uppercase"
+            style={{ fontSize: 11, letterSpacing: 2 }}
+          >
+            ALREADY A REF? <Text className="text-hi-vis">SIGN IN</Text>
+          </Text>
+        </Pressable>
+
+        <View className="flex-row justify-between mt-5">
+          <Text
+            className="text-paper/40 font-mono-bold text-[9px] uppercase"
+            style={{ letterSpacing: 1.5 }}
+          >
+            v0.1
+          </Text>
+          <Text
+            className="text-paper/40 font-mono-bold text-[9px] uppercase"
+            style={{ letterSpacing: 1.5 }}
+          >
+            ● BUILT BY OFFICIALS
+          </Text>
+        </View>
+      </View>
     </View>
   );
 }

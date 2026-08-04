@@ -93,6 +93,33 @@ function listTagLeft(row: JobDbRow): string | undefined {
   return row.level.replace("_", " ").toUpperCase();
 }
 
+function formatClosesIn(closesAt: string | null): string | null {
+  if (!closesAt) return null;
+  const ms = new Date(closesAt).getTime() - Date.now();
+  if (ms <= 0) return "CLOSED";
+  const h = Math.floor(ms / (1000 * 60 * 60));
+  const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  if (h > 0) return `CLOSES IN ${h}H ${m}M`;
+  return `CLOSES IN ${m}M`;
+}
+
+function heroTagFromRow(row: JobDbRow): string {
+  if (row.is_featured && row.job_type === "tournament") return "FEATURED · TOURNAMENT";
+  if (row.is_featured) return "FEATURED · POSTING";
+  return row.job_type.replace("_", " ").toUpperCase();
+}
+
+function telemetryLeftFromRow(row: JobDbRow, slotsOpen: number): string {
+  const closes = formatClosesIn(row.closes_at);
+  if (slotsOpen > 0) {
+    const slots = `${slotsOpen} SLOT${slotsOpen > 1 ? "S" : ""} LEFT`;
+    return closes ? `${slots} · ${closes}` : `${slots} · OPEN ROLE`;
+  }
+  if (closes) return closes;
+  if (row.is_featured) return "FEATURED POSTING";
+  return "OPEN ASSIGNMENT";
+}
+
 export function mapDbJobToListRow(row: JobDbRow): JobListRow {
   const org = row.hirers?.org_name ?? "ORGANIZER";
   const variant = listVariant(row);
@@ -143,20 +170,17 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
   return {
     id: row.id,
     jobCode: jobCodeFromId(row.id),
-    telemetryLeft:
-      slotsOpen > 0
-        ? `${slotsOpen} SLOT${slotsOpen > 1 ? "S" : ""} OPEN · OPEN ROLE`
-        : row.is_featured
-          ? "FEATURED POSTING"
-          : "OPEN ASSIGNMENT",
+    telemetryLeft: telemetryLeftFromRow(row, slotsOpen),
     telemetryRight: row.status === "partially_filled" ? "LIVE" : "OPEN",
-    heroTag: row.is_featured ? "FEATURED · POSTING" : row.job_type.replace("_", " ").toUpperCase(),
+    heroTag: heroTagFromRow(row),
     title: row.title.toUpperCase(),
     org: org.toUpperCase(),
+    orgVerified: row.hirers?.is_verified ?? false,
     payTotal,
     payPerGame: row.pay_per_game,
     numGames: row.num_games,
     payoutHours: payout,
+    startsAtIso: row.starts_at,
     whenPrimary: formatDetailDate(row.starts_at),
     whenSecondary: `${formatTime(row.starts_at)} CT`,
     whenTertiary: tertiary,
@@ -180,7 +204,7 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
     parking: row.parking_info?.toUpperCase() ?? null,
     hirerNote: row.hirer_note,
     slotsOpen,
-    closesInLabel: row.closes_at ? "SEE POSTING" : null,
+    closesInLabel: formatClosesIn(row.closes_at),
     isFeatured: row.is_featured,
     variant,
   };

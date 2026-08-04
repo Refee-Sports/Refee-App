@@ -1,22 +1,26 @@
 import { Text, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { ConversationList } from "@/components/messages/ConversationList";
 
 export default function Inbox() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
+
   return (
     <View className="flex-1 bg-paper">
       <View style={{ height: insets.top }} />
-      <View className="flex-1 px-5 pt-4">
+      <View className="px-5 pt-4 pb-3">
         <Text
           className="text-ink font-display"
           style={{ fontSize: 26, lineHeight: 26, letterSpacing: -1 }}
         >
           INBOX
         </Text>
-        <Text className="text-ink-60 mt-6 font-mono text-xs uppercase">
-          [ Coming next: messages from organizers + system notifications ]
-        </Text>
       </View>
+      <ConversationList
+        onOpen={(id) => router.push(`/(app)/conversation/${id}` as any)}
+      />
     </View>
   );
 }

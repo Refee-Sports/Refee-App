@@ -5,6 +5,7 @@ import {
   View,
   Pressable,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -131,6 +132,24 @@ export default function Onboarding() {
     setStep((s) => s - 1);
   };
 
+  const handleExit = () => {
+    Haptics.selectionAsync();
+    Alert.alert(
+      "Leave setup?",
+      "You can finish your profile next time you sign in.",
+      [
+        { text: "Stay", style: "cancel" },
+        {
+          text: "Leave",
+          style: "destructive",
+          onPress: async () => {
+            await supabase.auth.signOut();
+          },
+        },
+      ]
+    );
+  };
+
   const handleSubmit = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
@@ -206,9 +225,8 @@ export default function Onboarding() {
         <>
           <View className="flex-row items-center justify-between px-5 py-3">
             <Pressable
-              onPress={step === 0 ? undefined : handleBack}
-              className={`w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70 ${step === 0 ? "opacity-0" : ""}`}
-              disabled={step === 0}
+              onPress={step === 0 ? handleExit : handleBack}
+              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
             >
               <Text className="text-ink font-mono-bold text-base">←</Text>
             </Pressable>
@@ -218,7 +236,12 @@ export default function Onboarding() {
             >
               <Text className="text-ink">{STEP_NUMBERS[step]}</Text> / 08
             </Text>
-            <View className="w-9" />
+            <Pressable
+              onPress={handleExit}
+              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
+            >
+              <Text className="text-ink font-mono-bold text-base">✕</Text>
+            </Pressable>
           </View>
           <View className="h-0.5 bg-ink-20 mx-5">
             <View
@@ -266,6 +289,16 @@ export default function Onboarding() {
               )}
             </View>
           </Pressable>
+          {step === 0 ? (
+            <Pressable onPress={handleExit} className="mt-3 py-2 active:opacity-70">
+              <Text
+                className="text-signal text-center font-mono-bold text-[11px] uppercase underline"
+                style={{ letterSpacing: 1.5 }}
+              >
+                Use a different account
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       }
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20 }}

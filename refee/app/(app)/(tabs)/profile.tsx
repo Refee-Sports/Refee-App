@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Text, View, Pressable, Switch, ActivityIndicator } from "react-native";
+import { Text, View, Pressable, Switch, ActivityIndicator, Image, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -21,6 +21,16 @@ import {
   CertificationRow,
   RefLevelRow,
 } from "@/lib/profile/queries";
+import { fetchUpcomingGames, fetchEarningsSummary, type UpcomingGameRow, type EarningsSummary, type EarningsPeriod } from "@/lib/referee/queries";
+import { getOrCreateCrewConversation } from "@/lib/messages/queries";
+import { pickAndUploadAvatar } from "@/lib/profile/avatar";
+import * as WebBrowser from "expo-web-browser";
+import * as Linking from "expo-linking";
+import {
+  getPayoutOnboardingLink,
+  fetchPayoutStatus,
+  type PayoutStatus,
+} from "@/lib/payments/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -76,6 +86,14 @@ export default function Profile() {
   const [avail, setAvail] = useState<AvailabilityRow | null>(null);
   const [certs, setCerts] = useState<CertificationRow[]>([]);
   const [levels, setLevels] = useState<RefLevelRow[]>([]);
+  const [upcomingGames, setUpcomingGames] = useState<UpcomingGameRow[]>([]);
+  const [earnings, setEarnings] = useState<EarningsSummary>({
+    totalEarned: 0,
+    gamesWorked: 0,
+    pendingTotal: 0,
+    pendingGames: 0,
+  });
+  const [earningsPeriod, setEarningsPeriod] = useState<EarningsPeriod>("week");
   const [loading, setLoading] = useState(true);
   const [availToggling, setAvailToggling] = useState(false);
 
@@ -87,13 +105,16 @@ export default function Profile() {
       if (!session || cancelled) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes] = await Promise.all([
-        fetchMyProfile(uid),
-        fetchMyRefSports(uid),
-        fetchMyAvailability(uid),
-        fetchMyCertifications(uid),
-        fetchMyLevels(uid),
-      ]);
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, earningsRes] =
+        await Promise.all([
+          fetchMyProfile(uid),
+          fetchMyRefSports(uid),
+          fetchMyAvailability(uid),
+          fetchMyCertifications(uid),
+          fetchMyLevels(uid),
+          fetchUpcomingGames(uid),
+          fetchEarningsSummary(uid, earningsPeriod),
+        ]);
 
       if (cancelled) return;
       setProfile(profileRes.data as ProfileRow | null);
@@ -101,10 +122,32 @@ export default function Profile() {
       setAvail(availRes.data as AvailabilityRow | null);
       setCerts((certsRes.data ?? []) as CertificationRow[]);
       setLevels((levelsRes.data ?? []) as RefLevelRow[]);
+      setUpcomingGames(upcomingRes.games);
+      setEarnings(earningsRes.summary);
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [profileVersion]);
+
+  useEffect(() => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      const { summary } = await fetchEarningsSummary(session.user.id, earningsPeriod);
+      setEarnings(summary);
+    })();
+  }, [earningsPeriod]);
+
+  const cyclePeriod = () => {
+    Haptics.selectionAsync();
+    setEarningsPeriod((p) => p === "week" ? "month" : p === "month" ? "year" : "week");
+  };
+
+  const PERIOD_LABEL: Record<EarningsPeriod, string> = {
+    week: "EARNED / WK",
+    month: "EARNED / MO",
+    year: "EARNED / YR",
+  };
 
   const handleAvailToggle = async (value: boolean) => {
     if (!profile || availToggling) return;
@@ -113,6 +156,64 @@ export default function Profile() {
     setProfile((p) => (p ? { ...p, is_available: value } : p));
     await toggleAvailability(profile.id, value);
     setAvailToggling(false);
+  };
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [payoutStatus, setPayoutStatus] = useState<PayoutStatus | null>(null);
+  const [payoutBusy, setPayoutBusy] = useState(false);
+
+  useEffect(() => {
+    // Non-critical: tolerate edge functions being unavailable locally
+    (async () => {
+      const { status, error: err } = await fetchPayoutStatus();
+      if (!err) setPayoutStatus(status);
+    })();
+  }, [profileVersion]);
+
+  const handleSetUpPayouts = async () => {
+    if (payoutBusy) return;
+    Haptics.selectionAsync();
+    setPayoutBusy(true);
+    try {
+      const returnUrl = Linking.createURL("payouts-return");
+      const { url, error: err } = await getPayoutOnboardingLink(returnUrl);
+      if (err || !url) {
+        Alert.alert(
+          "Payouts unavailable",
+          err?.message ?? "Could not start payout setup. Is the local Stripe function running?"
+        );
+        return;
+      }
+      await WebBrowser.openBrowserAsync(url);
+      // re-check status after they come back (also releases any held pay)
+      const { status } = await fetchPayoutStatus();
+      setPayoutStatus(status);
+      if (status.released > 0) {
+        Alert.alert(
+          "Payouts released",
+          `Held pay from ${status.released} past game${status.released !== 1 ? "s" : ""} just transferred to your account.`
+        );
+      }
+    } finally {
+      setPayoutBusy(false);
+    }
+  };
+
+  const handleAvatarPress = async () => {
+    if (!profile || uploadingAvatar) return;
+    Haptics.selectionAsync();
+    setUploadingAvatar(true);
+    const { avatarUrl, error: err, cancelled } = await pickAndUploadAvatar(profile.id);
+    setUploadingAvatar(false);
+    if (cancelled) return;
+    if (err) {
+      Alert.alert("Upload failed", err.message);
+      return;
+    }
+    if (avatarUrl) {
+      setProfile((p) => (p ? { ...p, avatar_url: avatarUrl } : p));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
   };
 
   const signOut = async () => {
@@ -174,10 +275,6 @@ export default function Profile() {
           <Text className="font-mono-bold text-ink">PROFILE</Text>
           {` · ID ${profile.ref_id_number}`}
         </Text>
-        <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
-          {"SYNC "}
-          <Text className="font-mono-bold text-ink">OK</Text>
-        </Text>
       </View>
       <View className="px-5 mb-4">
         <ZebraRule variant="signal" thin />
@@ -185,11 +282,30 @@ export default function Profile() {
 
       {/* ── Avatar pill ──────────────────────────────────────────── */}
       <View className="px-5 flex-row items-center gap-4 mb-5">
-        <View style={{ position: "relative" }}>
-          <View className="w-16 h-16 bg-ink border border-ink items-center justify-center">
-            <Text className="text-paper font-display" style={{ fontSize: 22, letterSpacing: -1 }}>
-              {initials}
-            </Text>
+        <Pressable onPress={handleAvatarPress} style={{ position: "relative" }} className="active:opacity-80">
+          <View className="w-16 h-16 bg-ink border border-ink items-center justify-center overflow-hidden">
+            {uploadingAvatar ? (
+              <ActivityIndicator color="#E5E1D6" size="small" />
+            ) : profile.avatar_url ? (
+              <Image source={{ uri: profile.avatar_url }} style={{ width: 64, height: 64 }} resizeMode="cover" />
+            ) : (
+              <Text className="text-paper font-display" style={{ fontSize: 22, letterSpacing: -1 }}>
+                {initials}
+              </Text>
+            )}
+          </View>
+          {/* camera hint */}
+          <View
+            style={{
+              position: "absolute",
+              top: -4,
+              left: -4,
+              backgroundColor: "#08111C",
+              paddingHorizontal: 3,
+              paddingVertical: 2,
+            }}
+          >
+            <Feather name="camera" size={9} color="#C9F031" />
           </View>
           <View
             style={{
@@ -203,7 +319,7 @@ export default function Profile() {
               borderColor: PAPER,
             }}
           />
-        </View>
+        </Pressable>
 
         <View className="flex-1">
           <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
@@ -289,7 +405,11 @@ export default function Profile() {
             </Text>
           </View>
           <View className="border-[1.5px] border-ink bg-chalk flex-row">
-            <ScoreCell label="RATING" value={profile.rating.toFixed(2)} sub="/ 5.00" />
+            {profile.rating_count < 5 ? (
+              <ScoreCell label="RATING" value="NEW" sub={`${profile.rating_count}/5 RATINGS`} />
+            ) : (
+              <ScoreCell label="RATING" value={profile.rating.toFixed(2)} sub="/ 5.00" />
+            )}
             <View className="w-px bg-ink" />
             <ScoreCell label="REVIEWS" value={String(profile.rating_count)} sub="ALL-TIME" />
             <View className="w-px bg-ink" />
@@ -305,12 +425,89 @@ export default function Profile() {
 
       {/* ── Stat strip ───────────────────────────────────────────── */}
       <View className="mx-5 border border-ink bg-chalk flex-row mb-4">
-        <StatStrip label="GAMES / YTD" value={String(profile.games_called_total)} />
+        <StatStrip label="GAMES WORKED" value={String(earnings.gamesWorked || profile.games_called_total)} />
+        <View className="w-px bg-ink" />
+        <Pressable className="flex-1 px-3 py-3 active:opacity-70" onPress={cyclePeriod}>
+          <Text
+            className="text-ink-60 font-mono-bold text-[8px] uppercase mb-1"
+            style={{ letterSpacing: 2 }}
+          >
+            {PERIOD_LABEL[earningsPeriod]}
+          </Text>
+          <Text
+            className="text-ink font-display"
+            style={{ fontSize: 16, letterSpacing: -0.5, lineHeight: 18 }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            ${earnings.totalEarned.toLocaleString()}
+          </Text>
+          <Text
+            className="font-mono text-[7px] text-ink-40 uppercase mt-0.5"
+            style={{ letterSpacing: 1.5 }}
+          >
+            TAP TO SWITCH
+          </Text>
+        </Pressable>
         <View className="w-px bg-ink" />
         <StatStrip label="MEMBER SINCE" value={String(memberYear)} />
-        <View className="w-px bg-ink" />
-        <StatStrip label="LOCATION" value={`${profile.city}, ${profile.state}`} small />
       </View>
+
+      {/* ── Pending earnings ─────────────────────────────────────── */}
+      {earnings.pendingTotal > 0 && (
+        <View className="mx-5 -mt-3 mb-4 border border-t-0 border-ink bg-hivis px-4 py-2.5 flex-row items-center justify-between">
+          <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
+            PENDING · {earnings.pendingGames} GAME{earnings.pendingGames !== 1 ? "S" : ""} SCHEDULED
+          </Text>
+          <Text className="font-display text-ink" style={{ fontSize: 16, letterSpacing: -0.5 }}>
+            ${earnings.pendingTotal.toLocaleString()}
+          </Text>
+        </View>
+      )}
+
+      {/* ── Upcoming games ───────────────────────────────────────── */}
+      {upcomingGames.length > 0 && (
+        <>
+          <PSectionHeader num="01" title="Upcoming Games" />
+          <View className="mx-5 gap-1.5 mb-2">
+            {upcomingGames.map((g) => (
+              <UpcomingGameCard key={g.assignmentId} game={g} />
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* ── Payouts ──────────────────────────────────────────────── */}
+      {payoutStatus?.payoutsEnabled ? (
+        <View className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3 flex-row items-center gap-2">
+          <Feather name="check-circle" size={13} color="#00A85C" />
+          <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
+            PAYOUTS READY · PAY LANDS AUTOMATICALLY
+          </Text>
+        </View>
+      ) : (
+        <Pressable
+          onPress={handleSetUpPayouts}
+          disabled={payoutBusy}
+          className="mx-5 mb-4 border border-ink bg-ink px-4 py-3.5 flex-row items-center justify-between active:opacity-80"
+        >
+          <View className="flex-1 pr-3">
+            <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
+              {payoutBusy ? "OPENING STRIPE..." : "SET UP PAYOUTS"}
+            </Text>
+            <Text className="font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1, color: "rgba(229,225,214,0.6)" }}>
+              {payoutStatus?.hasAccount
+                ? "FINISH STRIPE ONBOARDING TO GET PAID"
+                : "CONNECT A BANK ACCOUNT TO GET PAID FOR GAMES"}
+            </Text>
+          </View>
+          {payoutBusy ? (
+            <ActivityIndicator color="#C9F031" size="small" />
+          ) : (
+            <Feather name="arrow-right" size={16} color="#C9F031" />
+          )}
+        </Pressable>
+      )}
 
       {/* ── Availability ─────────────────────────────────────────── */}
       <View
@@ -375,7 +572,7 @@ export default function Profile() {
       {certs.length > 0 && (
         <>
           <PSectionHeader
-            num="01"
+            num={upcomingGames.length > 0 ? "02" : "01"}
             title="Credentials"
             action="[ MANAGE ]"
             onAction={() => {
@@ -537,6 +734,85 @@ function StatStrip({
         {value}
       </Text>
     </View>
+  );
+}
+
+const TZ = "America/Chicago";
+
+function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
+  const router = useRouter();
+  const d = new Date(game.startsAt);
+  const dateStr = d
+    .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: TZ })
+    .toUpperCase();
+  const timeStr = d.toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: TZ,
+  });
+
+  return (
+    <Pressable
+      onPress={() => {
+        Haptics.selectionAsync();
+        router.push(`/job/${game.jobId}` as any);
+      }}
+      className={`border px-4 py-3.5 flex-row items-start justify-between active:opacity-80 ${
+        game.needsReconfirm ? "border-foul bg-foul/5" : "border-ink bg-chalk"
+      }`}
+    >
+      <View className="flex-1 pr-3">
+        {game.needsReconfirm && (
+          <Text
+            className="font-mono-bold text-[8px] text-foul uppercase mb-1"
+            style={{ letterSpacing: 1.5 }}
+          >
+            ⚠ DETAILS CHANGED — TAP TO RE-CONFIRM
+          </Text>
+        )}
+        <Text
+          className="font-mono-bold text-[12px] text-ink uppercase"
+          style={{ letterSpacing: 0.5 }}
+          numberOfLines={1}
+        >
+          {game.title}
+        </Text>
+        <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+          {game.orgName.toUpperCase()} · {game.venueCity.toUpperCase()}, {game.venueState}
+        </Text>
+        <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+          {dateStr} · {timeStr}
+        </Text>
+      </View>
+      <View className="items-end gap-1.5">
+        <View className="items-end">
+          <Text
+            className="font-display text-ink"
+            style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 20 }}
+          >
+            ${game.payPerGame}
+          </Text>
+          <Text className="font-mono text-[8px] text-ink-40 uppercase" style={{ letterSpacing: 1 }}>
+            / GAME
+          </Text>
+        </View>
+        <Pressable
+          onPress={async () => {
+            Haptics.selectionAsync();
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { conversationId } = await getOrCreateCrewConversation(session.user.id, game.jobId);
+            if (conversationId) {
+              router.push(`/(app)/conversation/${conversationId}` as any);
+            }
+          }}
+          className="w-8 h-8 border border-ink bg-paper items-center justify-center active:opacity-70"
+        >
+          <Feather name="message-square" size={13} color="#08111C" />
+        </Pressable>
+      </View>
+    </Pressable>
   );
 }
 

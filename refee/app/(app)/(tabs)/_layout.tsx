@@ -11,7 +11,8 @@ const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
     className={`font-mono-bold text-[8px] uppercase mt-0.5 ${
       focused ? "text-signal" : "text-ink-40"
     }`}
-    style={{ letterSpacing: 1.5 }}
+    style={{ letterSpacing: 1 }}
+    numberOfLines={1}
   >
     {label}
   </Text>

@@ -3,6 +3,7 @@ import { View } from "react-native";
 type Props = {
   variant?: "ink" | "signal" | "hi-vis";
   thin?: boolean;
+  noMargin?: boolean;
 };
 
 /**
@@ -10,7 +11,7 @@ type Props = {
  * Implemented with overlapping bordered views since RN doesn't have
  * background-image: repeating-linear-gradient.
  */
-export function ZebraRule({ variant = "ink", thin = false }: Props) {
+export function ZebraRule({ variant = "ink", thin = false, noMargin = false }: Props) {
   const stripeColor =
     variant === "signal" ? "#1F4FCC" : variant === "hi-vis" ? "#C9F031" : "#08111C";
   const height = thin ? 4 : 12;
@@ -21,7 +22,7 @@ export function ZebraRule({ variant = "ink", thin = false }: Props) {
 
   return (
     <View
-      className="flex-row overflow-hidden w-full my-3"
+      className={`flex-row overflow-hidden w-full ${noMargin ? "" : "my-3"}`}
       style={{ height }}
     >
       {stripes.map((_, i) => (

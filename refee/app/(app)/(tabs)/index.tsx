@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Text, View, ActivityIndicator, Pressable } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
@@ -143,33 +144,38 @@ export default function Home() {
   });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session || cancelled) return;
-      const uid = session.user.id;
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      setLoading(true);
+      (async () => {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session || cancelled) return;
+        const uid = session.user.id;
 
-      const [profileRes, assignRes, earningsRes] = await Promise.all([
-        fetchMyProfile(uid),
-        fetchMyAssignments(uid),
-        fetchEarningsSummary(uid),
-      ]);
+        // Fallback for pg_cron: auto-completes games 24h past their end
+        void supabase.rpc("sweep_game_lifecycle");
 
-      if (cancelled) return;
-      setProfile(profileRes.data as ProfileRow | null);
-      setTodayGames(assignRes.today);
-      setUpcomingGames(assignRes.upcoming);
-      setEarnings(earningsRes.summary);
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [profileVersion]);
+        const [profileRes, assignRes, earningsRes] = await Promise.all([
+          fetchMyProfile(uid),
+          fetchMyAssignments(uid),
+          fetchEarningsSummary(uid),
+        ]);
+
+        if (cancelled) return;
+        setProfile(profileRes.data as ProfileRow | null);
+        setTodayGames(assignRes.today);
+        setUpcomingGames(assignRes.upcoming);
+        setEarnings(earningsRes.summary);
+        setLoading(false);
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }, [profileVersion])
+  );
 
   const monthName = new Date().toLocaleDateString("en-US", { month: "long" }).toUpperCase();
 

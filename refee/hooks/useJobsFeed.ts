@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getMockJobDetail, getMockJobs } from "@/lib/jobs/mock-data";
 import { fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
@@ -31,7 +32,8 @@ export function useJobsFeed() {
       return;
     }
     setState((s) => ({ ...s, loading: true, error: null }));
-    const { jobs, error } = await fetchOpenJobs(supabase);
+    const { data: { session } } = await supabase.auth.getSession();
+    const { jobs, error } = await fetchOpenJobs(supabase, session?.user.id ?? null);
     if (error) {
       setState({
         dbAvailable: [],
@@ -49,9 +51,12 @@ export function useJobsFeed() {
     });
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  // Reload whenever the feed regains focus, so a just-accepted job disappears
+  useFocusEffect(
+    useCallback(() => {
+      void load();
+    }, [load])
+  );
 
   const mockAll = useMemo(() => getMockJobs(), []);
 

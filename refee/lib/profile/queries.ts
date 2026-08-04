@@ -177,6 +177,7 @@ export async function updateFullProfile(
     yearsExperience: number;
     minPayPerGame: number;
     travelRadiusMiles: number;
+    availableDays: number;
     certs: CertEntry[];
     levelIds: string[];
   }
@@ -201,6 +202,7 @@ export async function updateFullProfile(
     ref_id: userId,
     min_pay_per_game: args.minPayPerGame,
     travel_radius_miles: args.travelRadiusMiles,
+    available_days: args.availableDays,
   });
   if (availError) return { error: availError };
 
@@ -248,4 +250,15 @@ export async function toggleAvailability(userId: string, isAvailable: boolean) {
     .from("public_profiles")
     .update({ is_available: isAvailable })
     .eq("id", userId);
+}
+
+export async function fetchPrimaryRole(
+  userId: string
+): Promise<"referee" | "director" | "assignor"> {
+  const { data } = await supabase
+    .from("public_profiles")
+    .select("primary_role")
+    .eq("id", userId)
+    .maybeSingle();
+  return (data?.primary_role as "referee" | "director" | "assignor") ?? "referee";
 }

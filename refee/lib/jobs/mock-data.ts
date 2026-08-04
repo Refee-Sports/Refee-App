@@ -144,6 +144,7 @@ const MOCK_DETAILS: Record<string, JobDetail> = {
     heroTag: "FEATURED · TOURNAMENT",
     title: "SPRING AAU SHOWCASE",
     org: "TEXAS HOOPS ORG",
+    orgVerified: true,
     payTotal: 740,
     payPerGame: 185,
     numGames: 4,

@@ -34,19 +34,22 @@ export async function fetchMyAssignments(userId: string): Promise<{
       "id, status, job:jobs(id, title, starts_at, venue_name, venue_city, venue_state, pay_per_game, num_games, sport_id, hirers(org_name))"
     )
     .eq("ref_id", userId)
-    .in("status", ["accepted", "confirmed"])
-    .gte("job.starts_at", new Date().toISOString())
-    .order("job.starts_at", { ascending: true })
-    .limit(10);
+    .in("status", ["accepted"]);
 
   if (error) return { today: [], upcoming: [], error: new Error(error.message) };
-
-  const rows = ((data ?? []) as unknown as AssignmentRow[]).filter((r) => r.job);
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
   const todayEnd = new Date();
   todayEnd.setHours(23, 59, 59, 999);
+
+  const rows = ((data ?? []) as unknown as AssignmentRow[])
+    .filter((r) => r.job)
+    .filter((r) => new Date(r.job.starts_at) >= todayStart)
+    .sort(
+      (a, b) => new Date(a.job.starts_at).getTime() - new Date(b.job.starts_at).getTime()
+    )
+    .slice(0, 10);
 
   const today: AssignmentRow[] = [];
   const upcoming: AssignmentRow[] = [];
@@ -73,9 +76,9 @@ export async function fetchEarningsSummary(userId: string): Promise<{
 
   const { data, error } = await supabase
     .from("job_assignments")
-    .select("status, pay_amount, job:jobs(starts_at, num_games)")
+    .select("status, payout_status, amount_due, job:jobs(starts_at, num_games, pay_per_game)")
     .eq("ref_id", userId)
-    .in("status", ["accepted", "confirmed", "paid"]);
+    .in("status", ["accepted", "completed", "cancelled"]);
 
   if (error) {
     return {
@@ -89,19 +92,37 @@ export async function fetchEarningsSummary(userId: string): Promise<{
   let gamesThisMonth = 0;
 
   for (const row of data ?? []) {
-    const r = row as any;
-    const amt: number = r.pay_amount ?? 0;
-    const startsAt: string | undefined = r.job?.starts_at;
+    const r = row as {
+      status?: string;
+      payout_status?: string;
+      amount_due?: number | null;
+      job?: { starts_at?: string; num_games?: number; pay_per_game?: number };
+    };
+    const startsAt = r.job?.starts_at;
     const isThisMonth = startsAt ? new Date(startsAt) >= monthStart : false;
+    const games = r.job?.num_games ?? 1;
+    const amt =
+      r.amount_due ??
+      (r.job?.pay_per_game != null ? r.job.pay_per_game * games : 0);
 
-    if (r.status === "paid") {
+    if (r.status === "cancelled") {
+      // late-cancellation bust fee: counts toward money, not games
+      const fee = r.amount_due ?? 0;
+      if (fee > 0) {
+        if (r.payout_status === "paid") {
+          if (isThisMonth) paidThisMonth += fee;
+        } else {
+          pendingTotal += fee;
+        }
+      }
+    } else if (r.payout_status === "paid") {
       if (isThisMonth) {
         paidThisMonth += amt;
-        gamesThisMonth += r.job?.num_games ?? 1;
+        gamesThisMonth += games;
       }
-    } else {
+    } else if (r.status === "accepted" || r.status === "completed") {
       pendingTotal += amt;
-      if (isThisMonth) gamesThisMonth += r.job?.num_games ?? 1;
+      if (isThisMonth) gamesThisMonth += games;
     }
   }
 

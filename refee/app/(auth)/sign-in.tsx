@@ -79,6 +79,8 @@ export default function SignIn() {
     }
 
     const e164 = "+1" + phone.replace(/\D/g, "");
+    // Drop stale JWT so OTP attaches to the seeded phone user, not a ghost account.
+    await supabase.auth.signOut();
     const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
 
     setPhoneLoading(false);
