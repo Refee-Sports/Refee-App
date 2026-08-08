@@ -24,6 +24,7 @@ import {
 import { fetchUpcomingGames, fetchEarningsSummary, type UpcomingGameRow, type EarningsSummary, type EarningsPeriod } from "@/lib/referee/queries";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { pickAndUploadAvatar } from "@/lib/profile/avatar";
+import { unregisterPushToken } from "@/lib/push/notifications";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import {
@@ -218,6 +219,7 @@ export default function Profile() {
 
   const signOut = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await unregisterPushToken();
     await supabase.auth.signOut();
   };
 

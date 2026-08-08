@@ -3,7 +3,11 @@ import { useFocusEffect } from "expo-router";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getMockJobDetail, getMockJobs } from "@/lib/jobs/mock-data";
 import { fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
+import { getCurrentCoords } from "@/lib/geo/location";
+import type { Coords } from "@/lib/geo/geocode";
 import type { FeedTab, JobDetail, JobListRow } from "@/lib/jobs/types";
+
+export type LocationMode = "home" | "near_me";
 
 type JobsFeedState = {
   /** Jobs loaded from Supabase (open / partially filled) */
@@ -20,42 +24,74 @@ export function useJobsFeed() {
     error: null,
     usedMockForAvailable: false,
   });
+  const [locationMode, setLocationMode] = useState<LocationMode>("home");
+  const [liveCoords, setLiveCoords] = useState<Coords | null>(null);
+  const [locating, setLocating] = useState(false);
 
-  const load = useCallback(async () => {
-    if (!isSupabaseConfigured) {
+  const load = useCallback(
+    async (origin?: Coords | null) => {
+      if (!isSupabaseConfigured) {
+        setState({
+          dbAvailable: [],
+          loading: false,
+          error: null,
+          usedMockForAvailable: true,
+        });
+        return;
+      }
+      setState((s) => ({ ...s, loading: true, error: null }));
+      const { data: { session } } = await supabase.auth.getSession();
+      const { jobs, error } = await fetchOpenJobs(
+        supabase,
+        session?.user.id ?? null,
+        origin ?? undefined
+      );
+      if (error) {
+        setState({
+          dbAvailable: [],
+          loading: false,
+          error: error.message,
+          usedMockForAvailable: true,
+        });
+        return;
+      }
       setState({
-        dbAvailable: [],
+        dbAvailable: jobs,
         loading: false,
         error: null,
-        usedMockForAvailable: true,
+        usedMockForAvailable: jobs.length === 0,
       });
-      return;
-    }
-    setState((s) => ({ ...s, loading: true, error: null }));
-    const { data: { session } } = await supabase.auth.getSession();
-    const { jobs, error } = await fetchOpenJobs(supabase, session?.user.id ?? null);
-    if (error) {
-      setState({
-        dbAvailable: [],
-        loading: false,
-        error: error.message,
-        usedMockForAvailable: true,
-      });
-      return;
-    }
-    setState({
-      dbAvailable: jobs,
-      loading: false,
-      error: null,
-      usedMockForAvailable: jobs.length === 0,
-    });
-  }, []);
+    },
+    []
+  );
 
-  // Reload whenever the feed regains focus, so a just-accepted job disappears
+  /**
+   * Switch between home-base and live "near me" location. Returns false if
+   * near-me was requested but permission was denied (feed stays on home).
+   */
+  const toggleLocationMode = useCallback(async (): Promise<boolean> => {
+    if (locationMode === "near_me") {
+      setLocationMode("home");
+      setLiveCoords(null);
+      void load(null);
+      return true;
+    }
+    setLocating(true);
+    const result = await getCurrentCoords();
+    setLocating(false);
+    if (!result.ok) return false; // caller shows the reason; stay on home
+    setLiveCoords(result.coords);
+    setLocationMode("near_me");
+    void load(result.coords);
+    return true;
+  }, [locationMode, load]);
+
+  // Reload whenever the feed regains focus, so a just-accepted job disappears.
+  // Preserves the active location origin (live coords when in near-me mode).
   useFocusEffect(
     useCallback(() => {
-      void load();
-    }, [load])
+      void load(locationMode === "near_me" ? liveCoords : null);
+    }, [load, locationMode, liveCoords])
   );
 
   const mockAll = useMemo(() => getMockJobs(), []);
@@ -89,7 +125,10 @@ export function useJobsFeed() {
     ...state,
     rowsForTab,
     counts,
-    refresh: load,
+    refresh: () => load(locationMode === "near_me" ? liveCoords : null),
+    locationMode,
+    locating,
+    toggleLocationMode,
   };
 }
 

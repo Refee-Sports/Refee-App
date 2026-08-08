@@ -21,6 +21,11 @@ function startOfDay(d: Date): Date {
   return x;
 }
 
+function parseKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return startOfDay(new Date(y, m - 1, d));
+}
+
 /**
  * Tap once for a single day, tap a later day to make a range.
  * Tapping before the current start restarts the selection.
@@ -30,20 +35,21 @@ export function CalendarRangePicker({
   endDate,
   onChange,
   minDate,
+  maxDate,
 }: {
   startDate: string | null; // YYYY-MM-DD
   endDate: string | null;
   onChange: (start: string, end: string) => void;
   minDate?: Date;
+  maxDate?: Date;
 }) {
   const today = startOfDay(new Date());
   const min = minDate ? startOfDay(minDate) : today;
-  const [viewYear, setViewYear] = useState(
-    startDate ? parseInt(startDate.slice(0, 4), 10) : today.getFullYear()
-  );
-  const [viewMonth, setViewMonth] = useState(
-    startDate ? parseInt(startDate.slice(5, 7), 10) - 1 : today.getMonth()
-  );
+  const max = maxDate ? startOfDay(maxDate) : null;
+  // Default the visible month to the min bound when one is set (e.g. tournament start)
+  const initial = startDate ? parseKey(startDate) : minDate ? startOfDay(minDate) : today;
+  const [viewYear, setViewYear] = useState(initial.getFullYear());
+  const [viewMonth, setViewMonth] = useState(initial.getMonth());
 
   const firstOfMonth = new Date(viewYear, viewMonth, 1);
   const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
@@ -63,7 +69,7 @@ export function CalendarRangePicker({
   };
 
   const handleDayPress = (d: Date) => {
-    if (d < min) return;
+    if (d < min || (max && d > max)) return;
     Haptics.selectionAsync();
     const key = toKey(d);
     if (!startDate || (startDate && endDate && startDate !== endDate) || key < startDate) {
@@ -108,7 +114,7 @@ export function CalendarRangePicker({
             {cells.slice(week * 7, week * 7 + 7).map((d, i) => {
               if (!d) return <View key={i} className="flex-1 aspect-square" />;
               const key = toKey(d);
-              const disabled = d < min;
+              const disabled = d < min || (max ? d > max : false);
               const isStart = key === startDate;
               const isEnd = key === endDate;
               const inRange =

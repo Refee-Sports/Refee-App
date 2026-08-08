@@ -139,7 +139,7 @@ export default function RoleSelect() {
                 <View>
                   <Text
                     className={`font-display ${isSelected ? "text-signal" : "text-ink"}`}
-                    style={{ fontSize: 28, lineHeight: 26, letterSpacing: -1 }}
+                    style={{ fontSize: 28, lineHeight: 34, letterSpacing: -1, paddingTop: 2 }}
                   >
                     {role.title}
                   </Text>

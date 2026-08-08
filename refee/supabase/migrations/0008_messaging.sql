@@ -7,7 +7,7 @@
 -- =============================================================
 
 create table public.conversations (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   kind text not null default 'dm' check (kind in ('dm', 'game_crew')),
   job_id uuid references public.jobs(id) on delete cascade,
   created_by uuid references public.public_profiles(id) not null,
@@ -26,7 +26,7 @@ create table public.conversation_participants (
 );
 
 create table public.messages (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   conversation_id uuid references public.conversations(id) on delete cascade not null,
   sender_id uuid references public.public_profiles(id) not null,
   body text not null check (length(body) between 1 and 4000),

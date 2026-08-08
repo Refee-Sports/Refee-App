@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { JobDetail, JobListRow } from "./types";
 import { mapDbJobToDetail, mapDbJobToListRow, type JobDbRow } from "./map-db-job";
+import { distanceMiles } from "@/lib/geo/geocode";
 
 export type AssignmentStatus =
   | "accepted"
@@ -206,18 +207,22 @@ export async function fetchJobCrewMembers(
 
 export async function fetchOpenJobs(
   supabase: SupabaseClient,
-  userId?: string | null
+  userId?: string | null,
+  /** When set (live "near me" location), used as the radius origin instead of the ref's home. */
+  originOverride?: { lat: number; lng: number } | null
 ): Promise<{ jobs: JobListRow[]; error: Error | null }> {
   const { data, error } = await supabase
     .from("jobs")
     .select("*, hirers(org_name, is_verified)")
-    .in("status", ["open", "partially_filled"])
+    .eq("status", "open")
     .order("starts_at", { ascending: true });
 
   if (error) {
     return { jobs: [], error: new Error(error.message) };
   }
   let rows = (data ?? []) as JobDbRow[];
+
+  const distanceByJob = new Map<string, number>();
 
   if (userId) {
     const [{ data: mine }, { data: profile }, { data: prefs }] = await Promise.all([
@@ -228,10 +233,14 @@ export async function fetchOpenJobs(
         .select("job_id, status")
         .eq("ref_id", userId)
         .in("status", ["accepted", "pending", "declined", "needs_reconfirm"]),
-      supabase.from("public_profiles").select("state").eq("id", userId).maybeSingle(),
+      supabase
+        .from("public_profiles")
+        .select("state, home_lat, home_lng")
+        .eq("id", userId)
+        .maybeSingle(),
       supabase
         .from("availability_prefs")
-        .select("min_pay_per_game")
+        .select("min_pay_per_game, travel_radius_miles")
         .eq("ref_id", userId)
         .maybeSingle(),
     ]);
@@ -239,12 +248,27 @@ export async function fetchOpenJobs(
     const taken = new Set((mine ?? []).map((a) => a.job_id));
     rows = rows.filter((r) => !taken.has(r.id));
 
-    // Location: same state as the ref (true radius filtering needs venue
-    // geocoding — venue_lat/lng are reserved for that).
+    // Location: true mile-radius when the ref and the venue are both geocoded;
+    // otherwise fall back to same-state matching.
     const refState = profile?.state?.toUpperCase();
-    if (refState) {
-      rows = rows.filter((r) => (r as any).venue_state?.toUpperCase() === refState);
-    }
+    const home =
+      originOverride ??
+      (profile?.home_lat != null && profile?.home_lng != null
+        ? { lat: profile.home_lat as number, lng: profile.home_lng as number }
+        : null);
+    const radius = prefs?.travel_radius_miles ?? 25;
+
+    rows = rows.filter((r) => {
+      const j = r as any;
+      const hasVenueCoords = j.venue_lat != null && j.venue_lng != null;
+      if (home && hasVenueCoords) {
+        const miles = distanceMiles(home, { lat: j.venue_lat, lng: j.venue_lng });
+        distanceByJob.set(j.id, miles);
+        return miles <= radius;
+      }
+      // Fallback: same-state
+      return refState ? j.venue_state?.toUpperCase() === refState : true;
+    });
 
     // Pay floor: only show jobs at or above the ref's minimum
     const minPay = prefs?.min_pay_per_game ?? 0;
@@ -254,7 +278,15 @@ export async function fetchOpenJobs(
   }
 
   return {
-    jobs: rows.map(mapDbJobToListRow),
+    jobs: rows.map((r) => {
+      const row = mapDbJobToListRow(r);
+      const miles = distanceByJob.get(r.id);
+      if (miles != null) {
+        row.distanceMiles = Math.round(miles);
+        row.dist = `${Math.round(miles)} MI`;
+      }
+      return row;
+    }),
     error: null,
   };
 }

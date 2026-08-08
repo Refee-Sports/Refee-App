@@ -26,17 +26,6 @@ function fmtTime(iso: string) {
   });
 }
 
-const STATUS_ORDER = ["draft", "open", "staffing", "staffed", "in_progress", "completed", "cancelled"] as const;
-
-const STATUS_NEXT: Record<string, string | null> = {
-  draft: "open",
-  open: "staffing",
-  staffing: "staffed",
-  staffed: "in_progress",
-  in_progress: "completed",
-  completed: null,
-  cancelled: null,
-};
 
 export default function TournamentDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -63,27 +52,6 @@ export default function TournamentDetail() {
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  const handleAdvanceStatus = async () => {
-    if (!tournament) return;
-    const next = STATUS_NEXT[tournament.status];
-    if (!next) return;
-    Haptics.selectionAsync();
-    Alert.alert(
-      `Set to ${next.replace("_", " ").toUpperCase()}?`,
-      undefined,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Confirm",
-          onPress: async () => {
-            await updateTournamentStatus(id!, next as any);
-            setTournament((t) => t ? { ...t, status: next } : t);
-          },
-        },
-      ]
-    );
-  };
-
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
@@ -102,8 +70,14 @@ export default function TournamentDetail() {
     );
   }
 
-  const nextStatus = STATUS_NEXT[tournament.status];
-  const filledSlots = games.filter((g) => g.status === "filled").length;
+  const staffedGames = games.filter((g) => g.status === "staffed" || g.status === "completed").length;
+  // Tournament is 'staffed' once it has games and all are staffed/completed
+  const derivedStatus =
+    tournament.status === "completed" || tournament.status === "cancelled"
+      ? tournament.status
+      : games.length > 0 && staffedGames === games.length
+        ? "staffed"
+        : "open";
 
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
@@ -167,27 +141,10 @@ export default function TournamentDetail() {
             <View className="mx-5 border border-ink bg-chalk flex-row mb-4">
               <StatCell label="GAMES" value={String(games.length)} />
               <View className="w-px bg-ink" />
-              <StatCell label="FILLED" value={`${filledSlots}/${games.length}`} />
+              <StatCell label="STAFFED" value={`${staffedGames}/${games.length}`} />
               <View className="w-px bg-ink" />
-              <StatCell label="STATUS" value={tournament.status.replace("_", " ").toUpperCase()} />
+              <StatCell label="STATUS" value={derivedStatus.toUpperCase()} />
             </View>
-
-            {/* Advance status */}
-            {nextStatus && (
-              <View className="mx-5 mb-4">
-                <Pressable
-                  onPress={handleAdvanceStatus}
-                  className="border border-signal py-3 active:opacity-70"
-                >
-                  <Text
-                    className="text-signal text-center font-mono-bold text-[10px] uppercase"
-                    style={{ letterSpacing: 2 }}
-                  >
-                    MARK AS {nextStatus.replace("_", " ").toUpperCase()} →
-                  </Text>
-                </Pressable>
-              </View>
-            )}
 
             {/* Games header */}
             <View className="px-5 flex-row items-center justify-between mb-3">
@@ -288,8 +245,8 @@ function StatCell({ label, value }: { label: string; value: string }) {
 function GameStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     open: "#1F4FCC",
-    partially_filled: "#F59E0B",
-    filled: "#00A85C",
+    staffed: "#00A85C",
+    completed: "#00A85C",
     cancelled: "#E53E3E",
   };
   return (
@@ -297,7 +254,7 @@ function GameStatusBadge({ status }: { status: string }) {
       className="font-mono-bold text-[8px] uppercase"
       style={{ letterSpacing: 1.5, color: colors[status] ?? "rgba(8,17,28,0.40)" }}
     >
-      {status.replace("_", " ")}
+      {status}
     </Text>
   );
 }

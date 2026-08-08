@@ -96,7 +96,7 @@ on conflict (id) do nothing;
 -- 4. TOURNAMENTS — first-class objects
 -- =============================================================
 create table if not exists public.tournaments (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   hirer_id uuid references public.hirers(id) on delete restrict not null,
 
   -- Basic info
@@ -160,7 +160,7 @@ create index if not exists idx_jobs_tournament on public.jobs(tournament_id) whe
 -- When a director invites assignors, each one can submit a proposal
 -- =============================================================
 create table if not exists public.assignor_proposals (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   tournament_id uuid references public.tournaments(id) on delete cascade not null,
   assignor_id uuid references public.public_profiles(id) on delete cascade not null,
 

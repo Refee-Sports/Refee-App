@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "refee",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "backgroundColor": "#08111C",
       "resizeMode": "contain"

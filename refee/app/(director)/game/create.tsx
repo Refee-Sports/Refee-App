@@ -13,9 +13,23 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { supabase } from "@/lib/supabase";
-import { createGame, updateGame, fetchGameForEdit, fetchMyHirerId } from "@/lib/director/queries";
+import {
+  createGame,
+  updateGame,
+  fetchGameForEdit,
+  fetchMyHirerId,
+  fetchTournamentById,
+  type TournamentRow,
+} from "@/lib/director/queries";
 import { CalendarRangePicker } from "@/components/ui/CalendarRangePicker";
 import { DropdownSelect } from "@/components/ui/DropdownSelect";
+import {
+  RULESETS,
+  LEVELS,
+  QUARTER_MINUTES,
+  HALF_MINUTES,
+  AGE_REQUIRED_LEVELS,
+} from "@/lib/basketball/options";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -28,16 +42,6 @@ const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
   return { value, label: `${h12}:${String(m).padStart(2, "0")} ${ampm}` };
 });
 
-const QUARTER_MINUTES = ["6", "7", "8", "9", "10", "12"];
-const HALF_MINUTES = ["14", "16", "18", "20", "24"];
-
-const RULESETS = [
-  { id: "NFHS", label: "NFHS" },
-  { id: "NCAA-M", label: "NCAA MEN'S" },
-  { id: "NCAA-W", label: "NCAA WOMEN'S" },
-  { id: "PRO", label: "PRO" },
-];
-
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
   "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
@@ -46,17 +50,12 @@ const US_STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
-const LEVELS = [
-  { id: "youth_rec",   label: "YOUTH / REC" },
-  { id: "high_school", label: "HIGH SCHOOL" },
-  { id: "juco",        label: "JUCO" },
-  { id: "naia",        label: "NAIA" },
-  { id: "ncaa_mens",   label: "NCAA MEN'S" },
-  { id: "ncaa_womens", label: "NCAA WOMEN'S" },
-  { id: "pro_am",      label: "PRO-AM" },
-];
-
 const PAPER = "#E5E1D6";
+
+function parseYMD(s: string): Date {
+  const [y, m, d] = s.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
 
 export default function CreateGame() {
   const { tournamentId, editId, copyFromId } = useLocalSearchParams<{
@@ -71,8 +70,13 @@ export default function CreateGame() {
   const [prefilling, setPrefilling] = useState(!!editId || !!copyFromId);
   const [error, setError] = useState<string | null>(null);
 
+  // Standalone = a single game with no parent tournament
+  const isStandalone = !tournamentId && !editId && !copyFromId;
+  const [tournament, setTournament] = useState<TournamentRow | null>(null);
+
   const [form, setForm] = useState({
-    title: "",
+    homeTeam: "",
+    awayTeam: "",
     level: "",
     crewSize: 2 as 2 | 3,
     payPerGame: "",
@@ -91,6 +95,27 @@ export default function CreateGame() {
     rulesetModifications: "",
   });
 
+  // For a new game under a tournament: inherit the tournament's defaults
+  // (ruleset, format, uniform) as editable prefills, and constrain the date.
+  useEffect(() => {
+    if (!tournamentId || editId) return;
+    (async () => {
+      const { tournament: t } = await fetchTournamentById(tournamentId);
+      if (!t) return;
+      setTournament(t);
+      if (!copyFromId) {
+        setForm((f) => ({
+          ...f,
+          ruleset: f.ruleset || t.ruleset || "",
+          rulesetModifications: f.rulesetModifications || t.ruleset_modifications || "",
+          gameFormat: (f.gameFormat || t.game_format || "") as "" | "quarters" | "halves",
+          periodMinutes: f.periodMinutes || (t.period_minutes ? String(t.period_minutes) : ""),
+          uniformRequirements: f.uniformRequirements || t.uniform_requirements || "",
+        }));
+      }
+    })();
+  }, [tournamentId, editId, copyFromId]);
+
   // Prefill from an existing game (edit keeps everything; copy keeps
   // everything except date/time so the director slots the new game fast)
   useEffect(() => {
@@ -101,8 +126,10 @@ export default function CreateGame() {
       if (game) {
         const d = new Date(game.starts_at);
         const pad = (n: number) => String(n).padStart(2, "0");
-        setForm({
-          title: isEdit ? game.title : `${game.title} (COPY)`,
+        setForm((f) => ({
+          ...f,
+          homeTeam: game.home_team ?? "",
+          awayTeam: game.away_team ?? "",
           level: game.level ?? "",
           crewSize: (game.crew_size === 3 ? 3 : 2) as 2 | 3,
           payPerGame: String(game.pay_per_game ?? ""),
@@ -121,7 +148,7 @@ export default function CreateGame() {
           ageGroup: game.age_group ?? "",
           ruleset: game.ruleset ?? "",
           rulesetModifications: game.ruleset_modifications ?? "",
-        });
+        }));
       }
       setPrefilling(false);
     })();
@@ -130,20 +157,26 @@ export default function CreateGame() {
   const set = (key: keyof typeof form) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
+  const ageRequired = AGE_REQUIRED_LEVELS.includes(form.level);
   const stateValid = !form.venueState || US_STATES.includes(form.venueState.toUpperCase());
   const canSubmit =
-    form.title.trim().length >= 2 &&
+    form.homeTeam.trim().length >= 1 &&
+    form.awayTeam.trim().length >= 1 &&
     !!form.level &&
+    (!ageRequired || form.ageGroup.trim().length >= 1) &&
     !!form.ruleset &&
+    !!form.gameFormat &&
+    !!form.periodMinutes &&
     parseInt(form.payPerGame, 10) >= 1 &&
     form.gameDate.length === 10 &&
     form.gameTime.length >= 4 &&
     form.venueName.trim().length >= 1 &&
     form.venueCity.trim().length >= 1 &&
+    form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
 
   const handleSubmit = async () => {
-    if (!canSubmit || (!tournamentId && !isEdit)) return;
+    if (!canSubmit) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     setError(null);
@@ -162,7 +195,8 @@ export default function CreateGame() {
     const numPeriods = form.gameFormat === "quarters" ? 4 : form.gameFormat === "halves" ? 2 : 0;
 
     const gameArgs = {
-      title: form.title.trim(),
+      homeTeam: form.homeTeam.trim(),
+      awayTeam: form.awayTeam.trim(),
       level: form.level,
       crewSize: form.crewSize,
       payPerGame: parseInt(form.payPerGame, 10),
@@ -204,7 +238,7 @@ export default function CreateGame() {
       return;
     }
 
-    const { gameId, error: createErr } = await createGame(hirerId, tournamentId!, gameArgs);
+    const { gameId, error: createErr } = await createGame(hirerId, tournamentId ?? null, gameArgs);
 
     if (createErr || !gameId) {
       setError(createErr?.message ?? "Failed to create game.");
@@ -281,14 +315,22 @@ export default function CreateGame() {
       </Text>
 
       {/* Section: Game details */}
-      <Sect>GAME DETAILS</Sect>
+      <Sect>MATCHUP</Sect>
 
-      <FLabel>GAME TITLE *</FLabel>
+      <FLabel>HOME TEAM *</FLabel>
       <FInput
-        value={form.title}
-        onChangeText={set("title")}
-        placeholder="e.g. U16 Boys Semi-Final"
+        value={form.homeTeam}
+        onChangeText={set("homeTeam")}
+        placeholder="e.g. Eastside Eagles"
         autoFocus
+        autoCapitalize="words"
+      />
+
+      <FLabel style={{ marginTop: 16 }}>AWAY TEAM *</FLabel>
+      <FInput
+        value={form.awayTeam}
+        onChangeText={set("awayTeam")}
+        placeholder="e.g. Westlake Warriors"
         autoCapitalize="words"
       />
 
@@ -317,8 +359,13 @@ export default function CreateGame() {
         })}
       </View>
 
-      <FLabel style={{ marginTop: 16 }}>AGE GROUP (OPTIONAL)</FLabel>
-      <FInput value={form.ageGroup} onChangeText={set("ageGroup")} placeholder="e.g. U14, U16, Adult" />
+      <FLabel style={{ marginTop: 16 }}>{`AGE GROUP ${ageRequired ? "*" : "(OPTIONAL)"}`}</FLabel>
+      <FInput
+        value={form.ageGroup}
+        onChangeText={set("ageGroup")}
+        placeholder={ageRequired ? "e.g. U14, U16 — required for this level" : "e.g. U14, U16, Adult"}
+        error={ageRequired && form.ageGroup.trim().length === 0 ? "Age group is required for youth & high school" : undefined}
+      />
 
       <FLabel style={{ marginTop: 16 }}>RULESET *</FLabel>
       <View className="flex-row flex-wrap gap-1.5">
@@ -417,10 +464,17 @@ export default function CreateGame() {
       <Sect style={{ marginTop: 28 }}>DATE & TIME</Sect>
 
       <FLabel>GAME DATE *</FLabel>
+      {tournament && (
+        <Text className="font-mono text-[9px] text-ink-40 uppercase mb-1.5" style={{ letterSpacing: 1 }}>
+          MUST FALL WITHIN THE TOURNAMENT ({tournament.starts_on} → {tournament.ends_on})
+        </Text>
+      )}
       <CalendarRangePicker
         startDate={form.gameDate || null}
         endDate={form.gameDate || null}
         onChange={(start) => setForm((f) => ({ ...f, gameDate: start }))}
+        minDate={tournament ? parseYMD(tournament.starts_on) : undefined}
+        maxDate={tournament ? parseYMD(tournament.ends_on) : undefined}
       />
 
       <FLabel style={{ marginTop: 16 }}>TIP-OFF TIME *</FLabel>
@@ -520,13 +574,27 @@ export default function CreateGame() {
       {/* Section: Requirements */}
       <Sect style={{ marginTop: 28 }}>REQUIREMENTS & NOTES</Sect>
 
-      <FLabel>REQUIRED UNIFORM (OPTIONAL)</FLabel>
-      <FInput
-        value={form.uniformRequirements}
-        onChangeText={set("uniformRequirements")}
-        placeholder="e.g. Black and white stripes, black pants"
-        autoCapitalize="sentences"
-      />
+      {/* Uniform: inherited from the tournament; only shown for standalone games */}
+      {tournament ? (
+        <View className="border border-ink-20 bg-chalk px-3 py-2.5 mb-1">
+          <Text className="font-mono-bold text-[9px] text-ink-40 uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
+            UNIFORM (FROM TOURNAMENT)
+          </Text>
+          <Text className="font-mono text-[11px] text-ink">
+            {form.uniformRequirements || "—"}
+          </Text>
+        </View>
+      ) : (
+        <>
+          <FLabel>REQUIRED UNIFORM *</FLabel>
+          <FInput
+            value={form.uniformRequirements}
+            onChangeText={set("uniformRequirements")}
+            placeholder="e.g. Black and white stripes, black pants"
+            autoCapitalize="sentences"
+          />
+        </>
+      )}
 
       <FLabel style={{ marginTop: 16 }}>GAME NOTES (OPTIONAL)</FLabel>
       <FInput

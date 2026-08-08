@@ -1,3 +1,15 @@
+# Local Edge Functions & Env
+
+Edge functions now include: Stripe (`pay-crew`, `auto-pay`, `confirm-payout`, `connect-onboard`, `connect-status`, `setup-payment-method`), `geocode`, and `send-push`. All run under one command:
+```bash
+npx supabase functions serve --env-file supabase/functions/.env
+```
+`supabase/functions/.env` keys: `STRIPE_SECRET_KEY` (required). Optional: `GEOCODER=google` + `GOOGLE_MAPS_API_KEY` (geocoding defaults to free Nominatim — no key needed). Push needs no secret (Expo push API is keyless for the send).
+
+**Push caveat:** notifications only deliver in an **EAS dev build** on a physical device. Expo Go (SDK 53+) and simulators can't get push tokens — the code no-ops there, so nothing breaks; you just won't see banners until you build.
+
+---
+
 # Stripe — Local Test Mode Setup
 
 Money flow (all test mode, no real money):
@@ -24,16 +36,34 @@ Auto-pay triggers: right after the director taps MARK GAME COMPLETED, and on the
     ```
 
 ### 2. Run everything
-```bash
-# terminal 1 — database (applies migrations incl. 0014)
-npx supabase start          # or: npx supabase db reset
+⚠️ Stripe is a **native module — it does NOT work in Expo Go.** You must run a
+native build. On the iOS Simulator that means `expo run:ios`, not `expo start`.
 
-# terminal 2 — Stripe edge functions
+```bash
+# terminal 1 — database (applies migrations)
+npm run supabase:start          # or: npm run supabase:db:reset
+
+# terminal 2 — edge functions (Stripe, geocode, push)
 npx supabase functions serve --env-file supabase/functions/.env
 
-# terminal 3 — the app
-npx expo start
+# terminal 3 — native app on the iOS Simulator, using the LOCAL env
+# (.env.local.supabase already holds the local Supabase URL + your pk_test_ key)
+REFEE_ENV_FILE=.env.local.supabase EXPO_NO_DOTENV=1 npx expo run:ios
 ```
+First `expo run:ios` compiles native code (a few minutes); later runs are fast.
+The Stripe **payment sheet works on the Simulator**; push notifications do not
+(simulators can't get push tokens — test push on a physical device).
+
+### Testing on a physical phone
+The Simulator reaches `127.0.0.1`; a phone cannot. So for on-device testing the
+backend must be reachable and the app must be a real build:
+1. **Backend** — either deploy to **hosted Supabase** (recommended: `supabase db push`,
+   `supabase functions deploy`, and `supabase secrets set STRIPE_SECRET_KEY=sk_test_…`),
+   or point the app at your laptop's LAN IP (`http://192.168.1.162:54321`) with phone
+   + laptop on the same Wi-Fi and `functions serve` running.
+2. **Build** — `eas build --profile development --platform ios`, install on the phone.
+   The publishable key is baked in at build time from the env; set the hosted
+   Supabase URL/anon + `pk_test_` in the env the build uses (EAS secrets or eas.json).
 
 ## Testing the flow
 

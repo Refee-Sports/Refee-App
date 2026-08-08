@@ -8,7 +8,10 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_APP_ENV": "development"
+        "EXPO_PUBLIC_APP_ENV": "development",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://rwqodozmniqjvkyjtcaw.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_rUqpPSMzXVck8YOS4hTRCA_GcGHsH-6",
+        "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_test_51TwtQWCKSY9GOxtVSzewLPEmqTf1dlu9qqQpLVoNPKhmlc2PZz8c9gnZ4aMVar9GDdCac4QK3vQuTzw6y4epInPd00Dq43nE53"
       }
     },
     "staging": {

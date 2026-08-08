@@ -19,6 +19,8 @@ export type JobDbRow = {
   venue_address: string | null;
   venue_city: string;
   venue_state: string;
+  venue_lat: number | null;
+  venue_lng: number | null;
   pay_per_game: number;
   num_games: number;
   payout_window_hours: number | null;
@@ -83,12 +85,10 @@ function tagsFromRow(row: JobDbRow): string[] {
 
 function listVariant(row: JobDbRow): "hot" | "featured" | "default" {
   if (row.is_featured) return "featured";
-  if (row.status === "partially_filled") return "hot";
   return "default";
 }
 
 function listTagLeft(row: JobDbRow): string | undefined {
-  if (row.status === "partially_filled") return "NEEDS CREW";
   if (row.is_featured) return "FEATURED";
   return row.level.replace("_", " ").toUpperCase();
 }
@@ -142,9 +142,8 @@ export function mapDbJobToListRow(row: JobDbRow): JobListRow {
     tags: tagsFromRow(row),
     variant,
     tagLeft: listTagLeft(row),
-    footerCta: row.status === "partially_filled" ? "ACCEPT →" : "VIEW →",
-    footerCtaTone:
-      row.status === "partially_filled" ? "ink" : row.is_featured ? "signal" : "muted",
+    footerCta: "VIEW →",
+    footerCtaTone: row.is_featured ? "signal" : "muted",
     startsAtIso: row.starts_at,
     payPerGame: row.pay_per_game,
     crewSize: row.crew_size,
@@ -161,7 +160,7 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
   const dm = row.duration_minutes;
   const tertiary = dm ? `~ ${Math.max(1, Math.round(dm / 60))} HR BLOCK` : "—";
   const variant = listVariant(row);
-  const slotsOpen = row.status === "partially_filled" ? 2 : row.crew_size > 2 ? 1 : 0;
+  const slotsOpen = row.crew_size;
 
   const line =
     row.venue_address?.toUpperCase() ??
@@ -171,7 +170,7 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
     id: row.id,
     jobCode: jobCodeFromId(row.id),
     telemetryLeft: telemetryLeftFromRow(row, slotsOpen),
-    telemetryRight: row.status === "partially_filled" ? "LIVE" : "OPEN",
+    telemetryRight: "OPEN",
     heroTag: heroTagFromRow(row),
     title: row.title.toUpperCase(),
     org: org.toUpperCase(),

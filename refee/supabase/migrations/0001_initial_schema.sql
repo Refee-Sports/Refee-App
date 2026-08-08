@@ -4,8 +4,7 @@
 -- identity at the database level, enforced by RLS.
 -- =============================================================
 
--- Enable UUID extension
-create extension if not exists "uuid-ossp";
+-- UUIDs use gen_random_uuid(), built into Postgres 13+ core (no extension needed).
 
 -- =============================================================
 -- 1. PUBLIC PROFILES
@@ -102,7 +101,7 @@ create table public.ref_sports (
 -- 5. CERTIFICATIONS
 -- =============================================================
 create table public.certifications (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   ref_id uuid references public.public_profiles(id) on delete cascade,
   org_name text not null, -- 'USAB', 'IAABO', 'NFHS', etc.
   license_number text,
@@ -131,7 +130,7 @@ create table public.availability_prefs (
 -- 7. HIRERS (organizers, leagues, tournament directors)
 -- =============================================================
 create table public.hirers (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   user_id uuid references auth.users(id) on delete cascade,
   org_name text not null,
   org_type text not null, -- 'tournament', 'league', 'school', 'parks_rec'
@@ -148,7 +147,7 @@ create table public.hirers (
 -- 8. JOBS
 -- =============================================================
 create table public.jobs (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   hirer_id uuid references public.hirers(id) on delete restrict,
   sport_id text references public.sports(id) not null,
   title text not null,
@@ -196,7 +195,7 @@ create index idx_jobs_featured on public.jobs(is_featured, featured_until) where
 -- 9. JOB ASSIGNMENTS (refs assigned to jobs)
 -- =============================================================
 create table public.job_assignments (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   job_id uuid references public.jobs(id) on delete cascade,
   ref_id uuid references public.public_profiles(id) on delete restrict,
   role text default 'official', -- 'crew_chief', 'official', 'official_2'
@@ -218,7 +217,7 @@ create index idx_assignments_job on public.job_assignments(job_id);
 -- 10. RATINGS (post-game)
 -- =============================================================
 create table public.ratings (
-  id uuid primary key default uuid_generate_v4(),
+  id uuid primary key default gen_random_uuid(),
   job_id uuid references public.jobs(id) on delete cascade,
   ref_id uuid references public.public_profiles(id) on delete cascade,
   hirer_id uuid references public.hirers(id) on delete cascade,

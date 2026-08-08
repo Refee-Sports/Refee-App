@@ -23,6 +23,7 @@ import { ensureValidSession } from "@/lib/auth/session";
 import { Session } from "@supabase/supabase-js";
 import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
 import { useOnboardingStore, type PrimaryRole } from "@/lib/stores/onboarding-store";
+import { registerForPushNotifications } from "@/lib/push/notifications";
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -89,6 +90,8 @@ export default function RootLayout() {
       if (exists) {
         const role = await fetchPrimaryRole(session.user.id);
         setPrimaryRole(role as PrimaryRole);
+        // Register for push once the profile exists (no-op on Expo Go/simulator)
+        void registerForPushNotifications(session.user.id);
       }
       setAuthReady(true);
     })();

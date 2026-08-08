@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { geocodeAddress } from "@/lib/geo/geocode";
 
 export type ProfileRow = {
   id: string;
@@ -80,12 +81,17 @@ export async function saveFullProfile(
     levelIds: string[];
   }
 ) {
+  // Geocode home city for distance-based job filtering (best-effort)
+  const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
+
   const { error: profileError } = await supabase.from("public_profiles").upsert({
     id: userId,
     first_name: args.firstName,
     last_initial: args.lastInitial,
     city: args.city,
     state: args.state,
+    home_lat: home?.lat ?? null,
+    home_lng: home?.lng ?? null,
   });
   if (profileError) return { error: profileError };
 
@@ -182,12 +188,17 @@ export async function updateFullProfile(
     levelIds: string[];
   }
 ) {
+  // Geocode home city for distance-based job filtering (best-effort)
+  const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
+
   const { error: profileError } = await supabase.from("public_profiles").upsert({
     id: userId,
     first_name: args.firstName,
     last_initial: args.lastInitial,
     city: args.city,
     state: args.state,
+    home_lat: home?.lat ?? null,
+    home_lng: home?.lng ?? null,
   });
   if (profileError) return { error: profileError };
 

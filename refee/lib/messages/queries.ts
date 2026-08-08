@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { sendPush } from "@/lib/push/notifications";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -131,10 +132,30 @@ export async function sendMessage(
   senderId: string,
   body: string
 ): Promise<{ error: Error | null }> {
+  const trimmed = body.trim();
   const { error } = await supabase
     .from("messages")
-    .insert({ conversation_id: conversationId, sender_id: senderId, body: body.trim() });
-  return { error: error ? new Error(error.message) : null };
+    .insert({ conversation_id: conversationId, sender_id: senderId, body: trimmed });
+  if (error) return { error: new Error(error.message) };
+
+  // Notify the other participants (best-effort)
+  const [{ data: participants }, { data: sender }] = await Promise.all([
+    supabase
+      .from("conversation_participants")
+      .select("user_id")
+      .eq("conversation_id", conversationId),
+    supabase.from("public_profiles").select("display_name").eq("id", senderId).maybeSingle(),
+  ]);
+  const others = (participants ?? [])
+    .map((p) => p.user_id)
+    .filter((uid) => uid !== senderId);
+  void sendPush(
+    others,
+    sender?.display_name ?? "New message",
+    trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
+    { type: "message", conversationId }
+  );
+  return { error: null };
 }
 
 export async function markRead(conversationId: string, userId: string): Promise<void> {

@@ -1,21 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { Text, View, Pressable, ActivityIndicator, FlatList, RefreshControl, Alert } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
-import { fetchMyTournaments, type TournamentRow } from "@/lib/director/queries";
+import {
+  fetchMyTournaments,
+  fetchGamesNeedingCompletion,
+  fetchStandaloneGames,
+  type TournamentRow,
+  type NeedsCompletionRow,
+  type DirectorGameRow,
+} from "@/lib/director/queries";
 import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: "rgba(8,17,28,0.40)",
   open: "#1F4FCC",
-  staffing: "#F59E0B",
   staffed: "#00A85C",
-  in_progress: "#C9F031",
   completed: "rgba(8,17,28,0.40)",
   cancelled: "#E53E3E",
 };
@@ -33,6 +37,8 @@ export default function TournamentsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
+  const [singleGames, setSingleGames] = useState<DirectorGameRow[]>([]);
+  const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,14 +65,29 @@ export default function TournamentsScreen() {
       });
     });
 
-    const { tournaments: rows, error: fetchErr } = await fetchMyTournaments(session.user.id);
+    const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }] = await Promise.all([
+      fetchMyTournaments(session.user.id),
+      fetchGamesNeedingCompletion(session.user.id),
+      fetchStandaloneGames(session.user.id),
+    ]);
     setTournaments(rows);
+    setNeedsCompletion(nudge);
+    setSingleGames(solo);
     if (fetchErr) setError(fetchErr.message);
     setLoading(false);
     setRefreshing(false);
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useFocusEffect(useCallback(() => { void load(); }, [load]));
+
+  const handleNew = () => {
+    Haptics.selectionAsync();
+    Alert.alert("Create new", "What do you want to create?", [
+      { text: "Tournament", onPress: () => router.push("/(director)/tournament/create" as any) },
+      { text: "Single game", onPress: () => router.push("/(director)/game/create" as any) },
+      { text: "Cancel", style: "cancel" },
+    ]);
+  };
 
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
@@ -74,10 +95,7 @@ export default function TournamentsScreen() {
       <View className="px-5 pt-1 pb-3 flex-row items-center justify-between">
         <Wordmark size={26} />
         <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.push("/(director)/tournament/create" as any);
-          }}
+          onPress={handleNew}
           className="h-9 px-3 bg-ink items-center justify-center flex-row gap-1.5 active:opacity-70"
         >
           <Feather name="plus" size={14} color="#E5E1D6" />
@@ -98,12 +116,45 @@ export default function TournamentsScreen() {
         <ZebraRule variant="signal" thin />
       </View>
 
+      {/* Completion nudge — games ended but not yet closed out */}
+      {needsCompletion.length > 0 && (
+        <View className="mx-5 mb-4 border border-ink bg-hivis">
+          <View className="px-4 py-2.5 border-b border-ink/20 flex-row items-center gap-2">
+            <Feather name="alert-circle" size={13} color="#08111C" />
+            <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
+              {needsCompletion.length} GAME{needsCompletion.length !== 1 ? "S" : ""} NEED CLOSING OUT
+            </Text>
+          </View>
+          {needsCompletion.slice(0, 4).map((g) => (
+            <Pressable
+              key={g.id}
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push(`/(director)/game/${g.id}` as any);
+              }}
+              className="px-4 py-2.5 flex-row items-center justify-between active:opacity-70 border-b border-ink/10"
+            >
+              <View className="flex-1 pr-2">
+                <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
+                  {g.title}
+                </Text>
+                <Text className="font-mono text-[9px] text-ink/60 uppercase" style={{ letterSpacing: 1 }}>
+                  {g.acceptedCount} REF{g.acceptedCount !== 1 ? "S" : ""} · MARK COMPLETE TO PAY
+                </Text>
+              </View>
+              <Feather name="chevron-right" size={14} color="#08111C" />
+            </Pressable>
+          ))}
+          <Text className="px-4 py-2 font-mono text-[8px] text-ink/50 uppercase" style={{ letterSpacing: 1 }}>
+            AUTO-COMPLETES 24H AFTER GAME END IF NOT DONE
+          </Text>
+        </View>
+      )}
+
       {loading ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator color="#1F4FCC" />
         </View>
-      ) : tournaments.length === 0 ? (
-        <EmptyState onCreate={() => router.push("/(director)/tournament/create" as any)} />
       ) : (
         <FlatList
           data={tournaments}
@@ -113,12 +164,35 @@ export default function TournamentsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />
           }
           ItemSeparatorComponent={() => <View className="h-2" />}
+          ListEmptyComponent={
+            singleGames.length === 0 ? (
+              <EmptyState onCreate={handleNew} />
+            ) : null
+          }
           renderItem={({ item }) => (
             <TournamentCard
               tournament={item}
               onPress={() => router.push(`/(director)/tournament/${item.id}` as any)}
             />
           )}
+          ListFooterComponent={
+            singleGames.length > 0 ? (
+              <View className="mt-5">
+                <Text className="font-mono-bold text-[10px] text-ink uppercase mb-3" style={{ letterSpacing: 2.5 }}>
+                  ── SINGLE GAMES ({singleGames.length})
+                </Text>
+                <View className="gap-2">
+                  {singleGames.map((g) => (
+                    <SingleGameCard
+                      key={g.id}
+                      game={g}
+                      onPress={() => router.push(`/(director)/game/${g.id}` as any)}
+                    />
+                  ))}
+                </View>
+              </View>
+            ) : null
+          }
         />
       )}
 
@@ -160,7 +234,7 @@ function TournamentCard({
             className="font-mono-bold text-[9px] uppercase"
             style={{ letterSpacing: 1.5, color: statusColor, marginTop: 2 }}
           >
-            {tournament.status.replace("_", " ")}
+            {tournament.status}
           </Text>
         </View>
 
@@ -179,6 +253,38 @@ function TournamentCard({
           BASKETBALL · DIRECT HIRE
         </Text>
         <Feather name="chevron-right" size={14} color="rgba(8,17,28,0.40)" />
+      </View>
+    </Pressable>
+  );
+}
+
+function SingleGameCard({ game, onPress }: { game: DirectorGameRow; onPress: () => void }) {
+  const statusColor = STATUS_COLORS[game.status] ?? "rgba(8,17,28,0.40)";
+  const title = game.home_team && game.away_team
+    ? `${game.home_team} vs ${game.away_team}`
+    : game.title;
+  return (
+    <Pressable
+      onPress={() => { Haptics.selectionAsync(); onPress(); }}
+      className="border border-ink bg-chalk active:opacity-75"
+    >
+      <View className="h-1" style={{ backgroundColor: statusColor }} />
+      <View className="px-4 pt-3 pb-3">
+        <View className="flex-row items-start justify-between mb-1">
+          <Text
+            className="text-ink font-mono-bold text-[12px] uppercase flex-1 pr-2"
+            style={{ letterSpacing: 0.5 }}
+            numberOfLines={1}
+          >
+            {title.toUpperCase()}
+          </Text>
+          <Text className="font-mono-bold text-[8px] uppercase" style={{ letterSpacing: 1.5, color: statusColor }}>
+            {game.status}
+          </Text>
+        </View>
+        <Text className="font-mono text-[10px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
+          {game.venue_city.toUpperCase()}, {game.venue_state} · ${game.pay_per_game}/REF
+        </Text>
       </View>
     </Pressable>
   );

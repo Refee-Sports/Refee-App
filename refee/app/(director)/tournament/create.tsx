@@ -19,6 +19,8 @@ import {
   fetchMyHirerId,
 } from "@/lib/director/queries";
 import { CalendarRangePicker } from "@/components/ui/CalendarRangePicker";
+import { DropdownSelect } from "@/components/ui/DropdownSelect";
+import { RULESETS, QUARTER_MINUTES, HALF_MINUTES } from "@/lib/basketball/options";
 
 const US_STATES = [
   "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
@@ -26,13 +28,6 @@ const US_STATES = [
   "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
   "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
-
-const RULESETS = [
-  { id: "NFHS", label: "NFHS" },
-  { id: "NCAA-M", label: "NCAA MEN'S" },
-  { id: "NCAA-W", label: "NCAA WOMEN'S" },
-  { id: "PRO", label: "PRO" },
 ];
 
 export default function CreateTournament() {
@@ -53,6 +48,9 @@ export default function CreateTournament() {
     venueState: "",
     ruleset: "",
     rulesetModifications: "",
+    gameFormat: "" as "" | "quarters" | "halves",
+    periodMinutes: "",
+    uniformRequirements: "",
   });
 
   useEffect(() => {
@@ -68,8 +66,11 @@ export default function CreateTournament() {
           venueName: t.venue_name ?? "",
           venueCity: t.venue_city,
           venueState: t.venue_state,
-          ruleset: (t as any).ruleset ?? "",
-          rulesetModifications: (t as any).ruleset_modifications ?? "",
+          ruleset: t.ruleset ?? "",
+          rulesetModifications: t.ruleset_modifications ?? "",
+          gameFormat: (t.game_format ?? "") as "" | "quarters" | "halves",
+          periodMinutes: t.period_minutes ? String(t.period_minutes) : "",
+          uniformRequirements: t.uniform_requirements ?? "",
         });
       }
     })();
@@ -86,6 +87,9 @@ export default function CreateTournament() {
     form.venueName.trim().length >= 1 &&
     form.venueCity.trim().length >= 1 &&
     !!form.ruleset &&
+    !!form.gameFormat &&
+    !!form.periodMinutes &&
+    form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
 
   const handleSubmit = async () => {
@@ -114,6 +118,9 @@ export default function CreateTournament() {
       venueState: form.venueState.trim().toUpperCase(),
       ruleset: form.ruleset,
       rulesetModifications: form.rulesetModifications.trim() || undefined,
+      gameFormat: (form.gameFormat || undefined) as "quarters" | "halves" | undefined,
+      periodMinutes: form.periodMinutes ? parseInt(form.periodMinutes, 10) : undefined,
+      uniformRequirements: form.uniformRequirements.trim() || undefined,
     };
 
     if (isEdit && editId) {
@@ -271,6 +278,67 @@ export default function CreateTournament() {
           />
         </>
       )}
+
+      {/* Section: Game format (default for every game in the tournament) */}
+      <SectionLabel style={{ marginTop: 28 }}>GAME FORMAT *</SectionLabel>
+      <FLabel>PERIODS — APPLIES TO EVERY GAME</FLabel>
+      <View className="flex-row gap-2">
+        {([
+          { id: "quarters", num: "4", label: "QUARTERS" },
+          { id: "halves", num: "2", label: "HALVES" },
+        ] as const).map((opt) => {
+          const selected = form.gameFormat === opt.id;
+          return (
+            <Pressable
+              key={opt.id}
+              onPress={() => {
+                Haptics.selectionAsync();
+                setForm((f) => ({ ...f, gameFormat: opt.id, periodMinutes: "" }));
+              }}
+              className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
+                selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+              }`}
+            >
+              <Text className={`font-display ${selected ? "text-signal" : "text-ink"}`} style={{ fontSize: 28, letterSpacing: -1 }}>
+                {opt.num}
+              </Text>
+              <Text
+                className={`font-mono-bold text-[9px] uppercase ${selected ? "text-signal/70" : "text-ink-40"}`}
+                style={{ letterSpacing: 2 }}
+              >
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {form.gameFormat !== "" && (
+        <>
+          <FLabel style={{ marginTop: 16 }}>
+            {form.gameFormat === "quarters" ? "MINUTES PER QUARTER *" : "MINUTES PER HALF *"}
+          </FLabel>
+          <DropdownSelect
+            value={form.periodMinutes || null}
+            options={(form.gameFormat === "quarters" ? QUARTER_MINUTES : HALF_MINUTES).map((m) => ({
+              value: m,
+              label: `${m} MINUTES`,
+            }))}
+            placeholder="SELECT MINUTES"
+            onSelect={(v) => setForm((f) => ({ ...f, periodMinutes: v }))}
+          />
+        </>
+      )}
+
+      {/* Section: Uniform (default for every game) */}
+      <SectionLabel style={{ marginTop: 28 }}>UNIFORM *</SectionLabel>
+      <FLabel>REQUIRED UNIFORM — APPLIES TO EVERY GAME</FLabel>
+      <FInput
+        value={form.uniformRequirements}
+        onChangeText={set("uniformRequirements")}
+        placeholder="e.g. Black and white stripes, black pants"
+        autoCapitalize="sentences"
+      />
 
       {/* Section: Venue */}
       <SectionLabel style={{ marginTop: 28 }}>VENUE</SectionLabel>

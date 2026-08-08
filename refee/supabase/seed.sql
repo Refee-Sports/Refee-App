@@ -651,3 +651,30 @@ begin
 
 end
 $extra$;
+
+-- =============================================================================
+-- Geocode backfill (migration 0015) — approx city-center coords so radius
+-- filtering works for seed users without calling the geocoder.
+-- =============================================================================
+update public.public_profiles set home_lat = 30.2672, home_lng = -97.7431
+  where id = '11111111-1111-4111-8111-111111111100'; -- Alex R, Austin TX
+update public.public_profiles set home_lat = 39.7392, home_lng = -104.9903
+  where id = '22222222-2222-4222-8222-222222222200'; -- Sam T, Denver CO
+update public.public_profiles set home_lat = 29.7604, home_lng = -95.3698
+  where id = '22222222-2222-4222-8222-222222222201'; -- Marcus J, Houston TX
+update public.public_profiles set home_lat = 29.4241, home_lng = -98.4936
+  where id = '22222222-2222-4222-8222-222222222202'; -- Devon K, San Antonio TX
+
+-- Venue coords for seed jobs (city-center approximations)
+update public.jobs set venue_lat = 30.5083, venue_lng = -97.6789
+  where venue_city = 'Round Rock';
+update public.jobs set venue_lat = 30.2672, venue_lng = -97.7431
+  where venue_city = 'Austin';
+update public.jobs set venue_lat = 30.3382, venue_lng = -97.9686
+  where venue_city = 'Lakeway';
+update public.jobs set venue_lat = 30.5052, venue_lng = -97.8203
+  where venue_city = 'Cedar Park';
+update public.jobs set venue_lat = 29.4241, venue_lng = -98.4936
+  where venue_city = 'San Antonio';
+update public.jobs set venue_lat = 32.7767, venue_lng = -96.7970
+  where venue_city = 'Dallas';

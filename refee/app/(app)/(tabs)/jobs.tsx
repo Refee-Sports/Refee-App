@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -52,7 +53,16 @@ function CardTopStripe({ variant }: { variant?: "hot" | "featured" }) {
 export default function Jobs() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { rowsForTab, counts, loading, error, usedMockForAvailable } = useJobsFeed();
+  const {
+    rowsForTab,
+    counts,
+    loading,
+    error,
+    usedMockForAvailable,
+    locationMode,
+    locating,
+    toggleLocationMode,
+  } = useJobsFeed();
   const [tab, setTab] = useState<FeedTab>("available");
   const [activeFilters, setActiveFilters] = useState<Set<JobFeedFilterId>>(new Set());
 
@@ -87,6 +97,17 @@ export default function Jobs() {
   const openJob = (id: string) => {
     Haptics.selectionAsync();
     router.push(`/(app)/job/${id}`);
+  };
+
+  const handleLocationToggle = async () => {
+    Haptics.selectionAsync();
+    const ok = await toggleLocationMode();
+    if (!ok) {
+      Alert.alert(
+        "Location off",
+        "Enable location access to see games near where you are right now. Showing games near your home city for now."
+      );
+    }
   };
 
   const headerDate = useMemo(() => {
@@ -129,7 +150,7 @@ export default function Jobs() {
         </Pressable>
       </View>
 
-      <View className="flex-row justify-between px-5 py-2 border-y border-ink">
+      <View className="flex-row items-center justify-between px-5 py-2 border-y border-ink">
         <Text
           className="text-ink font-mono-bold text-[9px] uppercase flex-1"
           style={{ letterSpacing: 1.4 }}
@@ -137,13 +158,32 @@ export default function Jobs() {
           <Text className="text-signal">{counts.available}</Text> NEW ·{" "}
           <Text className="text-signal">{counts.invited}</Text> INVITED
         </Text>
-        <Text
-          className="text-ink-60 font-mono-bold text-[9px] uppercase"
-          style={{ letterSpacing: 1.4 }}
+        <Pressable
+          onPress={handleLocationToggle}
+          disabled={locating}
+          className={`flex-row items-center gap-1 px-2 py-1 border active:opacity-70 ${
+            locationMode === "near_me" ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+          }`}
+          accessibilityLabel="Toggle location mode"
         >
-          RADIUS{" "}
-          <Text className="text-ink">{radiusLabel != null ? `${radiusLabel} MI` : "ANY"}</Text>
-        </Text>
+          {locating ? (
+            <ActivityIndicator size="small" color="#1F4FCC" />
+          ) : (
+            <Feather
+              name={locationMode === "near_me" ? "navigation" : "home"}
+              size={10}
+              color={locationMode === "near_me" ? "#1F4FCC" : "#08111C"}
+            />
+          )}
+          <Text
+            className={`font-mono-bold text-[9px] uppercase ${
+              locationMode === "near_me" ? "text-signal" : "text-ink"
+            }`}
+            style={{ letterSpacing: 1.4 }}
+          >
+            {locationMode === "near_me" ? "NEAR ME" : "HOME"}
+          </Text>
+        </Pressable>
       </View>
 
       <ZebraRule variant="signal" thin />

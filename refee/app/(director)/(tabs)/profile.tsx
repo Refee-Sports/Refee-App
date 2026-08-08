@@ -10,6 +10,7 @@ import { ZebraRule } from "@/components/ui/ZebraRule";
 import { supabase } from "@/lib/supabase";
 import { fetchMyHirerProfile, type HirerRow } from "@/lib/director/queries";
 import { getCardSetupParams } from "@/lib/payments/queries";
+import { unregisterPushToken } from "@/lib/push/notifications";
 
 const ORG_TYPE_LABELS: Record<string, string> = {
   tournament: "TOURNAMENT ORGANIZER",
@@ -78,6 +79,7 @@ export default function DirectorProfile() {
 
   const signOut = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await unregisterPushToken();
     await supabase.auth.signOut();
   };
 

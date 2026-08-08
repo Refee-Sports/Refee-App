@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/supabase";
+import { geocodeAddress } from "@/lib/geo/geocode";
+import { sendPush } from "@/lib/push/notifications";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -28,6 +30,11 @@ export type TournamentRow = {
   status: string;
   staffing_model: string;
   pay_per_game: number | null;
+  ruleset: string | null;
+  ruleset_modifications: string | null;
+  game_format: "quarters" | "halves" | null;
+  period_minutes: number | null;
+  uniform_requirements: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -37,6 +44,8 @@ export type DirectorGameRow = {
   hirer_id: string;
   tournament_id: string | null;
   title: string;
+  home_team: string | null;
+  away_team: string | null;
   level: string;
   age_group: string | null;
   gender: string | null;
@@ -187,6 +196,9 @@ export async function createTournament(
     venueState: string;
     ruleset?: string;
     rulesetModifications?: string;
+    gameFormat?: "quarters" | "halves";
+    periodMinutes?: number;
+    uniformRequirements?: string;
   }
 ): Promise<{ tournamentId: string | null; error: Error | null }> {
   const { data, error } = await supabase
@@ -203,8 +215,11 @@ export async function createTournament(
       venue_state: args.venueState,
       ruleset: args.ruleset || null,
       ruleset_modifications: args.rulesetModifications || null,
+      game_format: args.gameFormat ?? null,
+      period_minutes: args.periodMinutes ?? null,
+      uniform_requirements: args.uniformRequirements || null,
       staffing_model: "direct",
-      status: "draft",
+      status: "open",
     })
     .select("id")
     .single();
@@ -215,7 +230,7 @@ export async function createTournament(
 
 export async function updateTournamentStatus(
   id: string,
-  status: "draft" | "open" | "staffing" | "staffed" | "completed" | "cancelled"
+  status: "open" | "staffed" | "completed" | "cancelled"
 ): Promise<{ error: Error | null }> {
   const { error } = await supabase
     .from("tournaments")
@@ -239,37 +254,46 @@ export async function fetchTournamentGames(
   return { games: (data ?? []) as DirectorGameRow[], error: null };
 }
 
+export type CreateGameArgs = {
+  homeTeam: string;
+  awayTeam: string;
+  level: string;
+  crewSize: 2 | 3;
+  payPerGame: number;
+  startsAt: string;
+  durationMinutes?: number;
+  venueName: string;
+  venueCity: string;
+  venueState: string;
+  uniformRequirements?: string;
+  hirerNote?: string;
+  autoAccept?: boolean;
+  ageGroup?: string;
+  gender?: string;
+  ruleset?: string;
+  gameFormat?: "quarters" | "halves";
+  periodMinutes?: number;
+  rulesetModifications?: string;
+};
+
+/** Creates a game. Pass tournamentId = null for a standalone single game. */
 export async function createGame(
   hirerId: string,
-  tournamentId: string,
-  args: {
-    title: string;
-    level: string;
-    crewSize: 2 | 3;
-    payPerGame: number;
-    startsAt: string;
-    durationMinutes?: number;
-    venueName: string;
-    venueCity: string;
-    venueState: string;
-    uniformRequirements?: string;
-    hirerNote?: string;
-    autoAccept?: boolean;
-    ageGroup?: string;
-    gender?: string;
-    ruleset?: string;
-    gameFormat?: "quarters" | "halves";
-    periodMinutes?: number;
-    rulesetModifications?: string;
-  }
+  tournamentId: string | null,
+  args: CreateGameArgs
 ): Promise<{ gameId: string | null; error: Error | null }> {
+  // Geocode the venue for distance-based feed filtering (best-effort).
+  const coords = await geocodeAddress(`${args.venueCity}, ${args.venueState}, USA`);
+
   const { data, error } = await supabase
     .from("jobs")
     .insert({
       hirer_id: hirerId,
       tournament_id: tournamentId,
       sport_id: "basketball",
-      title: args.title,
+      title: `${args.homeTeam} vs ${args.awayTeam}`,
+      home_team: args.homeTeam,
+      away_team: args.awayTeam,
       level: args.level,
       crew_size: args.crewSize,
       pay_per_game: args.payPerGame,
@@ -278,6 +302,8 @@ export async function createGame(
       venue_name: args.venueName,
       venue_city: args.venueCity,
       venue_state: args.venueState,
+      venue_lat: coords?.lat ?? null,
+      venue_lng: coords?.lng ?? null,
       uniform_requirements: args.uniformRequirements || null,
       hirer_note: args.hirerNote || null,
       auto_accept: args.autoAccept ?? false,
@@ -287,7 +313,7 @@ export async function createGame(
       ruleset_modifications: args.rulesetModifications || null,
       game_format: args.gameFormat ?? null,
       period_minutes: args.periodMinutes ?? null,
-      job_type: "tournament",
+      job_type: tournamentId ? "tournament" : "single",
       status: "open",
       num_games: 1,
     })
@@ -340,6 +366,31 @@ export async function fetchGameApplicants(
   return { applicants, error: null };
 }
 
+/**
+ * Recomputes a game's status: 'staffed' once every crew slot is filled by an
+ * accepted ref, otherwise 'open'. No-op for completed/cancelled games.
+ */
+export async function recomputeJobStaffing(jobId: string): Promise<void> {
+  const { data: job } = await supabase
+    .from("jobs")
+    .select("crew_size, status")
+    .eq("id", jobId)
+    .maybeSingle();
+  if (!job || job.status === "completed" || job.status === "cancelled") return;
+
+  const { data: accepted } = await supabase
+    .from("job_assignments")
+    .select("id")
+    .eq("job_id", jobId)
+    .in("status", ["accepted", "needs_reconfirm"]);
+
+  const filled = (accepted ?? []).length >= (job.crew_size ?? 1);
+  const next = filled ? "staffed" : "open";
+  if (next !== job.status) {
+    await supabase.from("jobs").update({ status: next }).eq("id", jobId);
+  }
+}
+
 export async function approveApplicant(
   jobId: string,
   refId: string
@@ -349,7 +400,38 @@ export async function approveApplicant(
     .update({ status: "accepted", responded_at: new Date().toISOString() })
     .eq("job_id", jobId)
     .eq("ref_id", refId);
-  return { error: error ? new Error(error.message) : null };
+  if (error) return { error: new Error(error.message) };
+
+  // Flip the game to 'staffed' if this filled the crew
+  await recomputeJobStaffing(jobId);
+
+  // Notify the ref they're confirmed
+  const { data: job } = await supabase.from("jobs").select("title").eq("id", jobId).maybeSingle();
+  void sendPush(
+    [refId],
+    "You're confirmed! ✓",
+    `You've been accepted for ${job?.title ?? "a game"}.`,
+    { type: "accepted", jobId }
+  );
+  return { error: null };
+}
+
+/** Standalone (non-tournament) games created by this director. */
+export async function fetchStandaloneGames(
+  userId: string
+): Promise<{ games: DirectorGameRow[]; error: Error | null }> {
+  const hirerId = await fetchMyHirerId(userId);
+  if (!hirerId) return { games: [], error: null };
+
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("*")
+    .eq("hirer_id", hirerId)
+    .is("tournament_id", null)
+    .order("starts_at", { ascending: true });
+
+  if (error) return { games: [], error: new Error(error.message) };
+  return { games: (data ?? []) as DirectorGameRow[], error: null };
 }
 
 export async function declineApplicantForGame(
@@ -441,7 +523,8 @@ export async function fetchExistingRating(
 // ── Editing games & tournaments ──────────────────────────────────────────────
 
 export type GameUpdateArgs = {
-  title: string;
+  homeTeam: string;
+  awayTeam: string;
   level: string;
   crewSize: 2 | 3;
   payPerGame: number;
@@ -477,10 +560,19 @@ export async function updateGame(
     .maybeSingle();
   if (beforeErr) return { error: new Error(beforeErr.message), refsNeedReconfirm: false };
 
+  // Re-geocode only if the location changed
+  const locationChanged =
+    !before || before.venue_city !== args.venueCity || before.venue_state !== args.venueState;
+  const coords = locationChanged
+    ? await geocodeAddress(`${args.venueCity}, ${args.venueState}, USA`)
+    : null;
+
   const { error } = await supabase
     .from("jobs")
     .update({
-      title: args.title,
+      title: `${args.homeTeam} vs ${args.awayTeam}`,
+      home_team: args.homeTeam,
+      away_team: args.awayTeam,
       level: args.level,
       crew_size: args.crewSize,
       pay_per_game: args.payPerGame,
@@ -489,6 +581,7 @@ export async function updateGame(
       venue_name: args.venueName,
       venue_city: args.venueCity,
       venue_state: args.venueState,
+      ...(locationChanged ? { venue_lat: coords?.lat ?? null, venue_lng: coords?.lng ?? null } : {}),
       uniform_requirements: args.uniformRequirements || null,
       hirer_note: args.hirerNote || null,
       auto_accept: args.autoAccept ?? false,
@@ -521,6 +614,16 @@ export async function updateGame(
 
   const hadAccepted = (flipped ?? []).length > 0;
 
+  // Push the affected refs to re-confirm
+  if (hadAccepted) {
+    void sendPush(
+      (flipped ?? []).map((f) => f.ref_id),
+      "Game details changed ⚠",
+      `"${args.homeTeam} vs ${args.awayTeam}" was updated — please re-confirm your spot.`,
+      { type: "reconfirm", jobId: gameId }
+    );
+  }
+
   // Post a system note to the crew thread if one exists
   if (hadAccepted) {
     const { data: convo } = await supabase
@@ -533,7 +636,7 @@ export async function updateGame(
       await supabase.from("messages").insert({
         conversation_id: convo.id,
         sender_id: editorUserId,
-        body: `⚠ GAME DETAILS UPDATED — "${args.title}" changed (time, venue, or pay). Please re-confirm your spot from the job page.`,
+        body: `⚠ GAME DETAILS UPDATED — "${args.homeTeam} vs ${args.awayTeam}" changed (time, venue, or pay). Please re-confirm your spot from the job page.`,
       });
     }
   }
@@ -553,6 +656,9 @@ export async function updateTournament(
     venueState: string;
     ruleset?: string;
     rulesetModifications?: string;
+    gameFormat?: "quarters" | "halves";
+    periodMinutes?: number;
+    uniformRequirements?: string;
   }
 ): Promise<{ error: Error | null }> {
   const { error } = await supabase
@@ -567,6 +673,9 @@ export async function updateTournament(
       venue_state: args.venueState,
       ruleset: args.ruleset || null,
       ruleset_modifications: args.rulesetModifications || null,
+      game_format: args.gameFormat ?? null,
+      period_minutes: args.periodMinutes ?? null,
+      uniform_requirements: args.uniformRequirements || null,
     })
     .eq("id", tournamentId);
   return { error: error ? new Error(error.message) : null };
@@ -711,4 +820,46 @@ export async function fetchGameRatedRefIds(
     .eq("job_id", jobId)
     .eq("hirer_id", hirerId);
   return new Set((data ?? []).map((r) => r.ref_id));
+}
+
+// ── Completion nudge ─────────────────────────────────────────────────────────
+
+export type NeedsCompletionRow = {
+  id: string;
+  title: string;
+  startsAt: string;
+  acceptedCount: number;
+};
+
+/**
+ * Games that have already ended but aren't completed/cancelled yet — the
+ * window before the 24h auto-sweep. Prompts the director to close them out
+ * (and, with a card on file, auto-pay their crew).
+ */
+export async function fetchGamesNeedingCompletion(
+  userId: string
+): Promise<NeedsCompletionRow[]> {
+  const hirerId = await fetchMyHirerId(userId);
+  if (!hirerId) return [];
+
+  const nowIso = new Date().toISOString();
+  const { data } = await supabase
+    .from("jobs")
+    .select("id, title, starts_at, duration_minutes, job_assignments(status)")
+    .eq("hirer_id", hirerId)
+    .not("status", "in", "(completed,cancelled)")
+    .order("starts_at", { ascending: true });
+
+  const now = Date.now();
+  return (data ?? [])
+    .map((j: any) => {
+      const endMs =
+        new Date(j.starts_at).getTime() + (j.duration_minutes ?? 120) * 60_000;
+      const acceptedCount = (j.job_assignments ?? []).filter(
+        (a: any) => a.status === "accepted" || a.status === "needs_reconfirm"
+      ).length;
+      return { id: j.id, title: j.title, startsAt: j.starts_at, endMs, acceptedCount };
+    })
+    .filter((j) => j.endMs < now)
+    .map(({ endMs, ...rest }) => rest);
 }

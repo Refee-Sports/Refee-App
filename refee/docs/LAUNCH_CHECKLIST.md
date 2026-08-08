@@ -18,6 +18,7 @@
 - [ ] **Confirm platform fee before launch.** Set to **5%** now (`PLATFORM_FEE_PCT` in `supabase/functions/_shared/util.ts`). Revisit: Refr charges ~3% as an *assigning tool*; we're a *marketplace* (we supply refs), which justifies more. Decide final number + whether to also monetize ref-side instant cash-out.
 
 ### Infrastructure
+- [ ] **Google Maps Geocoding API key for production.** Dev uses free Nominatim; production needs a real provider for reliability + rate limits. Create a Google Cloud project → enable the **Geocoding API** → billing on → set `GEOCODER=google` and `GOOGLE_MAPS_API_KEY` in the edge-function secrets. Code + `.env.example` slots already wired.
 - [ ] **Hosted Supabase project** (currently local Docker only). Move migrations, set prod env.
 - [ ] **Real Twilio SMS** for phone OTP (test-OTP map is dev-only).
 - [ ] **`ANTHROPIC_API_KEY` / `STRIPE_SECRET_KEY` in prod function secrets**, not committed.
@@ -33,9 +34,10 @@
 
 ## 🟡 Should have before real users
 
-- [ ] **Push notifications** — availability-matched new games, "you're accepted," re-confirm prompts, new messages, payment received. Needs Expo push tokens (dev build) + edge function sender + `push_tokens` table.
-- [ ] **True radius filtering** — feed filters by state today; geocode venues (`venue_lat/lng`) for real miles. Unblocks nearby-game alerts + distance in match scoring.
-- [ ] **Game completion nudge** — remind directors to mark complete (or trust the 24h auto-sweep). Depends on push.
+- [x] **Push notifications** — ✅ infra built (migration 0016 `push_tokens`, `send-push` edge fn, `lib/push/notifications.ts`, token register on login / unregister on sign-out). Triggers wired: accepted, re-confirm, new message. **Fires only in an EAS dev build** — not Expo Go (SDK 53+). Remaining: availability-matched new-game alerts (needs the match-scoring pass), payment-received trigger, and move sends to DB triggers for production security.
+- [x] **True radius filtering** — ✅ done. Geocode edge fn (Nominatim default, `GEOCODER=google` swap), venues geocoded on game create/edit, ref home on profile save, Haversine filter in feed with state fallback; real miles shown on cards. Migration 0015 (`home_lat/lng`). Seed rows backfilled.
+- [x] **Hybrid location (home + live "near me")** — ✅ done. HOME/NEAR ME toggle on jobs feed; near-me requests device location (`expo-location`) and re-filters around it; denial falls back to home with a note. Home is the default (works with no location permission).
+- [x] **Game completion nudge** — ✅ in-app banner on director tournaments screen lists ended-but-open games (pre-24h-sweep window) with tap-to-complete. Push version rides on the push infra above.
 - [ ] **needs_reconfirm crew visibility** — a ref awaiting re-confirm drops off the referee-side crew list. Cosmetic but confusing.
 - [ ] **Mileage** (optional pay component) — Refr has it; some assignors expect it.
 - [ ] **Earnings ledger** — per-game statement view, not just totals (helps refs reconcile against their own 1099).
