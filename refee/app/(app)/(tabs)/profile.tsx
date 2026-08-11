@@ -26,7 +26,6 @@ import { getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { pickAndUploadAvatar } from "@/lib/profile/avatar";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import * as WebBrowser from "expo-web-browser";
-import * as Linking from "expo-linking";
 import {
   getPayoutOnboardingLink,
   fetchPayoutStatus,
@@ -176,8 +175,10 @@ export default function Profile() {
     Haptics.selectionAsync();
     setPayoutBusy(true);
     try {
-      const returnUrl = Linking.createURL("payouts-return");
-      const { url, error: err } = await getPayoutOnboardingLink(returnUrl);
+      // Stripe account links require an https return URL (deep-link schemes are
+      // rejected). After onboarding the user closes the browser and we re-check
+      // payout status below, so this page just needs to be a valid https URL.
+      const { url, error: err } = await getPayoutOnboardingLink("https://refee.app/payouts/done");
       if (err || !url) {
         Alert.alert(
           "Payouts unavailable",

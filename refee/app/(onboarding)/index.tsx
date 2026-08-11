@@ -66,6 +66,7 @@ export default function Onboarding() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const setProfileComplete = useOnboardingStore((s) => s.setProfileComplete);
+  const setPrimaryRole = useOnboardingStore((s) => s.setPrimaryRole);
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -195,8 +196,11 @@ export default function Onboarding() {
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // Set role BEFORE profileComplete so the root layout keeps the navigator
+      // mounted (splashReady requires primaryRole once profileComplete is true),
+      // then let the AuthGate route into the app.
+      setPrimaryRole("referee");
       setProfileComplete(true);
-      router.replace("/(app)/(tabs)/jobs");
     } catch (err: any) {
       setError(err?.message ?? "An unexpected error occurred. Please try again.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

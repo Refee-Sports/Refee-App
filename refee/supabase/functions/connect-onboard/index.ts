@@ -22,18 +22,37 @@ Deno.serve(async (req) => {
     let accountId = priv?.stripe_account_id as string | null;
 
     if (!accountId) {
-      const account = await stripe.accounts.create({
-        type: "express",
-        email: priv?.email ?? undefined,
-        capabilities: { transfers: { requested: true } },
-        business_type: "individual",
-        metadata: { refee_user_id: user.id },
-      });
-      accountId = account.id;
+      // Reuse an account previously created for this user (a prior attempt may
+      // have created + onboarded one without persisting its id), preferring the
+      // most-complete match, so the ref doesn't have to onboard again.
+      const existing = await stripe.accounts.list({ limit: 100 });
+      const mine = existing.data.filter((a) => a.metadata?.refee_user_id === user.id);
+      const reuse =
+        mine.find((a) => a.payouts_enabled) ??
+        mine.find((a) => a.details_submitted) ??
+        mine[0];
+
+      if (reuse) {
+        accountId = reuse.id;
+      } else {
+        const account = await stripe.accounts.create({
+          type: "express",
+          email: priv?.email ?? undefined,
+          capabilities: { transfers: { requested: true } },
+          business_type: "individual",
+          metadata: { refee_user_id: user.id },
+        });
+        accountId = account.id;
+      }
+
+      // Upsert (not update) — referee onboarding may not have created a
+      // private_profiles row yet, so an update would silently save nothing.
       await admin
         .from("private_profiles")
-        .update({ stripe_account_id: accountId, stripe_account_status: "pending" })
-        .eq("id", user.id);
+        .upsert(
+          { id: user.id, stripe_account_id: accountId, stripe_account_status: "pending" },
+          { onConflict: "id" }
+        );
     }
 
     const link = await stripe.accountLinks.create({
