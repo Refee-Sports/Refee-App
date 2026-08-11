@@ -14,18 +14,22 @@ function loadEnvFile(relativePath) {
 const localEnv = process.env.REFEE_ENV_FILE;
 let supabaseUrl;
 let supabaseAnonKey;
+let stripePublishableKey;
 
 if (localEnv) {
   const parsed = loadEnvFile(localEnv);
   supabaseUrl = parsed.EXPO_PUBLIC_SUPABASE_URL;
   supabaseAnonKey = parsed.EXPO_PUBLIC_SUPABASE_ANON_KEY;
-  console.log(`[refee] Local Supabase env from ${localEnv}`);
+  stripePublishableKey = parsed.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  console.log(`[refee] Local env from ${localEnv}`);
   console.log(`[refee] EXPO_PUBLIC_SUPABASE_URL=${supabaseUrl}`);
 } else {
   loadEnvFile(".env");
   const dev = loadEnvFile(".env.dev");
   supabaseUrl = dev.EXPO_PUBLIC_SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
   supabaseAnonKey = dev.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  stripePublishableKey =
+    dev.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 }
 
 module.exports = {
@@ -36,6 +40,7 @@ module.exports = {
       ...appJson.expo?.extra,
       supabaseUrl,
       supabaseAnonKey,
+      stripePublishableKey,
     },
     ios: {
       ...appJson.expo.ios,

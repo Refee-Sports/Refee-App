@@ -17,6 +17,7 @@ import {
   JetBrainsMono_500Medium,
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
+import Constants from "expo-constants";
 import { StripeProvider } from "@stripe/stripe-react-native";
 import { supabase } from "@/lib/supabase";
 import { ensureValidSession } from "@/lib/auth/session";
@@ -115,7 +116,11 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StripeProvider
-        publishableKey={process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""}
+        publishableKey={
+          (Constants.expoConfig?.extra?.stripePublishableKey as string | undefined) ??
+          process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ??
+          ""
+        }
         merchantIdentifier="merchant.app.refee"
       >
         <StatusBar style="dark" />
