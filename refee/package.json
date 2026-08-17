@@ -22,7 +22,9 @@
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
     "supabase:db:push": "supabase db push",
-    "supabase:db:reset": "supabase db reset"
+    "supabase:db:reset": "supabase db reset",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@expo-google-fonts/inter-tight": "^0.2.3",
@@ -76,7 +78,8 @@
     "eslint": "^9.0.0",
     "eslint-config-expo": "~10.0.0",
     "supabase": "^2.98.2",
-    "typescript": "~5.9.2"
+    "typescript": "~5.9.2",
+    "vitest": "^2.1.9"
   },
   "private": true
 }
