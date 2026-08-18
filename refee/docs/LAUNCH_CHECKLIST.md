@@ -15,7 +15,19 @@
 - [ ] **Decouple ref pay from director settlement (partial escrow) OR accept the risk explicitly.** Right now a ref only gets paid if the director's card charges at completion. If it declines, the ref is stuck. Either add escrow-at-fill (charge when crew locks) or a clear dunning + guarantee policy. This is also the #1 competitive gap vs Refr.
 
 ### Pricing (decided-but-revisit)
-- [ ] **Confirm platform fee before launch.** Set to **5%** now (`PLATFORM_FEE_PCT` in `supabase/functions/_shared/util.ts`). Revisit: Refr charges ~3% as an *assigning tool*; we're a *marketplace* (we supply refs), which justifies more. Decide final number + whether to also monetize ref-side instant cash-out.
+- [ ] **Confirm platform fee before launch.** Set to **5%** now (`PLATFORM_FEE_PCT` in `supabase/functions/_shared/pay-math.ts`). Revisit: Refr charges ~3% as an *assigning tool*; we're a *marketplace* (we supply refs), which justifies more. Decide final number + whether to also monetize ref-side instant cash-out.
+- [ ] **Fix the fee-vs-Stripe-cost margin (the 5% barely covers Stripe on small games).** The 5% is **Refee revenue** (lands in our platform balance); Stripe's processing fee (**2.9% + $0.30**) is separate and comes out of the same charge, so it eats most of our fee on low-dollar games. Verified on a real $35 game: charged $37.00 → Stripe took $1.37 → we kept $35.63 → transferred $35 to the ref → **net margin $0.63**. Worked example of the squeeze:
+  - $35 game → 5% = $2 → after ~$1.37 Stripe → **+$0.63**
+  - $20 game → 5% = $1 → after ~$0.91 Stripe → **+$0.09**
+  - $15 game → could **break even or go negative** once the flat $0.30 dominates.
+
+  Options (pick before launch):
+  1. **Raise the platform %** (e.g. 8–10%) — simplest; marketplace positioning supports it.
+  2. **Pass Stripe's fee through** — charge director `crew + our% + Stripe fee` so our % is pure margin (most defensible; director sees a "processing" line).
+  3. **Minimum fee floor** — `max(5%, $1.00)` so tiny games still cover the flat $0.30.
+  4. **Batch payouts** — one charge per tournament/day instead of per game amortizes the $0.30 across many games.
+
+  Note: the referee always receives the **full** crew amount — Stripe's fee is borne by the platform (separate charge + `source_transaction` transfer), never deducted from the ref.
 
 ### Infrastructure
 - [ ] **Google Maps Geocoding API key for production.** Dev uses free Nominatim; production needs a real provider for reliability + rate limits. Create a Google Cloud project → enable the **Geocoding API** → billing on → set `GEOCODER=google` and `GOOGLE_MAPS_API_KEY` in the edge-function secrets. Code + `.env.example` slots already wired.

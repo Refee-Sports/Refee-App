@@ -31,6 +31,9 @@ Deno.serve(async (req) => {
     if (intent.status !== "succeeded") {
       return json({ error: `Payment not completed (status: ${intent.status}).` }, 400);
     }
+    // Draw each transfer from this charge so it works before the platform
+    // balance settles (avoids "insufficient available funds").
+    const chargeId = intent.latest_charge as string | undefined;
 
     const { data: owed } = await admin
       .from("job_assignments")
@@ -55,6 +58,7 @@ Deno.serve(async (req) => {
           amount: (a.amount_due ?? 0) * 100,
           currency: "usd",
           destination: priv.stripe_account_id,
+          source_transaction: chargeId,
           metadata: { refee_job_id: jobId, refee_assignment_id: a.id },
         });
         await admin

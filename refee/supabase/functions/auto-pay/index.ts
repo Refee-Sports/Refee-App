@@ -2,7 +2,7 @@
 // completed / fee-cancelled games, then transfers each ref's share.
 // Body: { jobId? } — one game, or all eligible games when omitted.
 // Games whose charge fails fall back to the manual PAY CREW flow.
-import { stripe, adminClient, getCaller, json, handleOptions, PLATFORM_FEE_PCT } from "../_shared/util.ts";
+import { stripe, adminClient, getCaller, json, handleOptions, chargeTotal, decidePayment } from "../_shared/util.ts";
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -32,13 +32,15 @@ Deno.serve(async (req) => {
       return json({ paid: [], skipped: [], reason: "no_card" });
     }
 
-    // Eligible games: closed, unpaid, mine
+    // Eligible games: closed and not yet fully paid, mine.
+    // 'processing' is included so a game whose charge succeeded but whose
+    // transfer failed gets retried (transfers only) rather than re-charged.
     let gamesQuery = admin
       .from("jobs")
-      .select("id, title")
+      .select("id, title, payment_status, payment_intent_id")
       .eq("hirer_id", hirer.id)
       .in("status", ["completed", "cancelled"])
-      .eq("payment_status", "unpaid");
+      .in("payment_status", ["unpaid", "processing"]);
     if (jobId) gamesQuery = gamesQuery.eq("id", jobId);
     const { data: games } = await gamesQuery;
 
@@ -46,14 +48,30 @@ Deno.serve(async (req) => {
     const skipped: Array<{ jobId: string; title: string; reason: string }> = [];
 
     for (const game of games ?? []) {
-      // Poor-man's lock: only proceed if we're the one flipping unpaid → processing
-      const { data: locked } = await admin
-        .from("jobs")
-        .update({ payment_status: "processing" })
-        .eq("id", game.id)
-        .eq("payment_status", "unpaid")
-        .select("id");
-      if (!locked || locked.length === 0) continue;
+      // Reuse an already-succeeded charge if one exists (a prior run charged the
+      // card but its transfer failed). This is what keeps a failed transfer from
+      // ever causing a second charge.
+      let chargeId: string | null = null;
+      let piId = (game as { payment_intent_id: string | null }).payment_intent_id;
+      if (piId) {
+        try {
+          const existing = await stripe.paymentIntents.retrieve(piId);
+          if (existing.status === "succeeded") chargeId = existing.latest_charge as string;
+        } catch { /* stale id — treat as no charge */ }
+      }
+      const { shouldCharge, resetToUnpaidOnError } = decidePayment(chargeId != null);
+
+      // Lock unpaid → processing so concurrent runs don't both charge. Games we
+      // already charged are 'processing'; we proceed straight to retrying transfers.
+      if (game.payment_status === "unpaid") {
+        const { data: locked } = await admin
+          .from("jobs")
+          .update({ payment_status: "processing" })
+          .eq("id", game.id)
+          .eq("payment_status", "unpaid")
+          .select("id");
+        if (!locked || locked.length === 0) continue;
+      }
 
       const { data: owed } = await admin
         .from("job_assignments")
@@ -65,35 +83,37 @@ Deno.serve(async (req) => {
 
       const crewTotal = (owed ?? []).reduce((s, a) => s + (a.amount_due ?? 0), 0);
       if (crewTotal <= 0) {
-        // nothing owed — close the loop so we don't retry forever
+        // nothing left to pay (all transferred/held) — close the loop
         await admin.from("jobs").update({ payment_status: "paid" }).eq("id", game.id);
         continue;
       }
 
-      const total = crewTotal + Math.round(crewTotal * PLATFORM_FEE_PCT);
+      const total = chargeTotal(crewTotal);
 
       try {
-        const intent = await stripe.paymentIntents.create({
-          amount: total * 100,
-          currency: "usd",
-          customer: hirer.stripe_customer_id,
-          payment_method: paymentMethod.id,
-          off_session: true,
-          confirm: true,
-          description: `Refee auto-pay — ${game.title}`,
-          metadata: { refee_job_id: game.id },
-        });
+        if (shouldCharge) {
+          const intent = await stripe.paymentIntents.create({
+            amount: total * 100,
+            currency: "usd",
+            customer: hirer.stripe_customer_id,
+            payment_method: paymentMethod.id,
+            off_session: true,
+            confirm: true,
+            description: `Refee auto-pay — ${game.title}`,
+            metadata: { refee_job_id: game.id },
+          });
 
-        if (intent.status !== "succeeded") {
-          throw new Error(`Charge status: ${intent.status}`);
+          if (intent.status !== "succeeded") {
+            throw new Error(`Charge status: ${intent.status}`);
+          }
+          piId = intent.id;
+          chargeId = intent.latest_charge as string;
+          await admin.from("jobs").update({ payment_intent_id: piId }).eq("id", game.id);
         }
 
-        await admin
-          .from("jobs")
-          .update({ payment_intent_id: intent.id })
-          .eq("id", game.id);
-
-        // Transfer each ref's share (hold for refs without payout accounts)
+        // Transfer each ref's share, drawn from THIS charge (source_transaction)
+        // so it works before the platform balance settles. Hold refs without a
+        // payout account.
         let transferred = 0;
         let held = 0;
         for (const a of owed ?? []) {
@@ -108,6 +128,7 @@ Deno.serve(async (req) => {
               amount: (a.amount_due ?? 0) * 100,
               currency: "usd",
               destination: priv.stripe_account_id,
+              source_transaction: chargeId ?? undefined,
               metadata: { refee_job_id: game.id, refee_assignment_id: a.id },
             });
             await admin
@@ -130,17 +151,17 @@ Deno.serve(async (req) => {
 
         await admin.from("jobs").update({ payment_status: "paid" }).eq("id", game.id);
         paid.push({ jobId: game.id, title: game.title, total, transferred, held });
-      } catch (chargeErr) {
-        // Charge failed (declined, 3DS required off-session, etc.) —
-        // release the lock so the manual PAY CREW flow can take over.
-        await admin
-          .from("jobs")
-          .update({ payment_status: "unpaid" })
-          .eq("id", game.id);
+      } catch (payErr) {
+        // If we never charged, reset to 'unpaid' so a later run can retry cleanly.
+        // If a charge already succeeded, KEEP 'processing' (the charge id is saved)
+        // so the next run only retries the transfer — never a second charge.
+        if (resetToUnpaidOnError) {
+          await admin.from("jobs").update({ payment_status: "unpaid" }).eq("id", game.id);
+        }
         skipped.push({
           jobId: game.id,
           title: game.title,
-          reason: (chargeErr as Error).message,
+          reason: (payErr as Error).message,
         });
       }
     }

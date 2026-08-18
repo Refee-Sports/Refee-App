@@ -6,9 +6,9 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 // first run against a fresh account).
 export const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "");
 
-/** Platform take rate charged to the director on top of crew pay.
- *  NOTE: 5% for now — revisit pricing before launch (see LAUNCH_CHECKLIST.md). */
-export const PLATFORM_FEE_PCT = 0.05;
+// Payout math (fee %, charge total, idempotency decision) lives in one pure,
+// testable module. Re-exported here so existing imports keep working.
+export { PLATFORM_FEE_PCT, platformFee, chargeTotal, decidePayment } from "./pay-math.ts";
 
 /** Service-role client — bypasses RLS. Only use after verifying the caller. */
 export const adminClient = () =>

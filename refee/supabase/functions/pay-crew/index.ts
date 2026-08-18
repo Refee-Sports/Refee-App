@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     // Caller must be the hirer of this job
     const { data: job } = await admin
       .from("jobs")
-      .select("id, title, status, payment_status, hirers(user_id)")
+      .select("id, title, status, payment_status, payment_intent_id, hirers(user_id)")
       .eq("id", jobId)
       .maybeSingle();
     if (!job) return json({ error: "Game not found" }, 404);
@@ -29,6 +29,18 @@ Deno.serve(async (req) => {
     }
     if (job.payment_status === "paid") {
       return json({ error: "This game is already paid." }, 400);
+    }
+    // Guard against a double-charge: if auto-pay already charged the card
+    // (charge succeeded, only the transfer is outstanding), don't create a new
+    // PaymentIntent — the payout will finish on the next auto-pay run.
+    if (job.payment_intent_id) {
+      const existing = await stripe.paymentIntents.retrieve(job.payment_intent_id);
+      if (existing.status === "succeeded") {
+        return json(
+          { error: "This game is already charged — the crew payout will finish automatically." },
+          400
+        );
+      }
     }
 
     // Unpaid amounts owed to refs

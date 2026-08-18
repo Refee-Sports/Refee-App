@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     if (payoutsEnabled) {
       const { data: held } = await admin
         .from("job_assignments")
-        .select("id, amount_due, job_id, jobs(payment_status)")
+        .select("id, amount_due, job_id, jobs(payment_status, payment_intent_id)")
         .eq("ref_id", user.id)
         .eq("payout_status", "processing")
         .gt("amount_due", 0);
@@ -43,10 +43,18 @@ Deno.serve(async (req) => {
       for (const a of held ?? []) {
         const j = Array.isArray(a.jobs) ? a.jobs[0] : a.jobs;
         if (j?.payment_status !== "paid") continue;
+        // Draw from the director's original charge so the release works before
+        // the platform balance settles.
+        let chargeId: string | undefined;
+        if (j?.payment_intent_id) {
+          const intent = await stripe.paymentIntents.retrieve(j.payment_intent_id);
+          chargeId = intent.latest_charge as string | undefined;
+        }
         const transfer = await stripe.transfers.create({
           amount: (a.amount_due ?? 0) * 100,
           currency: "usd",
           destination: priv.stripe_account_id,
+          source_transaction: chargeId,
           metadata: { refee_job_id: a.job_id, refee_assignment_id: a.id },
         });
         await admin
