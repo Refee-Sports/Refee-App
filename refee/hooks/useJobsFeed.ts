@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getMockJobDetail, getMockJobs } from "@/lib/jobs/mock-data";
+import { resolveCounts, resolveTabRows } from "@/lib/jobs/feed-source";
 import { fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
 import { getCurrentCoords } from "@/lib/geo/location";
 import type { Coords } from "@/lib/geo/geocode";
@@ -47,11 +48,13 @@ export function useJobsFeed() {
         origin ?? undefined
       );
       if (error) {
+        // Configured but the fetch failed — surface the error and show an empty
+        // feed, NOT the offline demo list (that would look like out-of-area jobs).
         setState({
           dbAvailable: [],
           loading: false,
           error: error.message,
-          usedMockForAvailable: true,
+          usedMockForAvailable: false,
         });
         return;
       }
@@ -59,7 +62,7 @@ export function useJobsFeed() {
         dbAvailable: jobs,
         loading: false,
         error: null,
-        usedMockForAvailable: jobs.length === 0,
+        usedMockForAvailable: false,
       });
     },
     []
@@ -97,29 +100,25 @@ export function useJobsFeed() {
   const mockAll = useMemo(() => getMockJobs(), []);
 
   const rowsForTab = useCallback(
-    (tab: FeedTab): JobListRow[] => {
-      if (tab === "available") {
-        if (state.dbAvailable.length > 0) {
-          return state.dbAvailable;
-        }
-        return mockAll.filter((j) => j.tab === "available");
-      }
-      return mockAll.filter((j) => j.tab === tab);
-    },
+    (tab: FeedTab): JobListRow[] =>
+      resolveTabRows({
+        configured: isSupabaseConfigured,
+        tab,
+        dbAvailable: state.dbAvailable,
+        mockRows: mockAll,
+      }),
     [mockAll, state.dbAvailable]
   );
 
-  const counts = useMemo(() => {
-    const available =
-      state.dbAvailable.length > 0
-        ? state.dbAvailable.length
-        : mockAll.filter((j) => j.tab === "available").length;
-    return {
-      available,
-      invited: mockAll.filter((j) => j.tab === "invited").length,
-      saved: mockAll.filter((j) => j.tab === "saved").length,
-    };
-  }, [mockAll, state.dbAvailable]);
+  const counts = useMemo(
+    () =>
+      resolveCounts({
+        configured: isSupabaseConfigured,
+        dbAvailable: state.dbAvailable,
+        mockRows: mockAll,
+      }),
+    [mockAll, state.dbAvailable]
+  );
 
   return {
     ...state,

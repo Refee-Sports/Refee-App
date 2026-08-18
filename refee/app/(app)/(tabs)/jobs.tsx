@@ -65,6 +65,7 @@ export default function Jobs() {
   } = useJobsFeed();
   const [tab, setTab] = useState<FeedTab>("available");
   const [activeFilters, setActiveFilters] = useState<Set<JobFeedFilterId>>(new Set());
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
 
   const tabRows = useMemo(() => rowsForTab(tab), [rowsForTab, tab]);
   const visible = useMemo(
@@ -77,6 +78,11 @@ export default function Jobs() {
   const pickTab = (t: FeedTab) => {
     Haptics.selectionAsync();
     setTab(t);
+  };
+
+  const toggleFilterPanel = () => {
+    Haptics.selectionAsync();
+    setFilterPanelOpen((v) => !v);
   };
 
   const toggleFilter = (id: JobFeedFilterId) => {
@@ -140,13 +146,22 @@ export default function Jobs() {
           </Text>
         </View>
         <Pressable
-          onPress={() => (filtersActive ? clearFilters() : Haptics.selectionAsync())}
+          onPress={toggleFilterPanel}
           className={`w-9 h-9 border items-center justify-center active:opacity-70 ${
-            filtersActive ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+            filterPanelOpen || filtersActive ? "border-signal bg-signal/10" : "border-ink bg-chalk"
           }`}
-          accessibilityLabel={filtersActive ? "Clear filters" : "Filters"}
+          accessibilityLabel="Filters"
         >
-          <Feather name="filter" size={14} color={filtersActive ? "#1F4FCC" : "#08111C"} />
+          <Feather
+            name="filter"
+            size={14}
+            color={filterPanelOpen || filtersActive ? "#1F4FCC" : "#08111C"}
+          />
+          {filtersActive ? (
+            <View className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-signal items-center justify-center rounded-full">
+              <Text className="text-paper font-mono-bold text-[9px]">{activeFilters.size}</Text>
+            </View>
+          ) : null}
         </Pressable>
       </View>
 
@@ -208,12 +223,12 @@ export default function Jobs() {
           </View>
         ) : null}
 
-        {!loading && error && usedMockForAvailable && tab === "available" ? (
+        {!loading && error && tab === "available" ? (
           <Text
             className="text-foul font-mono text-[10px] uppercase px-1 py-2 mb-2"
             style={{ letterSpacing: 1 }}
           >
-            {error} — showing offline demo list.
+            {usedMockForAvailable ? `${error} — showing offline demo list.` : `Couldn't load jobs: ${error}`}
           </Text>
         ) : null}
 
@@ -248,36 +263,52 @@ export default function Jobs() {
           })}
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="mb-4 -mx-5 px-5"
-          contentContainerStyle={{ gap: 8, paddingRight: 20 }}
-          nestedScrollEnabled
-        >
-          {JOB_FEED_FILTERS.map((f) => {
-            const on = activeFilters.has(f.id);
-            return (
-              <Pressable
-                key={f.id}
-                onPress={() => toggleFilter(f.id)}
-                className={`border px-3 py-2 active:opacity-80 ${
-                  on ? "bg-signal border-signal" : "border-ink bg-chalk"
-                }`}
+        {filterPanelOpen ? (
+          <View className="border border-ink bg-paper mb-4">
+            <View className="flex-row items-center justify-between px-3 py-2 border-b border-ink-20">
+              <Text
+                className="text-ink-60 font-mono-bold text-[9px] uppercase"
+                style={{ letterSpacing: 1.6 }}
               >
-                <Text
-                  className={`font-mono-bold text-[9px] uppercase ${
-                    on ? "text-paper" : "text-ink"
-                  }`}
-                  style={{ letterSpacing: 1.2 }}
-                >
-                  {f.showPin ? "📍 " : ""}
-                  {f.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+                FILTERS
+              </Text>
+              {filtersActive ? (
+                <Pressable onPress={clearFilters} className="active:opacity-70">
+                  <Text
+                    className="text-signal font-mono-bold text-[9px] uppercase"
+                    style={{ letterSpacing: 1.4 }}
+                  >
+                    CLEAR ALL
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+            <View className="flex-row flex-wrap gap-2 p-3">
+              {JOB_FEED_FILTERS.map((f) => {
+                const on = activeFilters.has(f.id);
+                return (
+                  <Pressable
+                    key={f.id}
+                    onPress={() => toggleFilter(f.id)}
+                    className={`border px-3 py-2 active:opacity-80 ${
+                      on ? "bg-signal border-signal" : "border-ink bg-chalk"
+                    }`}
+                  >
+                    <Text
+                      className={`font-mono-bold text-[9px] uppercase ${
+                        on ? "text-paper" : "text-ink"
+                      }`}
+                      style={{ letterSpacing: 1.2 }}
+                    >
+                      {f.showPin ? "📍 " : ""}
+                      {f.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
 
         {filtersActive && tabRows.length > 0 ? (
           <Text
