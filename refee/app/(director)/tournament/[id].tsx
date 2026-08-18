@@ -6,6 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import {
   fetchTournamentById,
   fetchTournamentGames,
@@ -225,6 +226,7 @@ export default function TournamentDetail() {
           </Pressable>
         )}
       />
+      <DirectorTabBar active="tournaments" />
     </View>
   );
 }

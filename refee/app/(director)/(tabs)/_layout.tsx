@@ -1,69 +1,51 @@
 import { Tabs } from "expo-router";
-import { Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-
-const TabIcon = ({ name, focused }: { name: any; focused: boolean }) => (
-  <Feather name={name} size={20} color={focused ? "#1F4FCC" : "rgba(8,17,28,0.36)"} />
-);
-
-const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
-  <Text
-    className={`font-mono-bold text-[8px] uppercase mt-0.5 ${
-      focused ? "text-signal" : "text-ink-40"
-    }`}
-    style={{ letterSpacing: 1 }}
-    numberOfLines={1}
-  >
-    {label}
-  </Text>
-);
 
 export default function DirectorTabsLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: "#1F4FCC",
+        tabBarInactiveTintColor: "rgba(8,17,28,0.36)",
         tabBarStyle: {
           backgroundColor: "#E5E1D6",
           borderTopWidth: 1,
           borderTopColor: "#08111C",
           paddingTop: 8,
-          height: 80,
+          height: 84,
         },
-        tabBarShowLabel: false,
+        // Full labels (was truncating to "TOUR…"): render via tabBarLabel so
+        // each label gets the full tab width instead of the icon's box.
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontFamily: "JetBrainsMono_700Bold",
+          fontSize: 8,
+          letterSpacing: 0.5,
+          textTransform: "uppercase",
+          marginTop: 2,
+        },
       }}
     >
       <Tabs.Screen
         name="tournaments"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <View className="items-center">
-              <TabIcon name="grid" focused={focused} />
-              <TabLabel label="Tournaments" focused={focused} />
-            </View>
-          ),
+          tabBarLabel: "Tournaments",
+          tabBarIcon: ({ color }) => <Feather name="grid" size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="messages"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <View className="items-center">
-              <TabIcon name="message-square" focused={focused} />
-              <TabLabel label="Messages" focused={focused} />
-            </View>
-          ),
+          tabBarLabel: "Messages",
+          tabBarIcon: ({ color }) => <Feather name="message-square" size={20} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <View className="items-center">
-              <TabIcon name="user" focused={focused} />
-              <TabLabel label="Profile" focused={focused} />
-            </View>
-          ),
+          tabBarLabel: "Profile",
+          tabBarIcon: ({ color }) => <Feather name="user" size={20} color={color} />,
         }}
       />
     </Tabs>

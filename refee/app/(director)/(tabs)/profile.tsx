@@ -216,8 +216,9 @@ export default function DirectorProfile() {
 
       {/* Sign out */}
       <View className="mx-5 mt-6">
-        <Pressable onPress={signOut} className="border border-foul py-4 active:opacity-70">
-          <Text className="text-foul text-center font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
+        <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
+          <Feather name="log-out" size={14} color="#F1EDE1" />
+          <Text className="text-paper font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
             SIGN OUT
           </Text>
         </Pressable>

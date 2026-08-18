@@ -30,6 +30,7 @@ import {
 } from "@/lib/director/queries";
 import { getOrCreateDM, getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { RateRefereeModal } from "@/components/ratings/RateRefereeModal";
+import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import { supabase } from "@/lib/supabase";
 import { useStripe } from "@stripe/stripe-react-native";
 import { startCrewPayment, confirmCrewPayout, runAutoPay } from "@/lib/payments/queries";
@@ -346,6 +347,7 @@ export default function GameDetail() {
   const showPayCrew = isClosed && !isPaid && accepted.length > 0;
 
   return (
+    <View style={{ flex: 1, backgroundColor: "#E5E1D6" }}>
     <FlatList
       style={{ flex: 1, backgroundColor: "#E5E1D6" }}
       contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
@@ -431,10 +433,18 @@ export default function GameDetail() {
             </View>
           )}
           {isCompleted && unratedCount === 0 && accepted.length > 0 && (
-            <View className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3">
-              <Text className="font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
-                ✓ COMPLETED · ALL REFEREES RATED
-              </Text>
+            <View className="mx-5 mb-4 flex-row items-center gap-3 border border-court/30 bg-court/10 px-4 py-3.5">
+              <View className="w-7 h-7 rounded-full bg-court items-center justify-center">
+                <Feather name="check" size={15} color="#F1EDE1" />
+              </View>
+              <View className="flex-1">
+                <Text className="font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.2, color: "#00A85C" }}>
+                  COMPLETED
+                </Text>
+                <Text className="font-mono text-[9px] uppercase text-ink-60 mt-0.5" style={{ letterSpacing: 1 }}>
+                  All referees rated
+                </Text>
+              </View>
             </View>
           )}
 
@@ -463,11 +473,18 @@ export default function GameDetail() {
             </View>
           )}
           {isClosed && isPaid && (
-            <View className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3 flex-row items-center gap-2">
-              <Feather name="check-circle" size={13} color="#00A85C" />
-              <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
-                CREW PAID
-              </Text>
+            <View className="mx-5 mb-4 flex-row items-center gap-3 bg-court px-4 py-3.5">
+              <View className="w-7 h-7 rounded-full bg-paper/20 items-center justify-center">
+                <Feather name="check" size={15} color="#F1EDE1" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.2 }}>
+                  CREW PAID
+                </Text>
+                <Text className="text-paper/80 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+                  Sent to referees via Stripe
+                </Text>
+              </View>
             </View>
           )}
 
@@ -610,6 +627,8 @@ export default function GameDetail() {
         ) : null
       }
     />
+      <DirectorTabBar active="tournaments" />
+    </View>
   );
 }
 
