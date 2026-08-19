@@ -700,18 +700,11 @@ export async function fetchGameForEdit(gameId: string): Promise<{
 /** Cancelling inside this window pays confirmed refs a 50% bust fee. */
 export const CANCEL_FEE_WINDOW_HOURS = 1;
 
-async function postCrewNote(jobId: string, senderId: string, body: string) {
-  const { data: convo } = await supabase
-    .from("conversations")
-    .select("id")
-    .eq("job_id", jobId)
-    .eq("kind", "game_crew")
-    .maybeSingle();
-  if (convo) {
-    await supabase
-      .from("messages")
-      .insert({ conversation_id: convo.id, sender_id: senderId, body });
-  }
+// One-way crew note via the security-definer RPC (migration 0021): the director
+// posts without joining the thread, and it works whether or not the crew thread
+// exists yet. senderId is unused now — the RPC posts as the authed caller.
+async function postCrewNote(jobId: string, _senderId: string, body: string) {
+  await supabase.rpc("post_crew_note", { p_job_id: jobId, p_body: body });
 }
 
 /** Marks the game completed and locks in full pay for confirmed refs. */
@@ -862,4 +855,148 @@ export async function fetchGamesNeedingCompletion(
     })
     .filter((j) => j.endMs < now)
     .map(({ endMs, ...rest }) => rest);
+}
+
+// ── Assignor staffing (tournaments) ──────────────────────────────────────────
+// Director-side half of the assignor role: choose direct vs assignor-managed
+// staffing, browse/invite assignors, and review their proposals.
+
+export type AssignorBrowseRow = {
+  id: string;
+  display_name: string;
+  city: string;
+  state: string;
+  rating: number;
+  rating_count: number;
+  is_pro_assignor: boolean;
+  events_assigned: number;
+  fill_rate_pct: number | null;
+  avg_days_to_fill: number | null;
+};
+
+/** Browse available assignors (active_assignors view, migration 0004). */
+export async function browseAssignors(): Promise<{ assignors: AssignorBrowseRow[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("active_assignors")
+    .select("*")
+    .order("is_pro_assignor", { ascending: false })
+    .order("rating", { ascending: false });
+  if (error) return { assignors: [], error: new Error(error.message) };
+  return { assignors: (data ?? []) as AssignorBrowseRow[], error: null };
+}
+
+export async function setTournamentStaffingModel(
+  tournamentId: string,
+  model: "direct" | "assignor_managed"
+): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from("tournaments")
+    .update({ staffing_model: model })
+    .eq("id", tournamentId);
+  return { error: error ? new Error(error.message) : null };
+}
+
+/**
+ * Invites an assignor to bid on staffing this tournament. Creates a proposal
+ * row in 'invited' status with a suggested fee the assignor can counter
+ * before submitting. Overwrites tournaments.assignor_id (single-assignor
+ * model — inviting a new assignor supersedes any prior invite).
+ */
+export async function inviteAssignorToTournament(
+  tournamentId: string,
+  assignorId: string,
+  suggested?: { feeType: "flat" | "percentage"; feeAmount?: number; feePct?: number }
+): Promise<{ error: Error | null }> {
+  const { error: tErr } = await supabase
+    .from("tournaments")
+    .update({
+      assignor_id: assignorId,
+      assignor_status: "inviting",
+      assignor_fee_type: suggested?.feeType ?? "flat",
+      assignor_fee: suggested?.feeType === "percentage" ? null : suggested?.feeAmount ?? null,
+      assignor_fee_pct: suggested?.feeType === "percentage" ? suggested?.feePct ?? null : null,
+    })
+    .eq("id", tournamentId);
+  if (tErr) return { error: new Error(tErr.message) };
+
+  const { error: pErr } = await supabase.from("assignor_proposals").upsert(
+    {
+      tournament_id: tournamentId,
+      assignor_id: assignorId,
+      status: "invited",
+      fee_type: suggested?.feeType ?? "flat",
+      fee_amount: suggested?.feeType === "percentage" ? null : suggested?.feeAmount ?? null,
+      fee_pct: suggested?.feeType === "percentage" ? suggested?.feePct ?? null : null,
+      invited_at: new Date().toISOString(),
+    },
+    { onConflict: "tournament_id,assignor_id" }
+  );
+  return { error: pErr ? new Error(pErr.message) : null };
+}
+
+export type ProposalWithAssignorRow = {
+  id: string;
+  assignor_id: string;
+  status: string;
+  fee_type: "flat" | "percentage";
+  fee_amount: number | null;
+  fee_pct: number | null;
+  message: string | null;
+  submitted_at: string | null;
+  assignor: { display_name: string; rating: number; rating_count: number } | { display_name: string; rating: number; rating_count: number }[] | null;
+};
+
+export async function fetchProposalsForTournament(
+  tournamentId: string
+): Promise<{ proposals: ProposalWithAssignorRow[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("assignor_proposals")
+    .select("id, assignor_id, status, fee_type, fee_amount, fee_pct, message, submitted_at, assignor:public_profiles!assignor_proposals_assignor_id_fkey(display_name, rating, rating_count)")
+    .eq("tournament_id", tournamentId)
+    .order("submitted_at", { ascending: false });
+  if (error) return { proposals: [], error: new Error(error.message) };
+  return { proposals: (data ?? []) as unknown as ProposalWithAssignorRow[], error: null };
+}
+
+/** Accepts one assignor's proposal, locks the tournament to them, and declines the rest. */
+export async function acceptAssignorProposal(
+  tournamentId: string,
+  proposalId: string,
+  assignorId: string,
+  fee: { feeType: "flat" | "percentage"; feeAmount: number | null; feePct: number | null }
+): Promise<{ error: Error | null }> {
+  const { error: tErr } = await supabase
+    .from("tournaments")
+    .update({
+      assignor_id: assignorId,
+      assignor_status: "accepted",
+      assignor_fee_type: fee.feeType,
+      assignor_fee: fee.feeType === "flat" ? fee.feeAmount : null,
+      assignor_fee_pct: fee.feeType === "percentage" ? fee.feePct : null,
+    })
+    .eq("id", tournamentId);
+  if (tErr) return { error: new Error(tErr.message) };
+
+  const { error: acceptErr } = await supabase
+    .from("assignor_proposals")
+    .update({ status: "accepted", responded_at: new Date().toISOString() })
+    .eq("id", proposalId);
+  if (acceptErr) return { error: new Error(acceptErr.message) };
+
+  await supabase
+    .from("assignor_proposals")
+    .update({ status: "declined", responded_at: new Date().toISOString() })
+    .eq("tournament_id", tournamentId)
+    .neq("id", proposalId)
+    .in("status", ["invited", "submitted"]);
+
+  return { error: null };
+}
+
+export async function declineAssignorProposal(proposalId: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase
+    .from("assignor_proposals")
+    .update({ status: "declined", responded_at: new Date().toISOString() })
+    .eq("id", proposalId);
+  return { error: error ? new Error(error.message) : null };
 }

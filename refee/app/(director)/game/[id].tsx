@@ -6,6 +6,10 @@ import {
   ActivityIndicator,
   FlatList,
   Alert,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -28,7 +32,7 @@ import {
   type ApplicantRow,
   type CategoryRatings,
 } from "@/lib/director/queries";
-import { getOrCreateDM, getOrCreateCrewConversation } from "@/lib/messages/queries";
+import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
 import { RateRefereeModal } from "@/components/ratings/RateRefereeModal";
 import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import { supabase } from "@/lib/supabase";
@@ -69,6 +73,9 @@ export default function GameDetail() {
   const [ratedRefIds, setRatedRefIds] = useState<Set<string>>(new Set());
   const [submittingRating, setSubmittingRating] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [noteText, setNoteText] = useState("");
+  const [postingNote, setPostingNote] = useState(false);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const load = useCallback(async () => {
@@ -93,16 +100,26 @@ export default function GameDetail() {
 
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
-  const handleMessageCrew = async () => {
+  const handleMessageCrew = () => {
     Haptics.selectionAsync();
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session || !id) return;
-    const { conversationId, error: err } = await getOrCreateCrewConversation(session.user.id, id);
-    if (err || !conversationId) {
-      Alert.alert("Error", err?.message ?? "Could not open crew chat");
+    setNoteText("");
+    setNoteOpen(true);
+  };
+
+  const submitCrewNote = async () => {
+    if (!id) return;
+    const body = noteText.trim();
+    if (!body) return;
+    setPostingNote(true);
+    const { error: err } = await postCrewNote(id, body);
+    setPostingNote(false);
+    if (err) {
+      Alert.alert("Couldn't send", err.message);
       return;
     }
-    router.push(`/(director)/conversation/${conversationId}` as any);
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setNoteOpen(false);
+    setNoteText("");
   };
 
   const handleMessageRef = async (refId: string) => {
@@ -495,14 +512,20 @@ export default function GameDetail() {
                 onPress={handleMessageCrew}
                 className="border border-ink bg-ink py-3.5 flex-row items-center justify-center gap-2 active:opacity-70"
               >
-                <Feather name="message-square" size={14} color="#C9F031" />
+                <Feather name="send" size={14} color="#C9F031" />
                 <Text
                   className="text-paper font-mono-bold text-[10px] uppercase"
                   style={{ letterSpacing: 2 }}
                 >
-                  MESSAGE CREW ({accepted.length + 1})
+                  POST CREW NOTE ({accepted.length})
                 </Text>
               </Pressable>
+              <Text
+                className="font-mono text-[8px] text-ink-40 uppercase mt-1.5 text-center"
+                style={{ letterSpacing: 1 }}
+              >
+                ONE-WAY · CREW SEES IT · THEY CAN'T REPLY
+              </Text>
             </View>
           )}
 
@@ -628,6 +651,62 @@ export default function GameDetail() {
       }
     />
       <DirectorTabBar active="tournaments" />
+
+      <Modal visible={noteOpen} transparent animationType="fade" onRequestClose={() => setNoteOpen(false)}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          className="flex-1 justify-end"
+          style={{ backgroundColor: "rgba(8,17,28,0.5)" }}
+        >
+          <View className="bg-paper border-t-2 border-ink px-5 pt-5 pb-8">
+            <Text className="text-ink font-display uppercase" style={{ fontSize: 20, letterSpacing: -0.5 }}>
+              POST CREW NOTE
+            </Text>
+            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-1 mb-3" style={{ letterSpacing: 1 }}>
+              Sends to the {accepted.length} confirmed ref{accepted.length !== 1 ? "s" : ""} · one-way
+            </Text>
+            <TextInput
+              value={noteText}
+              onChangeText={setNoteText}
+              placeholder="e.g. Arrive 30 min early, park behind the gym…"
+              placeholderTextColor="rgba(8,17,28,0.36)"
+              multiline
+              autoFocus
+              maxLength={4000}
+              className="border border-ink bg-chalk px-3 py-3 text-ink font-mono text-[13px]"
+              style={{ minHeight: 90, textAlignVertical: "top" }}
+            />
+            <View className="flex-row gap-2 mt-4">
+              <Pressable
+                onPress={() => setNoteOpen(false)}
+                className="flex-1 border border-ink py-3.5 items-center active:opacity-70"
+              >
+                <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
+                  CANCEL
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={submitCrewNote}
+                disabled={postingNote || noteText.trim().length === 0}
+                className={`flex-1 py-3.5 items-center justify-center flex-row gap-2 active:opacity-80 ${
+                  postingNote || noteText.trim().length === 0 ? "bg-ink-20" : "bg-signal"
+                }`}
+              >
+                {postingNote ? (
+                  <ActivityIndicator size="small" color="#E5E1D6" />
+                ) : (
+                  <>
+                    <Feather name="send" size={13} color="#E5E1D6" />
+                    <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
+                      SEND
+                    </Text>
+                  </>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }

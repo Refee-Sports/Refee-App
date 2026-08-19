@@ -215,6 +215,26 @@ export async function getOrCreateDM(
 }
 
 /**
+ * Director posts a ONE-WAY note to a game's crew. Goes through a security-definer
+ * RPC (migration 0021) so the director can post without joining the thread —
+ * referees see the note but can't message the director back. Returns the crew
+ * conversation id.
+ */
+export async function postCrewNote(
+  jobId: string,
+  body: string
+): Promise<{ conversationId: string | null; error: Error | null }> {
+  const trimmed = body.trim();
+  if (!trimmed) return { conversationId: null, error: new Error("Note is empty") };
+  const { data, error } = await supabase.rpc("post_crew_note", {
+    p_job_id: jobId,
+    p_body: trimmed,
+  });
+  if (error) return { conversationId: null, error: new Error(error.message) };
+  return { conversationId: (data as string) ?? null, error: null };
+}
+
+/**
  * Group thread for a game: creator + all accepted refs.
  * Reuses the existing crew thread for the job if one exists, and
  * syncs newly-accepted refs into it.
