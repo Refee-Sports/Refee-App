@@ -25,6 +25,11 @@ import { Session } from "@supabase/supabase-js";
 import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
 import { useOnboardingStore, type PrimaryRole } from "@/lib/stores/onboarding-store";
 import { registerForPushNotifications } from "@/lib/push/notifications";
+import { applyGlobalFontScaleCap } from "@/lib/ui/text-scaling";
+
+// Bound OS Dynamic Type scaling app-wide so text stays scalable (accessibility)
+// without breaking the dense layouts. Runs once at module load.
+applyGlobalFontScaleCap();
 
 WebBrowser.maybeCompleteAuthSession();
 
