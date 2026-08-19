@@ -37,6 +37,10 @@
 - [ ] **EAS build + App Store / Play Store submission.** Stripe payment sheet + Express onboarding require a real device build (not Expo Go).
 - [ ] **pg_cron enabled on hosted Supabase** so `sweep_game_lifecycle` runs server-side, not just on client focus.
 
+### Messaging
+- [ ] **Conversation-creation RLS bug.** Director tapping **MESSAGE CREW** on a game throws `new row violates row-level security policy for table "conversations"`. The insert policy is `created_by = auth.uid()` (migration 0008); a valid director crew message is being rejected. Fix the policy/insert path so directors (and refs) can create crew threads.
+- [ ] **Role-based messaging permissions (in progress).** Rules: referee↔referee ✅, assignor↔referee ✅ (both ways), **director→referee only** (referees can't message directors — reduces director inbox load). Enforce in the app (hide/disable send affordances via `canMessage`) **and** server-side in RLS (a message-insert policy checking the sender's role may message every other participant's role). Pure rules live in `lib/messages/permissions.ts`.
+
 ### Trust & safety / legal
 - [ ] **Terms of Service + Privacy Policy** (marketplace, payments, data). Required for app store review.
 - [ ] **Background check / identity verification** decision. Schema has Persona/NCSI placeholders, no integration. Decide: required for launch, or post-MVP with a "pending verification" label (current state).
@@ -64,7 +68,8 @@
 ## ⚠️ Technical debt
 - [ ] Automated tests — zero coverage. Highest-value targets: earnings math, conflict guard, fee calc, re-confirm/withdraw flows.
 - [ ] Mock-data fallback in jobs feed can mask a real "no jobs" state.
-- [ ] TZ hardcoded to America/Chicago in several screens.
+- [ ] TZ hardcoded to America/Chicago in several screens (games are venue-local — should follow the venue, not CT).
+- [ ] Dynamic Type only partially supported: scaling is capped at 1.4× (`lib/ui/text-scaling.ts`) so layouts survive, but ~75 fixed `lineHeight`/fixed-height rows still clip at large sizes. Make them flexible to raise the cap toward full support.
 - [ ] Typed-route `as any` casts to clean up once routes stabilize.
 
 ---
