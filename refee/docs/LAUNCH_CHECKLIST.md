@@ -49,6 +49,26 @@
 
 ---
 
+## 🧩 Assignor role & flow — MAJOR BUILD (required; not yet built/tested)
+
+**Status:** scaffolded only. Schema in 0004 (applied) + **0019 roster + 0020 fee-type (uncommitted, NOT on hosted)**; `lib/assignor/queries.ts` and a stub `app/(onboarding)/assignor.tsx`. **No working UI/flow, untested.** (Was previously mis-filed as a one-line "nice to have.")
+
+Requirements (per Gerda, Aug 2026):
+- [ ] **Director hires an assignor** to assign an entire tournament/league. Proposal → accept; assignor is paid a **flat fee or a % of ref fees** (0020). Schema: `assignor_proposals`, `tournaments.assignor_id/assignor_status`.
+- [ ] **Invite-only orgs (roster).** Referees join an assignor's org **by invite only** for now (`assignor_rosters`, invite lifecycle in 0019). Ref-initiated "request to join" is a later flow.
+- [ ] **Org-gated work.** If an assignor is responsible for a game/event/tournament, a ref can **only get alerts / see / claim / work it if they're on that assignor's roster.** Needs feed + push-alert filtering by roster membership (NEW — not yet enforced anywhere).
+- [ ] **Staffing modes** (0019): `assignor_direct` (assignor places a roster ref onto a game) vs roster-claim (roster refs see it and claim it themselves).
+- [ ] **External events.** Assignors bring in games/events/leagues that **don't use Refee** — i.e. create **assignor-owned events on Refee with no Refee director**, then assign them to their roster. Needs an assignor "create/import event + games" flow (NEW).
+- [ ] **App surfaces to build:** director-side "invite an assignor" flow; assignor onboarding (started); roster management (invite/remove); event + game creation; assign/claim UI; assignor payout (flat/%).
+- [ ] **Commit 0019/0020, push to hosted, and end-to-end test** the whole flow.
+- **AI angles:** auto-assign / optimize ref→game matching across a roster; suggest roster refs by availability + proximity + rating; flag assignment conflicts.
+
+## 📥 Bulk game creation (no more one-by-one) — NEW
+
+- [ ] Let directors/assignors **bulk-create games** instead of one at a time. Baseline: a **CSV template** — download → fill → upload → **preview + validate** → create. Columns map to game fields (home/away, date/time, venue, level, gender, pay, crew size, ruleset).
+- [ ] Validation/preview before commit: row-level errors, venue geocoding, date-within-tournament checks — reuse existing game validators.
+- **AI angle (recommended over a rigid CSV):** let them **paste or upload any schedule** (CSV/Excel/pasted text, even a bracket image) and use an LLM to parse it into structured Refee games for confirmation. Far less manual labor than forcing a strict template. (See docs/AI_ROADMAP.md.)
+
 ## 🟡 Should have before real users
 
 - [x] **Push notifications** — ✅ infra built (migration 0016 `push_tokens`, `send-push` edge fn, `lib/push/notifications.ts`, token register on login / unregister on sign-out). Triggers wired: accepted, re-confirm, new message. **Fires only in an EAS dev build** — not Expo Go (SDK 53+). Remaining: availability-matched new-game alerts (needs the match-scoring pass), payment-received trigger, and move sends to DB triggers for production security.
@@ -60,8 +80,8 @@
 - [ ] **Earnings ledger** — per-game statement view, not just totals (helps refs reconcile against their own 1099).
 
 ## 🟢 Nice to have / post-launch
-- [ ] Assignor role UI (schema exists, no screens — decide cut vs build).
 - [ ] Invited / Saved job tabs on real data (currently mock).
+- [ ] Referee **face-only avatar** (AI face-detection gate on upload) — requested; see AI_ROADMAP.md.
 - [ ] Rolling rating window (last 50 games) vs all-time.
 - [ ] AI Tournament Builder + match scoring (see AI_ROADMAP.md).
 - [ ] Multi-sport (basketball-only by design for launch).
