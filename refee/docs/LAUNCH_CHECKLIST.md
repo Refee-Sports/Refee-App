@@ -31,15 +31,16 @@
 
 ### Infrastructure
 - [ ] **Google Maps Geocoding API key for production.** Dev uses free Nominatim; production needs a real provider for reliability + rate limits. Create a Google Cloud project → enable the **Geocoding API** → billing on → set `GEOCODER=google` and `GOOGLE_MAPS_API_KEY` in the edge-function secrets. Code + `.env.example` slots already wired.
-- [ ] **Hosted Supabase project** (currently local Docker only). Move migrations, set prod env.
-- [ ] **Real Twilio SMS** for phone OTP (test-OTP map is dev-only).
+- [x] **Hosted Supabase project** — ✅ live (`rwqodozmniqjvkyjtcaw`). Migrations 0001–0023 applied; all edge functions deployed. (Assignor migrations 0019/0020 are the only ones not yet pushed — still local/uncommitted.)
+- [ ] **Real Twilio SMS** for phone OTP — hosted uses Twilio Verify (real SMS) in prod. A test-OTP number is enabled for QA: **(555) 555-0101 → 123456** (remove or restrict before launch).
 - [ ] **`ANTHROPIC_API_KEY` / `STRIPE_SECRET_KEY` in prod function secrets**, not committed.
 - [ ] **EAS build + App Store / Play Store submission.** Stripe payment sheet + Express onboarding require a real device build (not Expo Go).
 - [ ] **pg_cron enabled on hosted Supabase** so `sweep_game_lifecycle` runs server-side, not just on client focus.
 
 ### Messaging
-- [ ] **Conversation-creation RLS bug.** Director tapping **MESSAGE CREW** on a game throws `new row violates row-level security policy for table "conversations"`. The insert policy is `created_by = auth.uid()` (migration 0008); a valid director crew message is being rejected. Fix the policy/insert path so directors (and refs) can create crew threads.
-- [ ] **Role-based messaging permissions (in progress).** Rules: referee↔referee ✅, assignor↔referee ✅ (both ways), **director→referee only** (referees can't message directors — reduces director inbox load). Enforce in the app (hide/disable send affordances via `canMessage`) **and** server-side in RLS (a message-insert policy checking the sender's role may message every other participant's role). Pure rules live in `lib/messages/permissions.ts`.
+- [x] **Conversation-creation RLS bug** — ✅ fixed. Directors post crew messages via a security-definer RPC (`post_crew_note`, 0021); refs create crew threads after a SELECT-policy fix (0023, creator-or-participant read). Both verified.
+- [x] **One-way director crew messages + read receipts** — ✅ director broadcasts "Send a Crew Message" (not a participant, so refs can't reply); director sees sent messages + per-ref **SEEN x/N** on the game detail (`get_crew_thread`, 0022).
+- [ ] **Finish role-based messaging enforcement.** Done: rules (`lib/messages/permissions.ts`, tested), one-way crew notes. **Remaining:** (1) referee send-box gate so a ref can't reply inside a director-initiated DM (use `canSendToParticipants`); (2) server-side RLS on `messages` insert enforcing `canMessage`; (3) decide whether ref↔ref crew chat should be a **separate** thread from director notes (today they share one thread, so the director's `get_crew_thread` can see ref-to-ref chat). Assignor↔ref rules are ready but blocked on assignor UI.
 
 ### Trust & safety / legal
 - [ ] **Terms of Service + Privacy Policy** (marketplace, payments, data). Required for app store review.
@@ -66,8 +67,9 @@
 - [ ] Multi-sport (basketball-only by design for launch).
 
 ## ⚠️ Technical debt
-- [ ] Automated tests — zero coverage. Highest-value targets: earnings math, conflict guard, fee calc, re-confirm/withdraw flows.
-- [ ] Mock-data fallback in jobs feed can mask a real "no jobs" state.
+- [~] Automated tests — **Vitest set up; 81 tests** covering feed filters, distance, DB→UI mapping, schedule-conflict, fee/idempotency math, messaging permissions + receipts. Gaps: earnings math, re-confirm/withdraw flows, and any RN component/RLS-level tests.
+- [x] Mock-data fallback in jobs feed — ✅ fixed (mock is offline-only now; a configured DB with no jobs shows the empty state).
+- [x] Fake hardcoded crew ("Jeremy T.") on job detail — ✅ removed; shows real crew + open slots.
 - [ ] TZ hardcoded to America/Chicago in several screens (games are venue-local — should follow the venue, not CT).
 - [ ] Dynamic Type only partially supported: scaling is capped at 1.4× (`lib/ui/text-scaling.ts`) so layouts survive, but ~75 fixed `lineHeight`/fixed-height rows still clip at large sizes. Make them flexible to raise the cap toward full support.
 - [ ] Typed-route `as any` casts to clean up once routes stabilize.
