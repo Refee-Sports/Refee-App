@@ -1,6 +1,6 @@
 # REFEE — Pre-Launch Checklist
 
-**Created:** July 8, 2026
+**Created:** July 8, 2026 · **Last updated:** Aug 31, 2026
 **Scope:** Basketball MVP, first paying directors. Grouped by "must fix before real money/users" vs "should have" vs "decide."
 
 ---
