@@ -64,53 +64,34 @@ type Props = {
   crewMembers: CrewProfile[];
 };
 
-export function JobDetailCrew({ job, assignmentStatus, crewMembers }: Props) {
-  const meAccepted = crewMembers.find((m) => m.isMe && assignmentStatus === "accepted");
-  const otherAccepted = crewMembers.filter((m) => !m.isMe && m.status.includes("LOCKED"));
+export function JobDetailCrew({ job, crewMembers }: Props) {
+  // Real crew only. Note: RLS hides other refs until you're accepted onto the
+  // game, so before accepting this shows open slots (crew is private until you join).
+  const openSlots = Math.max(0, job.crewSize - crewMembers.length);
 
   return (
     <DataCard tab={`CREW · ${job.crewSize}-PERSON`}>
       <View className="pt-5 pb-3 px-3.5">
-        <CrewRow
-          initials="JT"
-          name="JEREMY T."
-          role="CREW CHIEF · 4.94 ★"
-          status="● LOCKED"
-          locked
-        />
-        {meAccepted ? (
-          <CrewRow
-            initials={meAccepted.initials}
-            name={meAccepted.displayName}
-            role={`UMPIRE 1 · ${meAccepted.rating.toFixed(2)} ★`}
-            status="● LOCKED"
-            locked
-          />
-        ) : (
-          <CrewRow
-            initials="?"
-            name="Open slot"
-            role="UMPIRE 1 · APPLY"
-            status="YOUR SPOT"
-            open
-          />
-        )}
-        {otherAccepted.map((member) => (
+        {crewMembers.map((member) => (
           <CrewRow
             key={member.refId}
             initials={member.initials}
-            name={member.displayName}
+            name={member.isMe ? `${member.displayName} (YOU)` : member.displayName}
             role={member.role}
             status={member.status}
-            locked
+            locked={member.status.includes("LOCKED")}
           />
         ))}
-        {job.crewSize > 2 && !meAccepted && otherAccepted.length === 0 ? (
-          <CrewRow initials="?" name="Open slot" role="UMPIRE 2" status="OPEN" />
-        ) : null}
-        {job.crewSize > 2 && meAccepted && otherAccepted.length === 0 ? (
-          <CrewRow initials="?" name="Open slot" role="UMPIRE 2" status="OPEN" />
-        ) : null}
+        {Array.from({ length: openSlots }).map((_, i) => (
+          <CrewRow
+            key={`open-${i}`}
+            initials="?"
+            name="Open slot"
+            role="OFFICIAL"
+            status="OPEN"
+            open
+          />
+        ))}
       </View>
     </DataCard>
   );
