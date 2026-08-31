@@ -32,7 +32,8 @@ import {
   type ApplicantRow,
   type CategoryRatings,
 } from "@/lib/director/queries";
-import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
+import { getOrCreateDM, postCrewNote, fetchCrewThread, type CrewThread } from "@/lib/messages/queries";
+import { hasSeenLatest, seenCount } from "@/lib/messages/receipts";
 import { RateRefereeModal } from "@/components/ratings/RateRefereeModal";
 import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import { supabase } from "@/lib/supabase";
@@ -76,6 +77,13 @@ export default function GameDetail() {
   const [noteOpen, setNoteOpen] = useState(false);
   const [noteText, setNoteText] = useState("");
   const [postingNote, setPostingNote] = useState(false);
+  const [crewThread, setCrewThread] = useState<CrewThread | null>(null);
+
+  const loadCrewThread = useCallback(async () => {
+    if (!id) return;
+    const { thread } = await fetchCrewThread(id);
+    if (thread) setCrewThread(thread);
+  }, [id]);
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
   const load = useCallback(async () => {
@@ -98,7 +106,10 @@ export default function GameDetail() {
     }
   }, [id]);
 
-  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useFocusEffect(useCallback(() => {
+    void load();
+    void loadCrewThread();
+  }, [load, loadCrewThread]));
 
   const handleMessageCrew = () => {
     Haptics.selectionAsync();
@@ -120,6 +131,7 @@ export default function GameDetail() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setNoteOpen(false);
     setNoteText("");
+    void loadCrewThread();
   };
 
   const handleMessageRef = async (refId: string) => {
@@ -517,15 +529,65 @@ export default function GameDetail() {
                   className="text-paper font-mono-bold text-[10px] uppercase"
                   style={{ letterSpacing: 2 }}
                 >
-                  POST CREW NOTE ({accepted.length})
+                  SEND A CREW MESSAGE
                 </Text>
               </Pressable>
               <Text
                 className="font-mono text-[8px] text-ink-40 uppercase mt-1.5 text-center"
                 style={{ letterSpacing: 1 }}
               >
-                ONE-WAY · CREW SEES IT · THEY CAN'T REPLY
+                ONLY CONFIRMED CREW CAN VIEW
               </Text>
+            </View>
+          )}
+
+          {/* Sent crew messages + read receipts (director-only view) */}
+          {crewThread && crewThread.messages.length > 0 && (
+            <View className="mx-5 mb-4 border border-ink-20 bg-chalk">
+              <View className="flex-row items-center justify-between px-3.5 py-2.5 border-b border-ink-20">
+                <Text className="text-ink-60 font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.4 }}>
+                  CREW MESSAGES
+                </Text>
+                <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.2 }}>
+                  <Text style={{ color: "#00A85C" }}>
+                    ✓ SEEN {seenCount(crewThread.receipts, crewThread.lastMessageAt)}/{crewThread.receipts.length}
+                  </Text>
+                </Text>
+              </View>
+
+              {crewThread.messages.map((m) => (
+                <View key={m.id} className="px-3.5 py-2.5 border-b border-ink-20">
+                  <Text className="text-ink font-mono text-[12px]">{m.body}</Text>
+                  <Text className="text-ink-40 font-mono text-[8px] uppercase mt-1" style={{ letterSpacing: 1 }}>
+                    {new Date(m.createdAt).toLocaleTimeString("en-US", {
+                      hour: "numeric",
+                      minute: "2-digit",
+                      timeZone: TZ,
+                    })}
+                  </Text>
+                </View>
+              ))}
+
+              <View className="px-3.5 py-2.5 flex-row flex-wrap gap-x-3 gap-y-1.5">
+                {crewThread.receipts.map((r) => {
+                  const seen = hasSeenLatest(r.lastReadAt, crewThread.lastMessageAt);
+                  return (
+                    <View key={r.refId} className="flex-row items-center gap-1">
+                      <Feather
+                        name={seen ? "check-circle" : "circle"}
+                        size={11}
+                        color={seen ? "#00A85C" : "rgba(8,17,28,0.36)"}
+                      />
+                      <Text
+                        className="font-mono-bold text-[9px] uppercase"
+                        style={{ letterSpacing: 0.8, color: seen ? "#08111C" : "rgba(8,17,28,0.56)" }}
+                      >
+                        {r.displayName}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
             </View>
           )}
 
@@ -660,10 +722,10 @@ export default function GameDetail() {
         >
           <View className="bg-paper border-t-2 border-ink px-5 pt-5 pb-8">
             <Text className="text-ink font-display uppercase" style={{ fontSize: 20, letterSpacing: -0.5 }}>
-              POST CREW NOTE
+              SEND A CREW MESSAGE
             </Text>
             <Text className="text-ink-60 font-mono text-[9px] uppercase mt-1 mb-3" style={{ letterSpacing: 1 }}>
-              Sends to the {accepted.length} confirmed ref{accepted.length !== 1 ? "s" : ""} · one-way
+              Note — crew messages can only be viewed by confirmed refs
             </Text>
             <TextInput
               value={noteText}

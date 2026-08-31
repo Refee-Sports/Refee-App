@@ -234,6 +234,36 @@ export async function postCrewNote(
   return { conversationId: (data as string) ?? null, error: null };
 }
 
+export type CrewMessage = { id: string; senderId: string; body: string; createdAt: string };
+export type CrewThread = {
+  conversationId: string | null;
+  lastMessageAt: string | null;
+  messages: CrewMessage[];
+  receipts: import("./receipts").CrewReceipt[];
+};
+
+/**
+ * Director view of a game's crew thread: the messages they've sent + per-ref
+ * read receipts. Via a security-definer RPC because the director isn't a
+ * participant (one-way), so they can't read the thread through normal RLS.
+ */
+export async function fetchCrewThread(
+  jobId: string
+): Promise<{ thread: CrewThread | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc("get_crew_thread", { p_job_id: jobId });
+  if (error) return { thread: null, error: new Error(error.message) };
+  const t = (data ?? {}) as any;
+  return {
+    thread: {
+      conversationId: t.conversationId ?? null,
+      lastMessageAt: t.lastMessageAt ?? null,
+      messages: (t.messages ?? []) as CrewMessage[],
+      receipts: (t.receipts ?? []) as import("./receipts").CrewReceipt[],
+    },
+    error: null,
+  };
+}
+
 /**
  * Group thread for a game: creator + all accepted refs.
  * Reuses the existing crew thread for the job if one exists, and
