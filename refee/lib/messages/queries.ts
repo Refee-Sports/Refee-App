@@ -1,10 +1,11 @@
 import { supabase } from "@/lib/supabase";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { sendPush } from "@/lib/push/notifications";
+import { canSendToParticipants, type MessagingRole } from "./permissions";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type ConversationKind = "dm" | "game_crew";
+export type ConversationKind = "dm" | "game_crew" | "director_crew_note";
 
 export type ConversationRow = {
   id: string;
@@ -77,7 +78,9 @@ export async function fetchConversations(
       const title =
         c.kind === "game_crew"
           ? `${job?.title ?? "Game"} — Crew`
-          : otherNames[0] ?? "Conversation";
+          : c.kind === "director_crew_note"
+            ? `${job?.title ?? "Game"} — Director updates`
+            : otherNames[0] ?? "Conversation";
 
       return {
         id: c.id,
@@ -156,6 +159,69 @@ export async function sendMessage(
     { type: "message", conversationId }
   );
   return { error: null };
+}
+
+export async function canSendInConversation(
+  conversationId: string,
+  userId: string
+): Promise<{ allowed: boolean; readOnlyReason: string | null; error: Error | null }> {
+  const { data: conversation, error: conversationError } = await supabase
+    .from("conversations")
+    .select("kind")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (conversationError || !conversation) {
+    return {
+      allowed: false,
+      readOnlyReason: "Messaging permissions could not be verified.",
+      error: new Error(conversationError?.message ?? "Conversation not found"),
+    };
+  }
+
+  if (conversation.kind === "director_crew_note") {
+    return {
+      allowed: false,
+      readOnlyReason: "Director updates are one-way. Contact your crew or assignor if you need help.",
+      error: null,
+    };
+  }
+
+  const { data: participants, error: participantError } = await supabase
+    .from("conversation_participants")
+    .select("user_id, public_profiles(primary_role)")
+    .eq("conversation_id", conversationId);
+
+  if (participantError) {
+    return {
+      allowed: false,
+      readOnlyReason: "Messaging permissions could not be verified.",
+      error: new Error(participantError.message),
+    };
+  }
+
+  const me = (participants ?? []).find((p) => p.user_id === userId) as
+    | { user_id: string; public_profiles: { primary_role?: string } | { primary_role?: string }[] | null }
+    | undefined;
+  const myProfile = Array.isArray(me?.public_profiles) ? me?.public_profiles[0] : me?.public_profiles;
+  const myRole = myProfile?.primary_role as MessagingRole | undefined;
+  const otherRoles = (participants ?? [])
+    .filter((p) => p.user_id !== userId)
+    .map((p) => {
+      const profile = Array.isArray(p.public_profiles) ? p.public_profiles[0] : p.public_profiles;
+      return profile?.primary_role as MessagingRole | undefined;
+    });
+
+  const allowed = !!myRole
+    && otherRoles.length > 0
+    && otherRoles.every(Boolean)
+    && canSendToParticipants(myRole, otherRoles as MessagingRole[]);
+
+  return {
+    allowed,
+    readOnlyReason: allowed ? null : "You can read this conversation, but your role cannot reply.",
+    error: null,
+  };
 }
 
 export async function markRead(conversationId: string, userId: string): Promise<void> {
@@ -270,47 +336,15 @@ export async function fetchCrewThread(
  * syncs newly-accepted refs into it.
  */
 export async function getOrCreateCrewConversation(
-  myId: string,
+  _myId: string,
   jobId: string
 ): Promise<{ conversationId: string | null; error: Error | null }> {
-  // accepted refs on this game
-  const { data: crew, error: crewErr } = await supabase
-    .from("job_assignments")
-    .select("ref_id")
-    .eq("job_id", jobId)
-    .eq("status", "accepted");
-  if (crewErr) return { conversationId: null, error: new Error(crewErr.message) };
-
-  const memberIds = Array.from(new Set([myId, ...(crew ?? []).map((c) => c.ref_id)]));
-
-  const { data: existing } = await supabase
-    .from("conversations")
-    .select("id")
-    .eq("job_id", jobId)
-    .eq("kind", "game_crew")
-    .maybeSingle();
-
-  let conversationId = existing?.id ?? null;
-
-  if (!conversationId) {
-    const { data: convo, error: cErr } = await supabase
-      .from("conversations")
-      .insert({ kind: "game_crew", job_id: jobId, created_by: myId })
-      .select("id")
-      .single();
-    if (cErr || !convo) return { conversationId: null, error: new Error(cErr?.message ?? "create failed") };
-    conversationId = convo.id;
-  }
-
-  // upsert roster (newly accepted refs get added on next open)
-  await supabase
-    .from("conversation_participants")
-    .upsert(
-      memberIds.map((uid) => ({ conversation_id: conversationId!, user_id: uid })),
-      { onConflict: "conversation_id,user_id", ignoreDuplicates: true }
-    );
-
-  return { conversationId, error: null };
+  // Create/find the crew thread and add all crew refs as participants in one
+  // security-definer RPC (migration 0024). Doing this client-side tripped an RLS
+  // 42501 on the participant insert, leaving an empty, read-only thread.
+  const { data, error } = await supabase.rpc("get_or_create_crew_thread", { p_job_id: jobId });
+  if (error) return { conversationId: null, error: new Error(error.message) };
+  return { conversationId: (data as string) ?? null, error: null };
 }
 
 // ── Realtime ─────────────────────────────────────────────────────────────────
