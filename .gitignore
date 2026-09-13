@@ -1,2 +1,16 @@
 # Redundant project archive
 refee-project.zip
+
+# Dependencies and build output
+node_modules/
+.DS_Store
+
+# Supabase CLI local state (project link, versions, runtime secrets)
+supabase/.temp/
+**/supabase/.temp/
+
+# Secrets — never commit (per-app .gitignores cover their own folders)
+.env
+.env.*
+!.env*.example
+supabase/functions/.env

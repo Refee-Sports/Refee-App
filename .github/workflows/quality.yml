@@ -9,12 +9,15 @@ concurrency:
   group: quality-${{ github.ref }}
   cancel-in-progress: true
 
+# One npm workspace at the repo root: install once there, then run each app's
+# checks from its own folder. Node 22 because @supabase/* 2.116 requires it.
+
 jobs:
-  verify:
+  mobile:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: refee
+        working-directory: apps/mobile
     env:
       EXPO_NO_DOTENV: "1"
       EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
@@ -25,40 +28,59 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.19.4
+          node-version: 22
           cache: npm
-          cache-dependency-path: refee/package-lock.json
 
       - run: npm ci
+        working-directory: .
       - name: Block critical production dependency advisories
         run: npm audit --omit=dev --audit-level=critical
+        working-directory: .
       - run: npm run quality
       - name: Verify production web export
         run: npx expo export --platform web --output-dir /tmp/refee-web-export
       - name: Verify production iOS bundle
         run: npx expo export --platform ios --output-dir /tmp/refee-ios-export
 
-  database:
+  web:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: refee
+        working-directory: apps/web
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.19.4
+          node-version: 22
           cache: npm
-          cache-dependency-path: refee/package-lock.json
+
+      - run: npm ci
+        working-directory: .
+      - run: npm run typecheck
+      - run: npm run build
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
 
       - run: npm ci
       - name: Start local Supabase
-        run: npm run supabase:start
+        run: npm run db:start
       - name: Prove a clean migration and seed reset
-        run: npm run supabase:db:reset
+        run: npm run db:reset
       - name: Run database authorization tests
-        run: npm run test:db
+        run: npm run db:test
       - name: Stop local Supabase
         if: always()
-        run: npm run supabase:stop
+        run: npm run db:stop

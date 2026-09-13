@@ -1,5 +1,5 @@
 {
-  "name": "refee",
+  "name": "@refee/mobile",
   "version": "0.1.0",
   "main": "expo-router/entry",
   "scripts": {
@@ -18,14 +18,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "quality": "npm run lint && npm run typecheck && npm test",
-    "supabase": "supabase",
-    "supabase:start": "supabase start",
-    "supabase:stop": "supabase stop",
-    "supabase:status": "supabase status",
-    "supabase:db:push": "supabase db push",
-    "supabase:db:reset": "supabase db reset",
     "test": "vitest run",
-    "test:db": "supabase test db",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -83,7 +76,6 @@
     "dotenv-cli": "^11.0.0",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~10.0.0",
-    "supabase": "^2.98.2",
     "typescript": "~5.9.2",
     "vitest": "^2.1.9"
   },
