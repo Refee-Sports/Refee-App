@@ -1,0 +1,573 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================
+   Refee design tokens — carried over from the app's design pack
+   (../Refee-App/Refee/refee/_design-references)
+   ============================================================ */
+:root {
+  --paper: #e5e1d6;
+  --paper-2: #d8d3c5;
+  --paper-3: #c9c3b2;
+  --chalk: #f5f2ea;
+  --line: rgba(8, 12, 18, 0.1);
+  --line-2: rgba(8, 12, 18, 0.18);
+  --line-3: rgba(8, 12, 18, 0.32);
+
+  --signal: #1f4fcc;
+  --signal-2: #4f8cff;
+  --signal-deep: #0b2880;
+
+  --hi-vis: #c9f031;
+  --whistle: #f5b90b;
+  --court: #00a85c;
+  --foul: #e63946;
+
+  --ink: #08111c;
+  --ink-80: rgba(8, 17, 28, 0.78);
+  --ink-60: rgba(8, 17, 28, 0.56);
+  --ink-40: rgba(8, 17, 28, 0.36);
+  --ink-20: rgba(8, 17, 28, 0.18);
+  --ink-10: rgba(8, 17, 28, 0.08);
+
+  /* Desktop layout metrics (see .app-shell) */
+  --side-nav-w: 244px;
+  --canvas-w: 1560px;
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--paper);
+    color: var(--ink-80);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background:
+      radial-gradient(
+        ellipse 1000px 500px at 15% 0%,
+        rgba(31, 79, 204, 0.05),
+        transparent 60%
+      ),
+      var(--paper);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle paper grain — the "game-day program stock" texture */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/></svg>");
+    mix-blend-mode: multiply;
+  }
+
+  ::selection {
+    background: var(--hi-vis);
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  /* Referee zebra rule — the signature divider */
+  .zebra-rule {
+    height: 14px;
+    background: repeating-linear-gradient(
+      90deg,
+      var(--ink) 0,
+      var(--ink) 14px,
+      var(--paper) 14px,
+      var(--paper) 28px
+    );
+  }
+  .zebra-rule--signal {
+    background: repeating-linear-gradient(
+      90deg,
+      var(--signal) 0,
+      var(--signal) 14px,
+      var(--paper) 14px,
+      var(--paper) 28px
+    );
+  }
+
+  /* Mono telemetry label */
+  .kicker {
+    font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ink-60);
+  }
+
+  /* Buttons — brutalist hard-shadow, translate on hover */
+  .btn {
+    font-family: var(--font-jetbrains-mono), monospace;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 15px 24px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn-primary:hover {
+    background: var(--signal);
+    box-shadow: 4px 4px 0 var(--ink);
+    transform: translate(-2px, -2px);
+  }
+  .btn-hi {
+    background: var(--hi-vis);
+    color: var(--ink);
+  }
+  .btn-hi:hover {
+    background: var(--ink);
+    color: var(--hi-vis);
+    box-shadow: 4px 4px 0 var(--hi-vis);
+    transform: translate(-2px, -2px);
+  }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1px solid var(--ink);
+  }
+  .btn-secondary:hover {
+    background: var(--ink);
+    color: var(--paper);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink-20);
+  }
+
+  /* Badge — mono pill w/ current-color border */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    padding: 5px 9px;
+    font-weight: 700;
+    border: 1px solid currentColor;
+    background: var(--paper);
+  }
+  .badge-live {
+    color: var(--ink);
+    background: var(--hi-vis);
+    border-color: var(--ink);
+  }
+  .badge-confirmed {
+    color: var(--court);
+  }
+  .badge-signal {
+    color: var(--signal);
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+  }
+  .dot-pulse {
+    animation: refee-pulse 1.4s infinite;
+  }
+
+  /* Hard-edged card */
+  .card {
+    background: var(--chalk);
+    border: 1px solid var(--ink);
+  }
+}
+
+@keyframes refee-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Pulls the eye to a count that is waiting on the user (Approvals). Well
+   under three flashes a second, so it stays clear of photosensitivity limits. */
+@keyframes refee-flash {
+  0%,
+  100% {
+    background-color: var(--whistle);
+    box-shadow: 0 0 0 0 rgba(245, 185, 11, 0);
+    transform: scale(1);
+  }
+  50% {
+    background-color: var(--hi-vis);
+    box-shadow: 0 0 0 4px rgba(245, 185, 11, 0.35);
+    transform: scale(1.15);
+  }
+}
+
+.badge-flash {
+  animation: refee-flash 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dot-pulse {
+    animation: none;
+  }
+  /* Keep the colour, drop the motion. */
+  .badge-flash {
+    animation: none;
+  }
+  .btn {
+    transition: none;
+  }
+}
+
+/* ============================================================
+   App shell — parity with the Refee mobile app
+   ------------------------------------------------------------
+   Refee is mobile-first: the signed-in web app renders the same
+   phone-width layout as the RN app, centred on larger screens.
+   These utilities mirror the app's NativeWind font families so
+   ported markup keeps the same class names.
+   ============================================================ */
+@layer utilities {
+  /* InterTight_900Black — scoreboard display */
+  .font-display {
+    font-family: var(--font-inter-tight), system-ui, sans-serif;
+    font-weight: 900;
+  }
+  /* InterTight_500Medium — body */
+  .font-body {
+    font-family: var(--font-inter-tight), system-ui, sans-serif;
+    font-weight: 500;
+  }
+  /* InterTight_700Bold */
+  .font-body-bold {
+    font-family: var(--font-inter-tight), system-ui, sans-serif;
+    font-weight: 700;
+  }
+  /* JetBrainsMono_500Medium — telemetry */
+  .font-mono {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-weight: 500;
+  }
+  /* JetBrainsMono_700Bold — labels */
+  .font-mono-bold {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-weight: 700;
+  }
+}
+
+@layer components {
+  /* ------------------------------------------------------------------
+     App shell.
+
+     Below `lg` this is the phone-width column the app was built around,
+     with the bottom tab bar. From `lg` up the same screens spread into a
+     full-width desktop layout: a persistent side nav in column one, the
+     screen canvas in column two. Same information either way — only the
+     arrangement changes.
+     ------------------------------------------------------------------ */
+  .app-shell {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--paper);
+    position: relative;
+    z-index: 2;
+  }
+  /* Tablets and up use the whole width rather than a column in a grey field. */
+  @media (min-width: 640px) {
+    .app-shell {
+      max-width: none;
+      margin: 0;
+    }
+  }
+  @media (min-width: 1024px) {
+    .app-shell {
+      max-width: none;
+      margin: 0;
+      display: grid;
+      grid-template-columns: var(--side-nav-w) minmax(0, 1fr);
+      align-items: start;
+    }
+  }
+
+  /* ------------------------------------------------------------------
+     Signed-out split — auth and onboarding.
+
+     Below `lg`: the form alone, full width, exactly as designed for a phone.
+     From `lg`: brand panel + form filling the viewport. The form column keeps
+     a reading width, because a stretched text field helps nobody.
+     ------------------------------------------------------------------ */
+  .auth-split {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--paper);
+    position: relative;
+    z-index: 2;
+  }
+
+  .auth-split__aside {
+    display: none;
+  }
+
+  .auth-split__main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .auth-split__form {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* Past phone width the form stops stretching and centres. A full-bleed
+     768px text field is not a web layout, it's an accident. */
+  @media (min-width: 640px) {
+    /* Breathing room rather than vertical centring: centring a form taller
+       than the viewport (onboarding) would push its top out of reach. */
+    .auth-split__form {
+      padding: clamp(24px, 4vh, 56px) 0 clamp(32px, 5vh, 64px);
+    }
+
+    /* Centre the screen's own markup without asking it to change.
+       Two classes so this beats the page's own `min-h-screen` utility, which
+       would otherwise stretch the form and strand its submit button at the
+       bottom of the viewport. */
+    .auth-split .auth-split__form > * {
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      min-height: 0;
+    }
+  }
+
+  /* Wide enough for the brand panel to earn its place beside the form. */
+  @media (min-width: 1024px) {
+    .auth-split {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(440px, 0.9fr);
+      align-items: stretch;
+    }
+
+    .auth-split__aside {
+      display: flex;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      height: 100dvh;
+      background: var(--ink);
+      border-right: 1px solid var(--ink);
+      overflow: hidden;
+    }
+
+    .auth-split__main {
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+  }
+
+  /* Signed-out shell — auth, onboarding, boot splash. No side nav, so instead
+     of spreading wide the column stays a comfortable reading width and centres
+     itself in the viewport. */
+  .form-shell {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--paper);
+    position: relative;
+    z-index: 2;
+  }
+  @media (min-width: 520px) {
+    .form-shell {
+      border-left: 1px solid var(--ink-20);
+      border-right: 1px solid var(--ink-20);
+    }
+  }
+  @media (min-width: 1024px) {
+    .form-shell {
+      max-width: 560px;
+      border: 1px solid var(--ink-20);
+      min-height: auto;
+      margin: clamp(24px, 5vh, 64px) auto;
+      box-shadow: 6px 6px 0 var(--ink-10);
+    }
+  }
+
+  /* Column two: holds the screen and, on mobile, the bottom tab bar. */
+  .app-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    min-width: 0;
+  }
+
+  /* Centres a screen's content once the viewport is wider than the design.
+     Full-bleed rules and headers still span the whole canvas. */
+  .app-canvas {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+  }
+  @media (min-width: 640px) {
+    .app-canvas {
+      width: 100%;
+      max-width: var(--canvas-w);
+      margin: 0 auto;
+      padding: 0 clamp(20px, 3vw, 48px) 40px;
+    }
+
+    /* Reading-width cap for prose/forms that shouldn't stretch. */
+    .app-canvas--form {
+      max-width: 620px;
+    }
+    .app-canvas--wide {
+      max-width: 1600px;
+    }
+  }
+
+  /* Responsive card grid — one column on phones, more as room allows. */
+  .card-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 640px) {
+    .card-grid {
+      gap: 16px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (min-width: 1280px) {
+    .card-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Two-column split used by home / profile / detail screens on desktop. */
+  .split-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+  }
+  @media (min-width: 1024px) {
+    .split-grid {
+      gap: 28px;
+      grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    }
+  }
+
+  /* Text inputs — squared, chalk fill, ink hairline (app parity). */
+  .field {
+    width: 100%;
+    background: var(--chalk);
+    border: 1.5px solid var(--ink);
+    padding: 13px 16px;
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-size: 14px;
+    color: var(--ink);
+    outline: none;
+  }
+  .field::placeholder {
+    color: var(--ink-40);
+  }
+  .field:focus-visible {
+    box-shadow: 3px 3px 0 var(--signal);
+  }
+  .field:disabled {
+    opacity: 0.5;
+  }
+
+  /* Mono label above a field. */
+  .field-label {
+    display: block;
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--ink-60);
+    margin-bottom: 8px;
+  }
+
+  /* Selectable chip — the app's filter / option pill. */
+  .chip {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 9px 13px;
+    border: 1px solid var(--ink-20);
+    background: transparent;
+    color: var(--ink-60);
+    cursor: pointer;
+    transition: none;
+    white-space: nowrap;
+  }
+  .chip:hover:not(:disabled) {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .chip[data-active="true"] {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .chip:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Sticky bottom action bar (the app's fixed CTA footer). */
+  .action-bar {
+    border-top: 1.5px solid var(--ink);
+    background: var(--paper);
+    padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  }
+}
+
+/* Hide scrollbars on the horizontal chip rails, as on mobile. */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
