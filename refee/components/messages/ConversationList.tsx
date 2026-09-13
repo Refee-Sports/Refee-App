@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Text, View, Pressable, FlatList, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -57,7 +57,7 @@ export function ConversationList({
           className="font-mono text-ink-40 text-[11px] uppercase text-center"
           style={{ letterSpacing: 1 }}
         >
-          No messages yet.{"\n"}Threads appear here once you're on a crew or a director messages you.
+          No messages yet.{"\n"}Threads appear here once you&apos;re on a crew or a director messages you.
         </Text>
       </View>
     );
@@ -101,9 +101,9 @@ export function ConversationList({
             >
               {item.lastMessageBody ?? "No messages yet"}
             </Text>
-            {item.kind === "game_crew" && (
+            {(item.kind === "game_crew" || item.kind === "director_crew_note") && (
               <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1 }}>
-                CREW · {item.participantCount}
+                {item.kind === "director_crew_note" ? "ONE-WAY" : `CREW · ${item.participantCount}`}
               </Text>
             )}
           </View>

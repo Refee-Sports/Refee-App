@@ -1,29 +1,26 @@
-import { useCallback, useEffect, useState } from "react";
-import { Text, View, Pressable, ActivityIndicator, FlatList, Alert } from "react-native";
+import { useCallback, useState } from "react";
+import { Text, View, Pressable, ActivityIndicator, FlatList } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
-import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import {
   fetchTournamentById,
   fetchTournamentGames,
-  updateTournamentStatus,
   type TournamentRow,
   type DirectorGameRow,
 } from "@/lib/director/queries";
 
-const TZ = "America/Chicago";
-
-function fmt(iso: string, opts: Intl.DateTimeFormatOptions) {
-  return new Date(iso).toLocaleDateString("en-US", { ...opts, timeZone: TZ }).toUpperCase();
+function fmtDateOnly(iso: string, opts: Intl.DateTimeFormatOptions) {
+  // Noon UTC prevents a date-only database value from rolling back a day in US timezones.
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { ...opts, timeZone: "UTC" }).toUpperCase();
 }
 
-function fmtTime(iso: string) {
+function fmtTime(iso: string, timeZone: string) {
   return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric", minute: "2-digit", hour12: true, timeZone: TZ,
+    hour: "numeric", minute: "2-digit", hour12: true, timeZone,
   });
 }
 
@@ -65,7 +62,7 @@ export default function TournamentDetail() {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
         <Text className="text-ink font-mono-bold uppercase" style={{ letterSpacing: 1 }}>
-          Tournament not found.
+          {error ?? "Tournament not found."}
         </Text>
       </View>
     );
@@ -130,8 +127,8 @@ export default function TournamentDetail() {
               </Text>
               <Text className="font-mono text-[10px] text-ink-60 uppercase mt-1.5" style={{ letterSpacing: 1.5 }}>
                 {tournament.venue_city.toUpperCase()}, {tournament.venue_state} ·{" "}
-                {fmt(tournament.starts_on, { month: "short", day: "numeric" })}–
-                {fmt(tournament.ends_on, { month: "short", day: "numeric", year: "numeric" })}
+                {fmtDateOnly(tournament.starts_on, { month: "short", day: "numeric" })}–
+                {fmtDateOnly(tournament.ends_on, { month: "short", day: "numeric", year: "numeric" })}
               </Text>
             </View>
             <View className="px-5 my-3">
@@ -155,18 +152,27 @@ export default function TournamentDetail() {
               >
                 ── GAMES ({games.length})
               </Text>
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  router.push({ pathname: "/(director)/game/create" as any, params: { tournamentId: id } });
-                }}
-                className="h-8 px-3 bg-ink flex-row items-center gap-1.5 active:opacity-70"
-              >
-                <Feather name="plus" size={12} color="#E5E1D6" />
-                <Text className="text-paper font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-                  ADD GAME
-                </Text>
-              </Pressable>
+              <View className="flex-row gap-2">
+                <Pressable
+                  onPress={() => router.push({ pathname: "/(director)/tournament/import" as any, params: { tournamentId: id } })}
+                  className="h-8 px-3 border border-ink flex-row items-center gap-1.5 active:opacity-70"
+                >
+                  <Feather name="upload" size={12} color="#08111C" />
+                  <Text className="text-ink font-mono-bold text-[9px] uppercase">CSV</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    router.push({ pathname: "/(director)/game/create" as any, params: { tournamentId: id } });
+                  }}
+                  className="h-8 px-3 bg-ink flex-row items-center gap-1.5 active:opacity-70"
+                >
+                  <Feather name="plus" size={12} color="#E5E1D6" />
+                  <Text className="text-paper font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+                    ADD GAME
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
             {games.length === 0 && (
@@ -198,7 +204,7 @@ export default function TournamentDetail() {
                 <GameStatusBadge status={item.status} />
               </View>
               <Text className="font-mono text-[10px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
-                {fmtTime(item.starts_at)} · {item.venue_city.toUpperCase()}, {item.venue_state}
+                {fmtTime(item.starts_at, tournament.timezone)} · {item.venue_city.toUpperCase()}, {item.venue_state}
               </Text>
             </View>
             <View className="border-t border-ink-20 flex-row items-center">

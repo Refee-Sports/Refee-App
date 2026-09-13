@@ -5,6 +5,9 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { extractAuthParams } from "@/lib/auth/redirect";
+
+export { extractAuthParams } from "@/lib/auth/redirect";
 
 /** Deep link back into the app after OAuth (add same URLs in Supabase → Authentication → URL Configuration). */
 export function getOAuthRedirectUri(): string {
@@ -14,32 +17,21 @@ export function getOAuthRedirectUri(): string {
   });
 }
 
-function extractOAuthParams(url: string): Record<string, string> {
-  const out: Record<string, string> = {};
-  const hashIdx = url.indexOf("#");
-  if (hashIdx >= 0) {
-    new URLSearchParams(url.slice(hashIdx + 1)).forEach((v, k) => {
-      out[k] = v;
-    });
-  }
-  const qIdx = url.indexOf("?");
-  if (qIdx >= 0 && (hashIdx < 0 || qIdx < hashIdx)) {
-    const queryOnly = url.slice(qIdx + 1).split("#")[0];
-    new URLSearchParams(queryOnly).forEach((v, k) => {
-      out[k] = v;
-    });
-  }
-  return out;
-}
-
 export async function finalizeOAuthRedirect(url: string): Promise<{ error: Error | null }> {
-  const params = extractOAuthParams(url);
+  const params = extractAuthParams(url);
   if (params.error) {
     const desc = params.error_description ?? params.error;
     return { error: new Error(desc) };
   }
   if (params.code) {
     const { error } = await supabase.auth.exchangeCodeForSession(params.code);
+    return { error: error ? new Error(error.message) : null };
+  }
+  if (params.token_hash && params.type) {
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: params.token_hash,
+      type: params.type as "signup" | "invite" | "magiclink" | "recovery" | "email_change" | "email",
+    });
     return { error: error ? new Error(error.message) : null };
   }
   if (params.access_token && params.refresh_token) {
@@ -50,6 +42,17 @@ export async function finalizeOAuthRedirect(url: string): Promise<{ error: Error
     return { error: error ? new Error(error.message) : null };
   }
   return { error: new Error("Could not complete sign-in from redirect.") };
+}
+
+export async function sendEmailMagicLink(email: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase.auth.signInWithOtp({
+    email: email.trim().toLowerCase(),
+    options: {
+      emailRedirectTo: getOAuthRedirectUri(),
+      shouldCreateUser: true,
+    },
+  });
+  return { error: error ? new Error(error.message) : null };
 }
 
 async function startOAuthBrowser(provider: "google" | "apple"): Promise<{ error: Error | null }> {

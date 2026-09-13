@@ -1,0 +1,64 @@
+name: Quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: refee
+    env:
+      EXPO_NO_DOTENV: "1"
+      EXPO_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY: pk_test_ci_placeholder
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.4
+          cache: npm
+          cache-dependency-path: refee/package-lock.json
+
+      - run: npm ci
+      - name: Block critical production dependency advisories
+        run: npm audit --omit=dev --audit-level=critical
+      - run: npm run quality
+      - name: Verify production web export
+        run: npx expo export --platform web --output-dir /tmp/refee-web-export
+      - name: Verify production iOS bundle
+        run: npx expo export --platform ios --output-dir /tmp/refee-ios-export
+
+  database:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: refee
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20.19.4
+          cache: npm
+          cache-dependency-path: refee/package-lock.json
+
+      - run: npm ci
+      - name: Start local Supabase
+        run: npm run supabase:start
+      - name: Prove a clean migration and seed reset
+        run: npm run supabase:db:reset
+      - name: Run database authorization tests
+        run: npm run test:db
+      - name: Stop local Supabase
+        if: always()
+        run: npm run supabase:stop

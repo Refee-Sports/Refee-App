@@ -16,7 +16,6 @@ import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Badge } from "@/components/ui/Badge";
 import { useJobsFeed } from "@/hooks/useJobsFeed";
 import {
-  activeRadiusMiles,
   applyJobFeedFilters,
   JOB_FEED_FILTERS,
   type JobFeedFilterId,
@@ -73,7 +72,6 @@ export default function Jobs() {
     [tabRows, activeFilters]
   );
   const filtersActive = activeFilters.size > 0;
-  const radiusLabel = activeRadiusMiles(activeFilters);
 
   const pickTab = (t: FeedTab) => {
     Haptics.selectionAsync();

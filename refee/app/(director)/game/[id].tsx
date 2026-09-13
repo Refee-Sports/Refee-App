@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   Text,
   View,
@@ -37,8 +37,9 @@ import { hasSeenLatest, seenCount } from "@/lib/messages/receipts";
 import { RateRefereeModal } from "@/components/ratings/RateRefereeModal";
 import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import { supabase } from "@/lib/supabase";
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe } from "@/lib/payments/stripe";
 import { startCrewPayment, confirmCrewPayout, runAutoPay } from "@/lib/payments/queries";
+import { canOfferCrewPayment, paymentNeedsReview } from "@/lib/payments/status";
 
 const TZ = "America/Chicago";
 
@@ -52,13 +53,6 @@ function fmtDatetime(iso: string) {
   });
   return `${date} · ${time}`;
 }
-
-const CERT_LABELS: Record<string, string> = {
-  iaabo: "IAABO",
-  nfhs: "NFHS",
-  ncaa: "NCAA",
-  fiba: "FIBA",
-};
 
 export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -201,7 +195,7 @@ export default function GameDetail() {
               Alert.alert(
                 "Crew paid automatically",
                 p.held > 0
-                  ? `$${p.total} charged. ${p.transferred} referee${p.transferred !== 1 ? "s" : ""} paid instantly; ${p.held} pending payout setup.`
+                  ? `$${p.total} charged. ${p.transferred} referee share${p.transferred !== 1 ? "s" : ""} transferred to Stripe; ${p.held} pending payout setup.`
                   : `$${p.total} charged and all ${p.transferred} referee${p.transferred !== 1 ? "s" : ""} paid.`
               );
             } else if (result?.reason === "no_card") {
@@ -293,7 +287,7 @@ export default function GameDetail() {
       Alert.alert(
         "Crew paid",
         held > 0
-          ? `${transferred} referee${transferred !== 1 ? "s" : ""} paid instantly. ${held} haven't set up payouts yet — their share is held and releases automatically once they onboard.`
+          ? `${transferred} referee share${transferred !== 1 ? "s" : ""} transferred to Stripe. ${held} haven't set up payouts yet — their share is held and releases automatically once they onboard.`
           : `All ${transferred} referee${transferred !== 1 ? "s" : ""} paid.`
       );
       await load();
@@ -355,7 +349,7 @@ export default function GameDetail() {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
         <Text className="text-ink font-mono-bold uppercase" style={{ letterSpacing: 1 }}>
-          Game not found.
+          {error ?? "Game not found."}
         </Text>
       </View>
     );
@@ -373,7 +367,16 @@ export default function GameDetail() {
   const isClosed = isCompleted || isCancelled;
   const unratedCount = accepted.filter((a) => !ratedRefIds.has(a.ref_id)).length;
   const isPaid = game.payment_status === "paid";
-  const showPayCrew = isClosed && !isPaid && accepted.length > 0;
+  const paymentLockedForReview = paymentNeedsReview(
+    game.payment_status,
+    game.payment_issue_requires_review
+  );
+  const showPayCrew = canOfferCrewPayment({
+    isClosed,
+    paymentStatus: game.payment_status,
+    reviewRequired: game.payment_issue_requires_review,
+    acceptedCrewCount: accepted.length,
+  });
 
   return (
     <View style={{ flex: 1, backgroundColor: "#E5E1D6" }}>
@@ -446,6 +449,19 @@ export default function GameDetail() {
             <View className="mx-5 mb-4 border border-foul bg-foul/10 px-4 py-3">
               <Text className="text-foul font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
                 ✕ GAME CANCELLED
+              </Text>
+            </View>
+          )}
+
+          {paymentLockedForReview && (
+            <View className="mx-5 mb-4 border border-whistle bg-whistle/10 px-4 py-3">
+              <Text className="text-whistle font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
+                ! PAYMENT REVIEW REQUIRED
+              </Text>
+              <Text className="text-ink font-mono text-[9px] uppercase mt-1" style={{ letterSpacing: 1 }}>
+                {game.payment_review_reason === "refund"
+                  ? "A REFUND WAS RECORDED. CREW PAY IS LOCKED WHILE SUPPORT REVIEWS TRANSFERS."
+                  : "A PAYMENT DISPUTE WAS RECORDED. CREW PAY IS LOCKED WHILE SUPPORT REVIEWS IT."}
               </Text>
             </View>
           )}
@@ -834,8 +850,6 @@ function ApplicantSection({
     </View>
   );
 }
-
-import React from "react";
 
 function ApplicantCard({
   applicant,

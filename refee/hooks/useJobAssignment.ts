@@ -76,7 +76,7 @@ export function useJobAssignment(jobId: string | undefined) {
     setActionLoading(true);
     const result = await acceptJob(supabase, uid, jobId);
     if (!result.error) {
-      setStatus("accepted");
+      setStatus(result.status);
       await refresh();
     }
     setActionLoading(false);
@@ -96,7 +96,7 @@ export function useJobAssignment(jobId: string | undefined) {
     setActionLoading(true);
     const result = await declineJob(supabase, uid, jobId);
     if (!result.error) {
-      setStatus("declined");
+      setStatus(result.status);
       await refresh();
     }
     setActionLoading(false);
@@ -108,7 +108,12 @@ export function useJobAssignment(jobId: string | undefined) {
     !!userId &&
     !loading &&
     status !== "accepted" &&
-    status !== "declined";
+    status !== "declined" &&
+    status !== "pending" &&
+    status !== "completed" &&
+    status !== "cancelled" &&
+    status !== "removed" &&
+    status !== "withdrawn";
 
   return {
     status,

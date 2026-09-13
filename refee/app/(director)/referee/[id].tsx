@@ -63,7 +63,7 @@ export default function RefereePublicProfile() {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
         <Text className="text-ink font-mono-bold uppercase" style={{ letterSpacing: 1 }}>
-          Referee not found.
+          {error ?? "Referee not found."}
         </Text>
       </View>
     );

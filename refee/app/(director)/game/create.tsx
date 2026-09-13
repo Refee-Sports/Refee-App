@@ -71,7 +71,6 @@ export default function CreateGame() {
   const [error, setError] = useState<string | null>(null);
 
   // Standalone = a single game with no parent tournament
-  const isStandalone = !tournamentId && !editId && !copyFromId;
   const [tournament, setTournament] = useState<TournamentRow | null>(null);
 
   const [form, setForm] = useState({

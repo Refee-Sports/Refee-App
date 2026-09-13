@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
-import { signInWithAppleOAuth, signInWithGoogleOAuth } from "@/lib/oauth";
+import { sendEmailMagicLink, signInWithAppleOAuth, signInWithGoogleOAuth } from "@/lib/oauth";
 import { getSupabaseConfig, isLocalSupabaseUrl } from "@/lib/supabase-config";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 
@@ -24,6 +24,9 @@ export default function SignIn() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [method, setMethod] = useState<"phone" | "email">("phone");
+  const [emailSent, setEmailSent] = useState(false);
   const [phoneLoading, setPhoneLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<"google" | "apple" | null>(null);
   const [oauthError, setOauthError] = useState<string | null>(null);
@@ -41,6 +44,8 @@ export default function SignIn() {
   };
 
   const isValidPhone = phone.replace(/\D/g, "").length === 10;
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const canSubmit = method === "phone" ? isValidPhone : isValidEmail;
   const oauthBusy = oauthLoading !== null;
 
   const runOAuth = async (provider: "google" | "apple") => {
@@ -65,7 +70,7 @@ export default function SignIn() {
   };
 
   const handleSubmit = async () => {
-    if (!isValidPhone) return;
+    if (!canSubmit) return;
     setPhoneLoading(true);
     setError(null);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -78,9 +83,23 @@ export default function SignIn() {
       return;
     }
 
-    const e164 = "+1" + phone.replace(/\D/g, "");
     // Drop stale JWT so OTP attaches to the seeded phone user, not a ghost account.
     await supabase.auth.signOut();
+
+    if (method === "email") {
+      const result = await sendEmailMagicLink(email);
+      setPhoneLoading(false);
+      if (result.error) {
+        setError(result.error.message);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+      setEmailSent(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return;
+    }
+
+    const e164 = "+1" + phone.replace(/\D/g, "");
     const { error } = await supabase.auth.signInWithOtp({ phone: e164 });
 
     setPhoneLoading(false);
@@ -160,29 +179,43 @@ export default function SignIn() {
               className="text-ink-60 font-mono-bold text-[9px] uppercase"
               style={{ letterSpacing: 2 }}
             >
-              or phone
+              or continue with
             </Text>
             <View className="flex-1 h-px bg-ink/15" />
           </View>
         </View>
 
         <View className="px-5">
+        <View className="flex-row border border-ink mt-2 mb-5">
+          {(["phone", "email"] as const).map((value) => (
+            <Pressable
+              key={value}
+              onPress={() => { setMethod(value); setError(null); setEmailSent(false); }}
+              className={`flex-1 py-3 items-center ${method === value ? "bg-ink" : "bg-chalk"}`}
+            >
+              <Text className={`font-mono-bold text-[9px] uppercase ${method === value ? "text-paper" : "text-ink"}`} style={{ letterSpacing: 1.5 }}>
+                {value}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
         <Text
           className="text-signal font-mono-bold text-[10px] uppercase mt-2 mb-3"
           style={{ letterSpacing: 2 }}
         >
-          PHONE · STEP 1
+          {method.toUpperCase()} · STEP 1
         </Text>
         <Text
           className="text-ink font-display"
           style={{ fontSize: 40, lineHeight: 46, letterSpacing: -1.5 }}
         >
           ENTER YOUR{"\n"}
-          <Text className="text-signal">NUMBER.</Text>
+          <Text className="text-signal">{method === "phone" ? "NUMBER." : "EMAIL."}</Text>
         </Text>
         <Text className="text-ink-80 mt-3 mb-6" style={{ fontSize: 14, lineHeight: 20 }}>
-          We'll text you a 6-digit code. No passwords. You sign in the same way
-          on every new device.
+          {method === "phone"
+            ? "We'll text you a 6-digit code. No passwords. You sign in the same way on every new device."
+            : "We'll email you a secure, single-use sign-in link. No password required."}
         </Text>
 
         {__DEV__ && supabaseHost ? (
@@ -195,35 +228,30 @@ export default function SignIn() {
           </Text>
         ) : null}
 
-        {/* Phone input with prefix */}
+        {/* Passwordless phone or email input */}
         <Text
           className="text-ink-60 font-mono-bold text-[9px] uppercase mb-2"
           style={{ letterSpacing: 2 }}
         >
-          PHONE NUMBER
+          {method === "phone" ? "PHONE NUMBER" : "EMAIL ADDRESS"}
         </Text>
-        <View className="flex-row border-[1.5px] border-ink">
-          <View className="bg-ink px-4 justify-center">
-            <Text
-              className="text-paper font-mono-bold text-base"
-              style={{ letterSpacing: 0.5 }}
-            >
-              +1
-            </Text>
+        {method === "phone" ? (
+          <View className="flex-row border-[1.5px] border-ink">
+            <View className="bg-ink px-4 justify-center">
+              <Text className="text-paper font-mono-bold text-base" style={{ letterSpacing: 0.5 }}>+1</Text>
+            </View>
+            <TextInput value={phone} onChangeText={(v) => setPhone(formatPhone(v))} placeholder="(512) 555-8429" placeholderTextColor="rgba(8,17,28,0.36)" keyboardType="phone-pad" autoFocus={!oauthBusy} editable={!oauthBusy} className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono" style={{ fontSize: 14 }} maxLength={14} />
           </View>
-          <TextInput
-            value={phone}
-            onChangeText={(v) => setPhone(formatPhone(v))}
-            placeholder="(512) 555-8429"
-            placeholderTextColor="rgba(8,17,28,0.36)"
-            keyboardType="phone-pad"
-            autoFocus={!oauthBusy}
-            editable={!oauthBusy}
-            className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
-            style={{ fontSize: 14 }}
-            maxLength={14}
-          />
-        </View>
+        ) : (
+          <TextInput value={email} onChangeText={setEmail} placeholder="you@example.com" placeholderTextColor="rgba(8,17,28,0.36)" keyboardType="email-address" autoCapitalize="none" autoCorrect={false} editable={!oauthBusy} className="border-[1.5px] border-ink bg-chalk px-4 py-3.5 text-ink font-mono" style={{ fontSize: 14 }} />
+        )}
+
+        {emailSent && (
+          <View className="border border-court bg-court/10 px-4 py-3 mt-3">
+            <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1 }}>CHECK YOUR EMAIL</Text>
+            <Text className="font-mono text-[9px] text-ink-60 mt-1">Open the Refee sign-in link on this device. The link expires and can only be used once.</Text>
+          </View>
+        )}
 
         {error && (
           <Text className="text-foul font-mono text-xs mt-3 uppercase">{error}</Text>
@@ -233,7 +261,7 @@ export default function SignIn() {
           className="text-ink-60 font-mono text-[9px] mt-4 uppercase"
           style={{ letterSpacing: 1.4 }}
         >
-          BY CONTINUING YOU AGREE TO REFEE'S TERMS &amp; PRIVACY POLICY.
+          BY CONTINUING YOU AGREE TO REFEE&apos;S TERMS &amp; PRIVACY POLICY.
         </Text>
         </View>
       </ScrollView>
@@ -245,8 +273,8 @@ export default function SignIn() {
       >
         <Pressable
           onPress={handleSubmit}
-          disabled={!isValidPhone || phoneLoading || oauthBusy}
-          className={`py-4 ${isValidPhone && !phoneLoading && !oauthBusy ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
+          disabled={!canSubmit || phoneLoading || oauthBusy}
+          className={`py-4 ${canSubmit && !phoneLoading && !oauthBusy ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
         >
           <View className="flex-row justify-center items-center gap-2">
             {phoneLoading ? (
@@ -254,13 +282,13 @@ export default function SignIn() {
             ) : (
               <>
                 <Text
-                  className={`font-mono-bold ${isValidPhone && !oauthBusy ? "text-paper" : "text-ink-40"}`}
+                  className={`font-mono-bold ${canSubmit && !oauthBusy ? "text-paper" : "text-ink-40"}`}
                   style={{ fontSize: 12, letterSpacing: 2.5 }}
                 >
-                  SEND CODE
+                  {method === "phone" ? "SEND CODE" : emailSent ? "RESEND LINK" : "EMAIL SIGN-IN LINK"}
                 </Text>
                 <Text
-                  className={`font-mono-bold text-base ${isValidPhone && !oauthBusy ? "text-paper" : "text-ink-40"}`}
+                  className={`font-mono-bold text-base ${canSubmit && !oauthBusy ? "text-paper" : "text-ink-40"}`}
                 >
                   →
                 </Text>

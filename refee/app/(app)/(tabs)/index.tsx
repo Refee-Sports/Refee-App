@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Text, View, ActivityIndicator, Pressable } from "react-native";
+import { Text, View, ActivityIndicator, Pressable, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -16,6 +16,11 @@ import {
   type EarningsSummary,
 } from "@/lib/home/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
+import {
+  fetchMyRosterInvites,
+  respondToRosterInvite,
+  type RosterInviteRow,
+} from "@/lib/assignor/queries";
 
 const TZ = "America/Chicago";
 
@@ -137,6 +142,8 @@ export default function Home() {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [todayGames, setTodayGames] = useState<AssignmentRow[]>([]);
   const [upcomingGames, setUpcomingGames] = useState<AssignmentRow[]>([]);
+  const [rosterInvites, setRosterInvites] = useState<RosterInviteRow[]>([]);
+  const [rosterBusyId, setRosterBusyId] = useState<string | null>(null);
   const [earnings, setEarnings] = useState<EarningsSummary>({
     paidThisMonth: 0,
     pendingTotal: 0,
@@ -158,10 +165,11 @@ export default function Home() {
         // Fallback for pg_cron: auto-completes games 24h past their end
         void supabase.rpc("sweep_game_lifecycle");
 
-        const [profileRes, assignRes, earningsRes] = await Promise.all([
+        const [profileRes, assignRes, earningsRes, rosterRes] = await Promise.all([
           fetchMyProfile(uid),
           fetchMyAssignments(uid),
           fetchEarningsSummary(uid),
+          fetchMyRosterInvites(uid),
         ]);
 
         if (cancelled) return;
@@ -169,11 +177,14 @@ export default function Home() {
         setTodayGames(assignRes.today);
         setUpcomingGames(assignRes.upcoming);
         setEarnings(earningsRes.summary);
+        setRosterInvites(rosterRes.invites);
         setLoading(false);
       })();
       return () => {
         cancelled = true;
       };
+    // profileVersion is an explicit external-store invalidation signal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [profileVersion])
   );
 
@@ -188,6 +199,19 @@ export default function Home() {
   }
 
   const firstName = profile?.first_name.toUpperCase() ?? "REF";
+
+  const respondToRoster = async (invite: RosterInviteRow, accept: boolean) => {
+    if (rosterBusyId) return;
+    setRosterBusyId(invite.roster_id);
+    const result = await respondToRosterInvite(invite.roster_id, accept);
+    setRosterBusyId(null);
+    if (result.error) {
+      Alert.alert("Could not respond", result.error.message);
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setRosterInvites((current) => current.filter((row) => row.roster_id !== invite.roster_id));
+  };
 
   return (
     <ScrollScreen bottomOffset={tabBarHeight}>
@@ -228,6 +252,36 @@ export default function Home() {
           {firstName}.
         </Text>
       </View>
+
+      {rosterInvites.length > 0 && (
+        <>
+          <SectionHeader>{`ROSTER INVITES · ${rosterInvites.length} NEED ACTION`}</SectionHeader>
+          <View className="mx-5 gap-3">
+            {rosterInvites.map((invite) => (
+              <View key={invite.roster_id} className="border border-signal bg-signal/10 px-4 py-4">
+                <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 1 }}>
+                  {invite.assignor_name}
+                </Text>
+                <Text className="font-mono text-[9px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 1 }}>
+                  INVITED YOU TO THEIR REFEREE ROSTER
+                  {invite.assignor_city ? ` · ${invite.assignor_city}, ${invite.assignor_state ?? ""}` : ""}
+                </Text>
+                <Text className="font-mono text-[8px] text-ink-40 uppercase mt-2" style={{ letterSpacing: 0.8 }}>
+                  Joining allows this assignor to send game offers. Every game still requires your acceptance.
+                </Text>
+                <View className="flex-row mt-3">
+                  <Pressable disabled={rosterBusyId !== null} onPress={() => void respondToRoster(invite, false)} className="flex-1 border border-ink py-2.5 items-center active:opacity-70">
+                    <Text className="font-mono-bold text-[9px] text-ink uppercase">DECLINE</Text>
+                  </Pressable>
+                  <Pressable disabled={rosterBusyId !== null} onPress={() => void respondToRoster(invite, true)} className="flex-1 border border-ink bg-ink py-2.5 items-center active:opacity-70">
+                    {rosterBusyId === invite.roster_id ? <ActivityIndicator size="small" color="#E5E1D6" /> : <Text className="font-mono-bold text-[9px] text-paper uppercase">JOIN ROSTER</Text>}
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
 
       {/* ── Today ────────────────────────────────────────────────── */}
       <SectionHeader>TODAY</SectionHeader>

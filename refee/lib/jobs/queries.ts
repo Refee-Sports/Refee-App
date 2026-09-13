@@ -4,12 +4,16 @@ import { mapDbJobToDetail, mapDbJobToListRow, type JobDbRow } from "./map-db-job
 import { distanceMiles } from "@/lib/geo/geocode";
 
 export type AssignmentStatus =
+  | "offered"
   | "accepted"
   | "declined"
   | "pending"
   | "completed"
   | "no_show"
   | "needs_reconfirm"
+  | "removed"
+  | "withdrawn"
+  | "cancelled"
   | null;
 
 export async function fetchMyJobAssignment(
@@ -70,46 +74,42 @@ export async function acceptJob(
   supabase: SupabaseClient,
   userId: string,
   jobId: string
-): Promise<{ error: Error | null }> {
+): Promise<{ status: AssignmentStatus; error: Error | null }> {
   const { conflictTitle, error: conflictErr } = await findScheduleConflict(supabase, userId, jobId);
-  if (conflictErr) return { error: conflictErr };
+  if (conflictErr) return { status: null, error: conflictErr };
   if (conflictTitle) {
     return {
+      status: null,
       error: new Error(
         `Schedule conflict: you're already booked on "${conflictTitle}" during this time.`
       ),
     };
   }
 
-  const respondedAt = new Date().toISOString();
-  const { error } = await supabase.from("job_assignments").upsert(
-    {
-      ref_id: userId,
-      job_id: jobId,
-      status: "accepted",
-      responded_at: respondedAt,
-    },
-    { onConflict: "job_id,ref_id" }
-  );
-  return { error: error ? new Error(error.message) : null };
+  const { data, error } = await supabase.rpc("respond_to_job", {
+    p_job_id: jobId,
+    p_accept: true,
+  });
+  return {
+    status: error ? null : (data as AssignmentStatus),
+    error: error ? new Error(error.message) : null,
+  };
 }
 
 export async function declineJob(
   supabase: SupabaseClient,
   userId: string,
   jobId: string
-): Promise<{ error: Error | null }> {
-  const respondedAt = new Date().toISOString();
-  const { error } = await supabase.from("job_assignments").upsert(
-    {
-      ref_id: userId,
-      job_id: jobId,
-      status: "declined",
-      responded_at: respondedAt,
-    },
-    { onConflict: "job_id,ref_id" }
-  );
-  return { error: error ? new Error(error.message) : null };
+): Promise<{ status: AssignmentStatus; error: Error | null }> {
+  void userId; // Authorization is derived from the authenticated JWT in the RPC.
+  const { data, error } = await supabase.rpc("respond_to_job", {
+    p_job_id: jobId,
+    p_accept: false,
+  });
+  return {
+    status: error ? null : (data as AssignmentStatus),
+    error: error ? new Error(error.message) : null,
+  };
 }
 
 /** @deprecated Use declineJob */
@@ -150,6 +150,51 @@ export type CrewProfile = {
   isMe: boolean;
 };
 
+type CrewAssignmentRow = {
+  ref_id: string;
+  role: string | null;
+  status: string;
+  profile:
+    | {
+        first_name: string;
+        last_initial: string;
+        display_name: string;
+        rating: number;
+      }
+    | {
+        first_name: string;
+        last_initial: string;
+        display_name: string;
+        rating: number;
+      }[]
+    | null;
+};
+
+/** Pure DB-row mapper so crew lifecycle visibility is regression tested. */
+export function mapCrewAssignment(
+  row: CrewAssignmentRow,
+  currentUserId: string | null
+): CrewProfile | null {
+  const profile = Array.isArray(row.profile) ? row.profile[0] : row.profile;
+  if (!profile) return null;
+  const roleLabel = (row.role ?? "official").replace("_", " ").toUpperCase();
+  const isMe = currentUserId != null && row.ref_id === currentUserId;
+  const status = row.status === "needs_reconfirm"
+    ? "! RE-CONFIRM"
+    : row.status === "accepted"
+      ? "● LOCKED"
+      : "PENDING";
+  return {
+    refId: row.ref_id,
+    displayName: profile.display_name.toUpperCase(),
+    initials: `${profile.first_name[0] ?? "?"}${profile.last_initial}`.toUpperCase(),
+    rating: profile.rating ?? 0,
+    role: `${roleLabel} · ${(profile.rating ?? 0).toFixed(2)} ★`,
+    status,
+    isMe,
+  };
+}
+
 export async function fetchJobCrewMembers(
   supabase: SupabaseClient,
   jobId: string,
@@ -161,45 +206,12 @@ export async function fetchJobCrewMembers(
       "ref_id, role, status, profile:public_profiles(first_name, last_initial, display_name, rating)"
     )
     .eq("job_id", jobId)
-    .in("status", ["accepted", "pending"]);
+    .in("status", ["accepted", "pending", "needs_reconfirm"]);
 
   if (error) return { members: [], error: new Error(error.message) };
 
   const members: CrewProfile[] = (data ?? [])
-    .map((row) => {
-      const r = row as {
-        ref_id: string;
-        role: string | null;
-        status: string;
-        profile:
-          | {
-              first_name: string;
-              last_initial: string;
-              display_name: string;
-              rating: number;
-            }
-          | {
-              first_name: string;
-              last_initial: string;
-              display_name: string;
-              rating: number;
-            }[]
-          | null;
-      };
-      const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile;
-      if (!profile) return null;
-      const roleLabel = (r.role ?? "official").replace("_", " ").toUpperCase();
-      const isMe = currentUserId != null && r.ref_id === currentUserId;
-      return {
-        refId: r.ref_id,
-        displayName: profile.display_name.toUpperCase(),
-        initials: `${profile.first_name[0] ?? "?"}${profile.last_initial}`.toUpperCase(),
-        rating: profile.rating ?? 0,
-        role: `${roleLabel} · ${(profile.rating ?? 0).toFixed(2)} ★`,
-        status: isMe && r.status === "accepted" ? "● LOCKED" : r.status === "accepted" ? "● LOCKED" : "PENDING",
-        isMe,
-      };
-    })
+    .map((row) => mapCrewAssignment(row as CrewAssignmentRow, currentUserId))
     .filter((m): m is CrewProfile => m != null);
 
   return { members, error: null };
@@ -232,7 +244,7 @@ export async function fetchOpenJobs(
         .from("job_assignments")
         .select("job_id, status")
         .eq("ref_id", userId)
-        .in("status", ["accepted", "pending", "declined", "needs_reconfirm"]),
+        .in("status", ["offered", "accepted", "pending", "declined", "needs_reconfirm"]),
       supabase
         .from("public_profiles")
         .select("state, home_lat, home_lng")
@@ -289,6 +301,36 @@ export async function fetchOpenJobs(
     }),
     error: null,
   };
+}
+
+/** Assignment offers and material-change confirmations that require referee action. */
+export async function fetchActionableAssignments(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{ jobs: JobListRow[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("job_assignments")
+    .select("status, job:jobs(*, hirers(org_name, is_verified))")
+    .eq("ref_id", userId)
+    .in("status", ["offered", "needs_reconfirm"])
+    .order("offered_at", { ascending: false });
+
+  if (error) return { jobs: [], error: new Error(error.message) };
+
+  const jobs = (data ?? []).flatMap((assignment: any) => {
+    const job = Array.isArray(assignment.job) ? assignment.job[0] : assignment.job;
+    if (!job) return [];
+    const row = mapDbJobToListRow(job as JobDbRow);
+    return [{
+      ...row,
+      tab: "invited" as const,
+      tagLeft: assignment.status === "needs_reconfirm" ? "CHANGED" : "ASSIGNMENT OFFER",
+      footerCta: assignment.status === "needs_reconfirm" ? "REVIEW CHANGES →" : "REVIEW OFFER →",
+      footerCtaTone: "signal" as const,
+    }];
+  });
+
+  return { jobs, error: null };
 }
 
 export async function fetchJobById(

@@ -2,6 +2,7 @@
 // transfer each ref's share to their Stripe Express account.
 // Refs without a payout account are marked "processing" (owed, held).
 import { stripe, adminClient, getCaller, json, handleOptions } from "../_shared/util.ts";
+import { transferIdempotencyKey } from "../_shared/stripe-events.ts";
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -54,13 +55,20 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (priv?.stripe_account_id && priv.stripe_account_status === "complete") {
-        const transfer = await stripe.transfers.create({
-          amount: (a.amount_due ?? 0) * 100,
-          currency: "usd",
-          destination: priv.stripe_account_id,
-          source_transaction: chargeId,
-          metadata: { refee_job_id: jobId, refee_assignment_id: a.id },
-        });
+        const transfer = await stripe.transfers.create(
+          {
+            amount: (a.amount_due ?? 0) * 100,
+            currency: "usd",
+            destination: priv.stripe_account_id,
+            source_transaction: chargeId,
+            metadata: {
+              refee_job_id: jobId,
+              refee_assignment_id: a.id,
+              refee_payment_intent_id: intent.id,
+            },
+          },
+          { idempotencyKey: transferIdempotencyKey(a.id, intent.id) }
+        );
         await admin
           .from("job_assignments")
           .update({

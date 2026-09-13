@@ -6,7 +6,7 @@ import * as Haptics from "expo-haptics";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { supabase } from "@/lib/supabase";
 
-type Role = "referee" | "director";
+type Role = "referee" | "director" | "assignor";
 
 const ROLES: { id: Role; title: string; subtitle: string; description: string }[] = [
   {
@@ -20,6 +20,12 @@ const ROLES: { id: Role; title: string; subtitle: string; description: string }[
     title: "TOURNAMENT\nDIRECTOR",
     subtitle: "ORGANIZER",
     description: "Create tournaments and post game assignments. Hire referees directly or through an assignor.",
+  },
+  {
+    id: "assignor",
+    title: "ASSIGNOR",
+    subtitle: "STAFFING PARTNER",
+    description: "Get hired by tournament directors to staff their events. Build a roster of referees and assign them to games.",
   },
 ];
 
@@ -38,6 +44,8 @@ export default function RoleSelect() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (selected === "director") {
       router.push("/(onboarding)/director" as any);
+    } else if (selected === "assignor") {
+      router.push("/(onboarding)/assignor" as any);
     } else {
       router.push("/(onboarding)/" as any);
     }

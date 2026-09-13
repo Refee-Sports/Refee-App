@@ -13,13 +13,14 @@ export function resolveTabRows(params: {
   configured: boolean;
   tab: FeedTab;
   dbAvailable: JobListRow[];
+  dbInvited: JobListRow[];
   mockRows: JobListRow[];
 }): JobListRow[] {
-  const { configured, tab, dbAvailable, mockRows } = params;
+  const { configured, tab, dbAvailable, dbInvited, mockRows } = params;
   if (configured) {
-    // Only "available" has a real backend source today; invited/saved stay
-    // empty until they do (no demo leakage).
-    return tab === "available" ? dbAvailable : [];
+    if (tab === "available") return dbAvailable;
+    if (tab === "invited") return dbInvited;
+    return [];
   }
   return mockRows.filter((j) => j.tab === tab);
 }
@@ -28,11 +29,12 @@ export function resolveTabRows(params: {
 export function resolveCounts(params: {
   configured: boolean;
   dbAvailable: JobListRow[];
+  dbInvited: JobListRow[];
   mockRows: JobListRow[];
 }): { available: number; invited: number; saved: number } {
-  const { configured, dbAvailable, mockRows } = params;
+  const { configured, dbAvailable, dbInvited, mockRows } = params;
   if (configured) {
-    return { available: dbAvailable.length, invited: 0, saved: 0 };
+    return { available: dbAvailable.length, invited: dbInvited.length, saved: 0 };
   }
   return {
     available: mockRows.filter((j) => j.tab === "available").length,

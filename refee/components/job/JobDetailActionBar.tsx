@@ -124,6 +124,24 @@ export function JobDetailActionBar({
     );
   }
 
+  if (assignmentStatus === "pending") {
+    return (
+      <View
+        className="absolute left-0 right-0 border-t-[1.5px] border-ink bg-paper px-4 pt-3"
+        style={{ bottom: 0, paddingBottom: bottomInset + 12 }}
+      >
+        <View className="absolute top-0 left-0 right-0 -mt-[1.5px]">
+          <ZebraRule variant="signal" thin noMargin />
+        </View>
+        <View className="border border-ink-20 py-4 items-center">
+          <Text className="text-ink-60 font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
+            APPLICATION PENDING
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View
       className="absolute left-0 right-0 border-t-[1.5px] border-ink bg-paper px-4 pt-3"
@@ -152,7 +170,7 @@ export function JobDetailActionBar({
           ) : (
             <>
               <Text className="text-paper font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
-                ACCEPT JOB
+                {assignmentStatus === "offered" ? "ACCEPT ASSIGNMENT" : "ACCEPT JOB"}
               </Text>
               <Text className="text-paper font-mono-bold text-base">→</Text>
             </>

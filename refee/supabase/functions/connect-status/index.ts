@@ -1,6 +1,7 @@
 // Returns the calling referee's Stripe payout readiness and syncs the
 // account status onto their private profile.
 import { stripe, adminClient, getCaller, json, handleOptions } from "../_shared/util.ts";
+import { transferIdempotencyKey } from "../_shared/stripe-events.ts";
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -50,13 +51,20 @@ Deno.serve(async (req) => {
           const intent = await stripe.paymentIntents.retrieve(j.payment_intent_id);
           chargeId = intent.latest_charge as string | undefined;
         }
-        const transfer = await stripe.transfers.create({
-          amount: (a.amount_due ?? 0) * 100,
-          currency: "usd",
-          destination: priv.stripe_account_id,
-          source_transaction: chargeId,
-          metadata: { refee_job_id: a.job_id, refee_assignment_id: a.id },
-        });
+        const transfer = await stripe.transfers.create(
+          {
+            amount: (a.amount_due ?? 0) * 100,
+            currency: "usd",
+            destination: priv.stripe_account_id,
+            source_transaction: chargeId,
+            metadata: {
+              refee_job_id: a.job_id,
+              refee_assignment_id: a.id,
+              refee_payment_intent_id: j.payment_intent_id ?? "",
+            },
+          },
+          { idempotencyKey: transferIdempotencyKey(a.id, j.payment_intent_id ?? a.job_id) }
+        );
         await admin
           .from("job_assignments")
           .update({

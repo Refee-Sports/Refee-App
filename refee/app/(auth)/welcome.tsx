@@ -12,7 +12,8 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 /**
  * Welcome / 5.1 — first impression.
  * Inverse palette: ink canvas + paper text + hi-vis accents.
- * The three-cell value strip is the entire pitch: 48H / 0% / YOU set rate.
+ * The three-cell value strip states product capabilities without promising a
+ * payout deadline that depends on unsettled marketplace-risk policy.
  */
 export default function Welcome() {
   const router = useRouter();
@@ -98,7 +99,7 @@ export default function Welcome() {
           style={{ fontSize: 15, lineHeight: 22, maxWidth: 280 }}
         >
           The on-demand marketplace for officials. Find games, set your rate,
-          get paid in 48 hours.
+          and track every payout.
         </Text>
 
         {/* Three-cell value strip */}
@@ -108,13 +109,13 @@ export default function Welcome() {
               className="text-paper font-display"
               style={{ fontSize: 22, letterSpacing: -1, lineHeight: 22 }}
             >
-              48<Text className="text-hi-vis">H</Text>
+              LIVE<Text className="text-hi-vis">.</Text>
             </Text>
             <Text
               className="text-paper/50 font-mono-bold text-[8px] uppercase mt-1"
               style={{ letterSpacing: 1.5 }}
             >
-              PAYOUT
+              ROSTER
             </Text>
           </View>
           <View className="flex-1 py-3 border-r border-paper/20 items-center">
@@ -122,13 +123,13 @@ export default function Welcome() {
               className="text-paper font-display"
               style={{ fontSize: 22, letterSpacing: -1, lineHeight: 22 }}
             >
-              0<Text className="text-hi-vis">%</Text>
+              CLEAR<Text className="text-hi-vis">.</Text>
             </Text>
             <Text
               className="text-paper/50 font-mono-bold text-[8px] uppercase mt-1"
               style={{ letterSpacing: 1.5 }}
             >
-              REF FEES
+              PAY STATUS
             </Text>
           </View>
           <View className="flex-1 py-3 items-center">

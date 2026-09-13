@@ -3,7 +3,7 @@ import { Text, View, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
-import { useStripe } from "@stripe/stripe-react-native";
+import { useStripe } from "@/lib/payments/stripe";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";

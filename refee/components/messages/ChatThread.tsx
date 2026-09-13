@@ -16,6 +16,7 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import {
   fetchMessages,
+  canSendInConversation,
   sendMessage,
   markRead,
   subscribeToConversation,
@@ -40,6 +41,8 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
   const [draft, setDraft] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [canSend, setCanSend] = useState(false);
+  const [readOnlyReason, setReadOnlyReason] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { messages: msgs } = await fetchMessages(conversationId);
@@ -54,7 +57,12 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
       if (!session) return;
       uid = session.user.id;
       setMyId(uid);
-      await load();
+      const [, permission] = await Promise.all([
+        load(),
+        canSendInConversation(conversationId, uid),
+      ]);
+      setCanSend(permission.allowed);
+      setReadOnlyReason(permission.readOnlyReason);
       await markRead(conversationId, uid);
     })();
 
@@ -69,7 +77,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
 
   const handleSend = async () => {
     const body = draft.trim();
-    if (!body || !myId || sending) return;
+    if (!body || !myId || sending || !canSend) return;
     Haptics.selectionAsync();
     setSending(true);
     setDraft("");
@@ -162,30 +170,43 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
           />
         )}
 
-        {/* Composer */}
-        <View
-          className="border-t border-ink bg-chalk flex-row items-end px-4 py-3 gap-3"
-          style={{ paddingBottom: Math.max(insets.bottom, 12) }}
-        >
-          <TextInput
-            value={draft}
-            onChangeText={setDraft}
-            placeholder="MESSAGE..."
-            placeholderTextColor="rgba(8,17,28,0.36)"
-            multiline
-            className="flex-1 border border-ink bg-paper px-3 py-2.5 font-mono text-[13px] text-ink"
-            style={{ maxHeight: 100, letterSpacing: 0.5 }}
-          />
-          <Pressable
-            onPress={handleSend}
-            disabled={!draft.trim() || sending}
-            className={`w-11 h-11 items-center justify-center border border-ink ${
-              draft.trim() ? "bg-signal" : "bg-paper"
-            } active:opacity-70`}
+        {canSend ? (
+          <View
+            className="border-t border-ink bg-chalk flex-row items-end px-4 py-3 gap-3"
+            style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
-            <Feather name="arrow-up" size={18} color={draft.trim() ? "#E5E1D6" : "rgba(8,17,28,0.36)"} />
-          </Pressable>
-        </View>
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              placeholder="MESSAGE..."
+              placeholderTextColor="rgba(8,17,28,0.36)"
+              multiline
+              className="flex-1 border border-ink bg-paper px-3 py-2.5 font-mono text-[13px] text-ink"
+              style={{ maxHeight: 100, letterSpacing: 0.5 }}
+            />
+            <Pressable
+              onPress={handleSend}
+              disabled={!draft.trim() || sending}
+              className={`w-11 h-11 items-center justify-center border border-ink ${
+                draft.trim() ? "bg-signal" : "bg-paper"
+              } active:opacity-70`}
+            >
+              <Feather name="arrow-up" size={18} color={draft.trim() ? "#E5E1D6" : "rgba(8,17,28,0.36)"} />
+            </Pressable>
+          </View>
+        ) : (
+          <View
+            className="border-t border-ink bg-hi-vis px-5 py-4"
+            style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+          >
+            <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.2 }}>
+              READ-ONLY UPDATE
+            </Text>
+            <Text className="font-mono text-[10px] text-ink-60 mt-1" style={{ lineHeight: 15 }}>
+              {readOnlyReason ?? "You can read this conversation, but cannot reply."}
+            </Text>
+          </View>
+        )}
       </KeyboardAvoidingView>
     </View>
   );

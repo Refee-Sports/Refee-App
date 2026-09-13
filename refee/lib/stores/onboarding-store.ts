@@ -1,4 +1,8 @@
-import { create } from "zustand";
+// Metro's web import condition selects Zustand's ESM build, which contains
+// import.meta and cannot execute inside the classic Expo development bundle.
+// Requiring the package selects its equivalent CJS entry on every platform.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { create } = require("zustand") as typeof import("zustand");
 
 export type PrimaryRole = "referee" | "director" | "assignor";
 

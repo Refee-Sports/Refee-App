@@ -345,7 +345,7 @@ export default function EditProfile() {
             />
           </View>
           <Text className="text-ink-60 font-mono text-[9px] mt-1.5 uppercase" style={{ letterSpacing: 1.2 }}>
-            JOBS BELOW THIS RATE WON'T APPEAR IN YOUR FEED
+            JOBS BELOW THIS RATE WON&apos;T APPEAR IN YOUR FEED
           </Text>
 
           <FieldLabel top>TRAVEL RADIUS</FieldLabel>
@@ -386,7 +386,7 @@ export default function EditProfile() {
         {/* ── Days available ────────────────────────────────────────── */}
         <FormSection label="DAYS AVAILABLE">
           <Text className="text-ink-60 font-mono text-xs mb-4" style={{ lineHeight: 16 }}>
-            Tap the days you're open to work. Directors see this on your profile.
+            Tap the days you&apos;re open to work. Directors see this on your profile.
           </Text>
           <View className="flex-row gap-1">
             {DAYS.map((day, i) => {
@@ -477,7 +477,7 @@ export default function EditProfile() {
         {/* ── Levels ────────────────────────────────────────────────── */}
         <FormSection label="LEVELS WORKED">
           <Text className="text-ink-60 font-mono text-xs mb-4" style={{ lineHeight: 16 }}>
-            Select all levels you've officiated. At least one required.
+            Select all levels you&apos;ve officiated. At least one required.
           </Text>
           {(["AMATEUR", "COLLEGE", "PRO"] as const).map((tier) => (
             <View key={tier} className="mb-5">

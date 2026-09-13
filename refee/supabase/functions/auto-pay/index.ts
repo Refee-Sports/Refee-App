@@ -3,6 +3,7 @@
 // Body: { jobId? } — one game, or all eligible games when omitted.
 // Games whose charge fails fall back to the manual PAY CREW flow.
 import { stripe, adminClient, getCaller, json, handleOptions, chargeTotal, decidePayment } from "../_shared/util.ts";
+import { transferIdempotencyKey } from "../_shared/stripe-events.ts";
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -40,7 +41,7 @@ Deno.serve(async (req) => {
       .select("id, title, payment_status, payment_intent_id")
       .eq("hirer_id", hirer.id)
       .in("status", ["completed", "cancelled"])
-      .in("payment_status", ["unpaid", "processing"]);
+      .in("payment_status", ["unpaid", "processing", "failed"]);
     if (jobId) gamesQuery = gamesQuery.eq("id", jobId);
     const { data: games } = await gamesQuery;
 
@@ -63,12 +64,12 @@ Deno.serve(async (req) => {
 
       // Lock unpaid → processing so concurrent runs don't both charge. Games we
       // already charged are 'processing'; we proceed straight to retrying transfers.
-      if (game.payment_status === "unpaid") {
+      if (game.payment_status === "unpaid" || game.payment_status === "failed") {
         const { data: locked } = await admin
           .from("jobs")
           .update({ payment_status: "processing" })
           .eq("id", game.id)
-          .eq("payment_status", "unpaid")
+          .eq("payment_status", game.payment_status)
           .select("id");
         if (!locked || locked.length === 0) continue;
       }
@@ -124,13 +125,20 @@ Deno.serve(async (req) => {
             .maybeSingle();
 
           if (priv?.stripe_account_id && priv.stripe_account_status === "complete") {
-            const transfer = await stripe.transfers.create({
-              amount: (a.amount_due ?? 0) * 100,
-              currency: "usd",
-              destination: priv.stripe_account_id,
-              source_transaction: chargeId ?? undefined,
-              metadata: { refee_job_id: game.id, refee_assignment_id: a.id },
-            });
+            const transfer = await stripe.transfers.create(
+              {
+                amount: (a.amount_due ?? 0) * 100,
+                currency: "usd",
+                destination: priv.stripe_account_id,
+                source_transaction: chargeId ?? undefined,
+                metadata: {
+                  refee_job_id: game.id,
+                  refee_assignment_id: a.id,
+                  refee_payment_intent_id: piId ?? "",
+                },
+              },
+              { idempotencyKey: transferIdempotencyKey(a.id, piId ?? game.id) }
+            );
             await admin
               .from("job_assignments")
               .update({

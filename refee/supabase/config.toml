@@ -278,6 +278,10 @@ max_frequency = "5s"
 "+15555550199" = "123456"
 15555550199 = "123456"
 
+# Zebra Ref (real-number test referee) — bypasses real SMS locally.
+"+17038982404" = "123456"
+17038982404 = "123456"
+
 # Configure logged in session timeouts.
 # [auth.sessions]
 # Force log out after the specified duration.
@@ -392,6 +396,10 @@ policy = "per_worker"
 inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
+
+[functions.stripe-webhook]
+# Stripe authenticates this public endpoint with its own signature header.
+verify_jwt = false
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"

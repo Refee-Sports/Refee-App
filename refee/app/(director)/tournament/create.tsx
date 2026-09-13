@@ -5,7 +5,6 @@ import {
   View,
   Pressable,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -30,6 +29,16 @@ const US_STATES = [
   "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
 ];
 
+const US_TIMEZONES = [
+  { value: "America/New_York", label: "EASTERN" },
+  { value: "America/Chicago", label: "CENTRAL" },
+  { value: "America/Denver", label: "MOUNTAIN" },
+  { value: "America/Phoenix", label: "ARIZONA" },
+  { value: "America/Los_Angeles", label: "PACIFIC" },
+  { value: "America/Anchorage", label: "ALASKA" },
+  { value: "Pacific/Honolulu", label: "HAWAII" },
+];
+
 export default function CreateTournament() {
   const { editId } = useLocalSearchParams<{ editId?: string }>();
   const isEdit = !!editId;
@@ -46,6 +55,7 @@ export default function CreateTournament() {
     venueName: "",
     venueCity: "",
     venueState: "",
+    timezone: "America/Chicago",
     ruleset: "",
     rulesetModifications: "",
     gameFormat: "" as "" | "quarters" | "halves",
@@ -66,6 +76,7 @@ export default function CreateTournament() {
           venueName: t.venue_name ?? "",
           venueCity: t.venue_city,
           venueState: t.venue_state,
+          timezone: t.timezone ?? "America/Chicago",
           ruleset: t.ruleset ?? "",
           rulesetModifications: t.ruleset_modifications ?? "",
           gameFormat: (t.game_format ?? "") as "" | "quarters" | "halves",
@@ -116,6 +127,7 @@ export default function CreateTournament() {
       venueName: form.venueName.trim(),
       venueCity: form.venueCity.trim(),
       venueState: form.venueState.trim().toUpperCase(),
+      timezone: form.timezone,
       ruleset: form.ruleset,
       rulesetModifications: form.rulesetModifications.trim() || undefined,
       gameFormat: (form.gameFormat || undefined) as "quarters" | "halves" | undefined,
@@ -367,6 +379,14 @@ export default function CreateTournament() {
         autoCapitalize="characters"
         maxLength={2}
         error={form.venueState.length === 2 && !stateValid ? "Invalid state code" : undefined}
+      />
+
+      <FLabel style={{ marginTop: 16 }}>TOURNAMENT TIMEZONE *</FLabel>
+      <DropdownSelect
+        value={form.timezone}
+        options={US_TIMEZONES}
+        placeholder="SELECT TIMEZONE"
+        onSelect={(value) => setForm((current) => ({ ...current, timezone: value }))}
       />
     </ScrollScreen>
   );

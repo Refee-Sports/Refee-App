@@ -18,7 +18,7 @@ import {
   JetBrainsMono_700Bold,
 } from "@expo-google-fonts/jetbrains-mono";
 import Constants from "expo-constants";
-import { StripeProvider } from "@stripe/stripe-react-native";
+import { StripeProvider } from "@/lib/payments/stripe";
 import { supabase } from "@/lib/supabase";
 import { ensureValidSession } from "@/lib/auth/session";
 import { Session } from "@supabase/supabase-js";
@@ -26,10 +26,14 @@ import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
 import { useOnboardingStore, type PrimaryRole } from "@/lib/stores/onboarding-store";
 import { registerForPushNotifications } from "@/lib/push/notifications";
 import { applyGlobalFontScaleCap } from "@/lib/ui/text-scaling";
+import { LogBox } from "react-native";
 
 // Bound OS Dynamic Type scaling app-wide so text stays scalable (accessibility)
 // without breaking the dense layouts. Runs once at module load.
 applyGlobalFontScaleCap();
+
+// Dev-only: hide LogBox warning/error toasts so they don't cover the UI. No-op in prod.
+LogBox.ignoreAllLogs();
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -86,7 +90,7 @@ export default function RootLayout() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [setPrimaryRole, setProfileComplete]);
 
   useEffect(() => {
     if (!session) return;
@@ -101,7 +105,7 @@ export default function RootLayout() {
       }
       setAuthReady(true);
     })();
-  }, [session?.user.id]);
+  }, [session, setPrimaryRole, setProfileComplete]);
 
   const { primaryRole } = useOnboardingStore();
 
@@ -135,6 +139,8 @@ export default function RootLayout() {
             <Stack.Screen name="(onboarding)" />
             <Stack.Screen name="(app)" />
             <Stack.Screen name="(director)" />
+            <Stack.Screen name="(assignor)" />
+            <Stack.Screen name="auth/callback" />
           </Stack>
         </AuthGate>
       </StripeProvider>
@@ -163,9 +169,11 @@ function AuthGate({
     const inOnboardingGroup = segments[0] === "(onboarding)";
     const inAppGroup = segments[0] === "(app)";
     const inDirectorGroup = (segments[0] as string) === "(director)";
+    const inAssignorGroup = (segments[0] as string) === "(assignor)";
+    const inAuthCallback = (segments[0] as string) === "auth";
 
     if (!session) {
-      if (!inAuthGroup) router.replace("/(auth)/welcome");
+      if (!inAuthGroup && !inAuthCallback) router.replace("/(auth)/welcome");
       return;
     }
 
@@ -181,16 +189,19 @@ function AuthGate({
     if (primaryRole === null) return;
 
     if (primaryRole === "director") {
-      if (inAuthGroup || inOnboardingGroup || inAppGroup) {
+      if (inAuthGroup || inOnboardingGroup || inAppGroup || inAssignorGroup) {
         router.replace("/(director)/(tabs)/tournaments" as any);
       }
+    } else if (primaryRole === "assignor") {
+      if (inAuthGroup || inOnboardingGroup || inAppGroup || inDirectorGroup) {
+        router.replace("/(assignor)/(tabs)/tournaments" as any);
+      }
     } else {
-      // referee or assignor → main app
-      if (inAuthGroup || inOnboardingGroup || inDirectorGroup) {
+      if (inAuthGroup || inOnboardingGroup || inDirectorGroup || inAssignorGroup) {
         router.replace("/(app)/(tabs)/jobs");
       }
     }
-  }, [session, profileComplete, primaryRole, segments]);
+  }, [session, profileComplete, primaryRole, segments, router]);
 
   return <>{children}</>;
 }

@@ -79,7 +79,7 @@ export function JobDetailCrew({ job, crewMembers }: Props) {
             name={member.isMe ? `${member.displayName} (YOU)` : member.displayName}
             role={member.role}
             status={member.status}
-            locked={member.status.includes("LOCKED")}
+            locked={member.status.includes("LOCKED") || member.status.includes("RE-CONFIRM")}
           />
         ))}
         {Array.from({ length: openSlots }).map((_, i) => (

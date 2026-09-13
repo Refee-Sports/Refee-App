@@ -11,8 +11,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
-import { supabase } from "@/lib/supabase";
-import { getSupabaseSetupError } from "@/lib/supabase";
+import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createDirectorProfile } from "@/lib/director/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
@@ -261,7 +260,7 @@ function NameStep({
         <Text className="text-signal">CONTACT{"\n"}NAME</Text>
       </Text>
       <Text className="text-ink-80 mt-3 mb-7" style={{ fontSize: 14, lineHeight: 20 }}>
-        This is how you'll appear to referees on the platform.
+        This is how you&apos;ll appear to referees on the platform.
       </Text>
 
       <DLabel>FIRST NAME</DLabel>

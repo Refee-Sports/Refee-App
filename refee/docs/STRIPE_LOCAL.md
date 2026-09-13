@@ -1,10 +1,10 @@
 # Local Edge Functions & Env
 
-Edge functions now include: Stripe (`pay-crew`, `auto-pay`, `confirm-payout`, `connect-onboard`, `connect-status`, `setup-payment-method`), `geocode`, and `send-push`. All run under one command:
+Edge functions now include: Stripe (`pay-crew`, `auto-pay`, `confirm-payout`, `connect-onboard`, `connect-status`, `setup-payment-method`, `stripe-webhook`), `geocode`, and `send-push`. All run under one command:
 ```bash
 npx supabase functions serve --env-file supabase/functions/.env
 ```
-`supabase/functions/.env` keys: `STRIPE_SECRET_KEY` (required). Optional: `GEOCODER=google` + `GOOGLE_MAPS_API_KEY` (geocoding defaults to free Nominatim — no key needed). Push needs no secret (Expo push API is keyless for the send).
+`supabase/functions/.env` keys: `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` (required for signed webhook events). Optional: `GEOCODER=google` + `GOOGLE_MAPS_API_KEY` (geocoding defaults to free Nominatim — no key needed). Push needs no secret (Expo push API is keyless for the send).
 
 **Push caveat:** notifications only deliver in an **EAS dev build** on a physical device. Expo Go (SDK 53+) and simulators can't get push tokens — the code no-ops there, so nothing breaks; you just won't see banners until you build.
 
@@ -16,7 +16,7 @@ Money flow (all test mode, no real money):
 1. **Director saves a card once** — Profile → **SET UP AUTO-PAY**. From then on, completed games (manual or 24h auto-complete) are charged automatically and refs are paid without any taps.
 2. **No card on file?** The manual **PAY CREW** button on the game page opens a payment sheet — same math (crew total + 5% platform fee). It's also the fallback if an auto-charge is declined.
 3. **Referee** taps **SET UP PAYOUTS** on their profile → Stripe Express onboarding in the browser.
-4. Paid refs receive instant Transfers. Refs who haven't onboarded have their share **held** — it releases automatically the next time their payout status is checked after onboarding.
+4. Paid refs receive Transfers to their Stripe connected-account balance. This is not the same as bank arrival: a first US payout may take about 7 days and standard payouts are typically about 2 business days. Refs who haven't onboarded have their share **held** — it releases automatically the next time their payout status is checked after onboarding.
 
 Auto-pay triggers: right after the director taps MARK GAME COMPLETED, and on the tournaments screen load (which also sweeps games past their 24h auto-complete window). A `processing` lock on the job prevents double-charging.
 
@@ -35,7 +35,20 @@ Auto-pay triggers: right after the director taps MARK GAME COMPLETED, and on the
     STRIPE_SECRET_KEY=sk_test_...
     ```
 
-### 2. Run everything
+### 2. Signed webhook forwarding
+
+Run Stripe CLI forwarding during local payment tests and copy its `whsec_…`
+value into `supabase/functions/.env`:
+
+```bash
+stripe listen --forward-to http://127.0.0.1:54321/functions/v1/stripe-webhook
+```
+
+The endpoint intentionally has Supabase JWT verification disabled because
+Stripe authenticates the raw request with the `stripe-signature` header.
+Application callers still cannot forge an accepted event.
+
+### 3. Run everything
 ⚠️ Stripe is a **native module — it does NOT work in Expo Go.** You must run a
 native build. On the iOS Simulator that means `expo run:ios`, not `expo start`.
 
@@ -89,17 +102,18 @@ Other useful test cards: `4000 0000 0000 9995` (declined — insufficient funds)
 
 | Piece | Where |
 |---|---|
-| `pay-crew` | Edge function — validates caller is the hirer, sums unpaid `amount_due`, creates PaymentIntent (+10% fee) |
+| `pay-crew` | Edge function — validates caller is the hirer, sums unpaid `amount_due`, creates PaymentIntent (+5% fee) |
 | `confirm-payout` | Edge function — verifies the PaymentIntent **with Stripe** (never trusts the client), creates Transfers, marks `payout_status` |
+| `stripe-webhook` | Public, Stripe-signed source of truth — settles intents, records transfer/refund/dispute states, flags manual review, and deduplicates event replays |
 | `connect-onboard` | Edge function — creates/reuses Express account, returns onboarding link |
 | `connect-status` | Edge function — checks payout readiness, releases held payouts |
 | `lib/payments/queries.ts` | App-side wrappers via `supabase.functions.invoke` |
-| Migration 0014 | `jobs.payment_intent_id`, `jobs.payment_status` |
+| Migrations 0014/0025/0026 | Payment fields/statuses, unique Stripe reference indexes, refund/dispute review state, and service-only webhook event ledger |
 
 Secrets never touch the app: the secret key lives only in the edge functions' env; the app holds only the publishable key.
 
-## Known limitations (fine for local, revisit for production)
-- **No webhooks** — payout runs when the client calls `confirm-payout` after the sheet succeeds. If the app dies between payment and confirm, the game stays `processing`; re-tapping PAY CREW errors ("already paid" comes from Stripe status). Production should add a `payment_intent.succeeded` webhook as the source of truth.
+## Known limitations (revisit before production)
+- **Webhook deployment/config remains** — deploy `stripe-webhook`, set `STRIPE_WEBHOOK_SECRET`, register the live endpoint in Stripe, and prove one real test-mode `payment_intent.succeeded` event end to end. Local signed-event and replay rejection are verified.
 - **Platform fee** is `PLATFORM_FEE_PCT` in `_shared/util.ts` (currently 5% — revisit before launch).
-- **Instant transfers assume platform balance** — in test mode this just works; in live mode Stripe balance timing (charge settlement vs transfer) needs `source_transaction` or a balance buffer.
-- Refunds/disputes not built.
+- Transfers use the originating charge as `source_transaction`; live-mode timing still needs a Connect balance/failure drill.
+- Refund/dispute events are reconciled and lock repeat payment, but connected-account transfers are intentionally **not auto-reversed** until the loss-liability policy is approved. Deploy and run Stripe test-mode refund/dispute drills after that decision.

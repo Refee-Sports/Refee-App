@@ -9,9 +9,9 @@
 
 ### Payments & payouts
 - [ ] **Enable Stripe Tax Reporting (1099).** Data is collected at Express onboarding (see Q2 below); we still must turn on Stripe's 1099-K/NEC filing in the dashboard and set whether Stripe or Refee is the filer. Verify the $600 threshold logic and e-delivery consent.
-- [ ] **Payment source-of-truth webhook.** Add `payment_intent.succeeded` (and `.payment_failed`, `transfer.*`) webhook → mark `payment_status`/`payout_status`. Today confirm-payout runs only if the client calls back; a killed app can strand a game in `processing`.
-- [ ] **First-payout delay UX.** New US Express accounts have a ~7-day hold on the first payout, then rolling ~2-business-day standard payouts. Set ref expectations in the payout UI so "instant" isn't misread as "instant to bank." (See Q1.)
-- [ ] **Refund / dispute handling.** Director cancels after paying, or a chargeback lands — no flow exists. At minimum: reverse transfers, define who bears the loss.
+- [~] **Payment source-of-truth webhook.** ✅ Built locally in 0025 + `stripe-webhook`: signed `payment_intent.succeeded`/`.payment_failed` and `transfer.*` reconciliation, replay ledger, and stable transfer idempotency keys. **Remaining:** deploy, register the Stripe test/live endpoints + secrets, and run a real test-mode PaymentIntent E2E.
+- [x] **First-payout delay UX.** ✅ Ref payout setup/ready surfaces distinguish transfer to Stripe from bank arrival and state ~7 days for the first bank payout / ~2 business days standard. Director success copy no longer says "paid instantly."
+- [~] **Refund / dispute handling.** ✅ Migration 0026 + signed webhook handling now record partial/full refunds and open/won/lost disputes, deduplicate replays, flag manual review, and lock the director payment action so a loss event cannot trigger a second crew charge. **Remaining:** approve who bears each loss, implement/authorize connected-account transfer reversals accordingly, deploy/register events, and run Stripe test-mode refund/dispute drills.
 - [ ] **Decouple ref pay from director settlement (partial escrow) OR accept the risk explicitly.** Right now a ref only gets paid if the director's card charges at completion. If it declines, the ref is stuck. Either add escrow-at-fill (charge when crew locks) or a clear dunning + guarantee policy. This is also the #1 competitive gap vs Refr.
 
 ### Pricing (decided-but-revisit)
@@ -40,7 +40,7 @@
 ### Messaging
 - [x] **Conversation-creation RLS bug** — ✅ fixed. Directors post crew messages via a security-definer RPC (`post_crew_note`, 0021); refs create crew threads after a SELECT-policy fix (0023, creator-or-participant read). Both verified.
 - [x] **One-way director crew messages + read receipts** — ✅ director broadcasts "Send a Crew Message" (not a participant, so refs can't reply); director sees sent messages + per-ref **SEEN x/N** on the game detail (`get_crew_thread`, 0022).
-- [ ] **Finish role-based messaging enforcement.** Done: rules (`lib/messages/permissions.ts`, tested), one-way crew notes. **Remaining:** (1) referee send-box gate so a ref can't reply inside a director-initiated DM (use `canSendToParticipants`); (2) server-side RLS on `messages` insert enforcing `canMessage`; (3) decide whether ref↔ref crew chat should be a **separate** thread from director notes (today they share one thread, so the director's `get_crew_thread` can see ref-to-ref chat). Assignor↔ref rules are ready but blocked on assignor UI.
+- [~] **Finish role-based messaging enforcement.** ✅ Completed and locally verified in 0024: referee send-box gate, server-side directional RLS, and separate read-only `director_crew_note` vs ref `game_crew` threads. **Remaining:** push 0024 to hosted and repeat the RLS/UI smoke matrix there. Assignor↔ref rules are ready but assignor UI remains incomplete.
 
 ### Trust & safety / legal
 - [ ] **Terms of Service + Privacy Policy** (marketplace, payments, data). Required for app store review.
@@ -75,7 +75,7 @@ Requirements (per Gerda, Aug 2026):
 - [x] **True radius filtering** — ✅ done. Geocode edge fn (Nominatim default, `GEOCODER=google` swap), venues geocoded on game create/edit, ref home on profile save, Haversine filter in feed with state fallback; real miles shown on cards. Migration 0015 (`home_lat/lng`). Seed rows backfilled.
 - [x] **Hybrid location (home + live "near me")** — ✅ done. HOME/NEAR ME toggle on jobs feed; near-me requests device location (`expo-location`) and re-filters around it; denial falls back to home with a note. Home is the default (works with no location permission).
 - [x] **Game completion nudge** — ✅ in-app banner on director tournaments screen lists ended-but-open games (pre-24h-sweep window) with tap-to-complete. Push version rides on the push infra above.
-- [ ] **needs_reconfirm crew visibility** — a ref awaiting re-confirm drops off the referee-side crew list. Cosmetic but confusing.
+- [x] **needs_reconfirm crew visibility** — ✅ awaiting-reconfirm referees remain in the crew and show `! RE-CONFIRM`; mapper regression tests cover the state.
 - [ ] **Mileage** (optional pay component) — Refr has it; some assignors expect it.
 - [ ] **Earnings ledger** — per-game statement view, not just totals (helps refs reconcile against their own 1099).
 
@@ -87,7 +87,8 @@ Requirements (per Gerda, Aug 2026):
 - [ ] Multi-sport (basketball-only by design for launch).
 
 ## ⚠️ Technical debt
-- [~] Automated tests — **Vitest set up; 81 tests** covering feed filters, distance, DB→UI mapping, schedule-conflict, fee/idempotency math, messaging permissions + receipts. Gaps: earnings math, re-confirm/withdraw flows, and any RN component/RLS-level tests.
+- [~] Automated tests — **Vitest set up; 91 tests** covering feed filters, distance, DB→UI mapping, schedule-conflict, fee/idempotency math, Stripe webhook routing/refund/dispute/pay-lock behavior, crew reconfirm mapping, messaging permissions + receipts. Local SQL smoke tests cover directional message RLS, and signed local webhook smoke tests cover replay protection plus refund/dispute state transitions. Gaps: earnings math, full re-confirm/withdraw flows, automated DB/RLS harness, and RN component tests.
+- [x] Repository quality gate — ✅ lint is clean (previously 10 errors / 29 warnings); `.github/workflows/quality.yml` now runs lint, TypeScript, Vitest, and a production Expo web export on pushes/PRs. The same gate passes locally.
 - [x] Mock-data fallback in jobs feed — ✅ fixed (mock is offline-only now; a configured DB with no jobs shows the empty state).
 - [x] Fake hardcoded crew ("Jeremy T.") on job detail — ✅ removed; shows real crew + open slots.
 - [ ] TZ hardcoded to America/Chicago in several screens (games are venue-local — should follow the venue, not CT).

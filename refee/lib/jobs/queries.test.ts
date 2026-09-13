@@ -5,7 +5,14 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 // only stub the module-level import to keep things Node-friendly.
 vi.mock("@/lib/supabase", () => ({ supabase: {} }));
 
-import { findScheduleConflict, isLateWithdrawal, WITHDRAW_FREE_WINDOW_HOURS } from "./queries";
+import {
+  acceptJob,
+  declineJob,
+  findScheduleConflict,
+  isLateWithdrawal,
+  mapCrewAssignment,
+  WITHDRAW_FREE_WINDOW_HOURS,
+} from "./queries";
 
 type Existing = { job_id: string; title: string; starts_at: string; duration_minutes: number | null };
 
@@ -14,7 +21,15 @@ type Existing = { job_id: string; title: string; starts_at: string; duration_min
  * The "jobs" query ends in .maybeSingle(); the "job_assignments" query is awaited
  * directly (so the builder is thenable).
  */
-function fakeSupabase(target: { starts_at: string; duration_minutes: number | null } | null, mine: Existing[]) {
+function fakeSupabase(
+  target: { starts_at: string; duration_minutes: number | null } | null,
+  mine: Existing[],
+  rpcResult: { data: string | null; error: { message: string } | null } = {
+    data: "accepted",
+    error: null,
+  }
+) {
+  const rpc = vi.fn().mockResolvedValue(rpcResult);
   return {
     from(table: string) {
       const result =
@@ -29,6 +44,7 @@ function fakeSupabase(target: { starts_at: string; duration_minutes: number | nu
       };
       return builder;
     },
+    rpc,
   } as any;
 }
 
@@ -103,6 +119,44 @@ describe("findScheduleConflict (overlap detection)", () => {
   });
 });
 
+describe("server-authoritative job responses", () => {
+  it("accepts through respond_to_job after the friendly client conflict check", async () => {
+    const client = fakeSupabase(target, [], { data: "pending", error: null });
+
+    const result = await acceptJob(client, "ref1", "job1");
+
+    expect(client.rpc).toHaveBeenCalledWith("respond_to_job", {
+      p_job_id: "job1",
+      p_accept: true,
+    });
+    expect(result).toEqual({ status: "pending", error: null });
+  });
+
+  it("declines through respond_to_job and never authors an assignment row directly", async () => {
+    const client = fakeSupabase(target, [], { data: "declined", error: null });
+
+    const result = await declineJob(client, "ref1", "job1");
+
+    expect(client.rpc).toHaveBeenCalledWith("respond_to_job", {
+      p_job_id: "job1",
+      p_accept: false,
+    });
+    expect(result).toEqual({ status: "declined", error: null });
+  });
+
+  it("surfaces an authorization failure from the database", async () => {
+    const client = fakeSupabase(target, [], {
+      data: null,
+      error: { message: "This game is limited to the assignor roster" },
+    });
+
+    const result = await acceptJob(client, "ref1", "job1");
+
+    expect(result.status).toBeNull();
+    expect(result.error?.message).toBe("This game is limited to the assignor roster");
+  });
+});
+
 describe("isLateWithdrawal", () => {
   afterEach(() => vi.useRealTimers());
 
@@ -118,5 +172,37 @@ describe("isLateWithdrawal", () => {
     vi.setSystemTime(new Date("2026-09-01T00:00:00Z"));
     // Game 48h out — outside the 24h window.
     expect(isLateWithdrawal("2026-09-03T00:00:00Z")).toBe(false);
+  });
+});
+
+describe("mapCrewAssignment", () => {
+  const profile = {
+    first_name: "Alex",
+    last_initial: "R",
+    display_name: "Alex R.",
+    rating: 4.8,
+  };
+
+  it("keeps an awaiting-reconfirm referee visible with an explicit state", () => {
+    expect(
+      mapCrewAssignment(
+        { ref_id: "ref1", role: "crew_chief", status: "needs_reconfirm", profile },
+        "ref1"
+      )
+    ).toMatchObject({
+      refId: "ref1",
+      displayName: "ALEX R.",
+      status: "! RE-CONFIRM",
+      isMe: true,
+    });
+  });
+
+  it("keeps accepted crew locked", () => {
+    expect(
+      mapCrewAssignment(
+        { ref_id: "ref2", role: "official", status: "accepted", profile },
+        "ref1"
+      )
+    ).toMatchObject({ status: "● LOCKED", isMe: false });
   });
 });

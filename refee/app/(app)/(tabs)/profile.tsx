@@ -105,7 +105,7 @@ export default function Profile() {
       if (!session || cancelled) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, earningsRes] =
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes] =
         await Promise.all([
           fetchMyProfile(uid),
           fetchMyRefSports(uid),
@@ -113,7 +113,6 @@ export default function Profile() {
           fetchMyCertifications(uid),
           fetchMyLevels(uid),
           fetchUpcomingGames(uid),
-          fetchEarningsSummary(uid, earningsPeriod),
         ]);
 
       if (cancelled) return;
@@ -123,20 +122,21 @@ export default function Profile() {
       setCerts((certsRes.data ?? []) as CertificationRow[]);
       setLevels((levelsRes.data ?? []) as RefLevelRow[]);
       setUpcomingGames(upcomingRes.games);
-      setEarnings(earningsRes.summary);
       setLoading(false);
     })();
     return () => { cancelled = true; };
   }, [profileVersion]);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      if (!session || cancelled) return;
       const { summary } = await fetchEarningsSummary(session.user.id, earningsPeriod);
-      setEarnings(summary);
+      if (!cancelled) setEarnings(summary);
     })();
-  }, [earningsPeriod]);
+    return () => { cancelled = true; };
+  }, [earningsPeriod, profileVersion]);
 
   const cyclePeriod = () => {
     Haptics.selectionAsync();
@@ -482,10 +482,15 @@ export default function Profile() {
 
       {/* ── Payouts ──────────────────────────────────────────────── */}
       {payoutStatus?.payoutsEnabled ? (
-        <View className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3 flex-row items-center gap-2">
-          <Feather name="check-circle" size={13} color="#00A85C" />
-          <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
-            PAYOUTS READY · PAY LANDS AUTOMATICALLY
+        <View className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3">
+          <View className="flex-row items-center gap-2">
+            <Feather name="check-circle" size={13} color="#00A85C" />
+            <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
+              PAYOUTS READY · TRANSFERS ARE AUTOMATIC
+            </Text>
+          </View>
+          <Text className="font-mono text-[9px] text-ink-60 uppercase mt-2" style={{ letterSpacing: 0.7, lineHeight: 14 }}>
+            PAY REACHES YOUR STRIPE BALANCE AFTER THE DIRECTOR PAYS. YOUR FIRST BANK PAYOUT MAY TAKE ABOUT 7 DAYS; STANDARD PAYOUTS ARE TYPICALLY ABOUT 2 BUSINESS DAYS.
           </Text>
         </View>
       ) : (
@@ -502,6 +507,9 @@ export default function Profile() {
               {payoutStatus?.hasAccount
                 ? "FINISH STRIPE ONBOARDING TO GET PAID"
                 : "CONNECT A BANK ACCOUNT TO GET PAID FOR GAMES"}
+            </Text>
+            <Text className="font-mono text-[8px] uppercase mt-1.5" style={{ letterSpacing: 0.6, lineHeight: 12, color: "rgba(229,225,214,0.72)" }}>
+              FIRST BANK PAYOUT MAY TAKE ABOUT 7 DAYS · STANDARD PAYOUTS ARE TYPICALLY ABOUT 2 BUSINESS DAYS
             </Text>
           </View>
           {payoutBusy ? (

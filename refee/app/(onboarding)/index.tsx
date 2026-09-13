@@ -7,12 +7,10 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
-import { supabase } from "@/lib/supabase";
-import { getSupabaseSetupError } from "@/lib/supabase";
+import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, CertEntry } from "@/lib/profile/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 
@@ -63,7 +61,6 @@ type FormData = {
 };
 
 export default function Onboarding() {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const setProfileComplete = useOnboardingStore((s) => s.setProfileComplete);
   const setPrimaryRole = useOnboardingStore((s) => s.setPrimaryRole);
@@ -328,7 +325,7 @@ function NameStep({ form, set }: { form: FormData; set: StringSetter }) {
         className="text-ink font-display"
         style={{ fontSize: 40, lineHeight: 46, letterSpacing: -1.5 }}
       >
-        WHAT'S YOUR{"\n"}
+        WHAT&apos;S YOUR{"\n"}
         <Text className="text-signal">NAME?</Text>
       </Text>
       <Text className="text-ink-80 mt-3 mb-7" style={{ fontSize: 14, lineHeight: 20 }}>
@@ -356,7 +353,7 @@ function NameStep({ form, set }: { form: FormData; set: StringSetter }) {
         <View className="mt-5 border border-signal/30 bg-signal/5 px-3.5 py-2.5 flex-row items-center gap-2">
           <Text className="text-signal font-mono text-base">▸</Text>
           <Text className="text-ink-80 font-mono text-xs" style={{ letterSpacing: 0.5 }}>
-            YOU'LL APPEAR AS:{" "}
+            YOU&apos;LL APPEAR AS:{" "}
             <Text className="text-ink font-mono-bold">
               {form.firstName.trim()} {form.lastName.trim()[0].toUpperCase()}.
             </Text>
@@ -492,7 +489,7 @@ function RateStep({ form, set }: { form: FormData; set: StringSetter }) {
         className="text-ink-60 font-mono text-[9px] mt-1.5 uppercase"
         style={{ letterSpacing: 1.2 }}
       >
-        JOBS BELOW THIS RATE WON'T APPEAR IN YOUR FEED
+        JOBS BELOW THIS RATE WON&apos;T APPEAR IN YOUR FEED
       </Text>
 
       <Label style={{ marginTop: 20 }}>TRAVEL RADIUS (MILES)</Label>
@@ -516,7 +513,7 @@ function RateStep({ form, set }: { form: FormData; set: StringSetter }) {
         className="text-ink-60 font-mono text-[9px] mt-1.5 uppercase"
         style={{ letterSpacing: 1.2 }}
       >
-        HOW FAR YOU'RE WILLING TO TRAVEL FROM YOUR CITY
+        HOW FAR YOU&apos;RE WILLING TO TRAVEL FROM YOUR CITY
       </Text>
     </View>
   );

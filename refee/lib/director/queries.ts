@@ -27,6 +27,7 @@ export type TournamentRow = {
   venue_name: string | null;
   venue_city: string;
   venue_state: string;
+  timezone: string;
   status: string;
   staffing_model: string;
   pay_per_game: number | null;
@@ -62,6 +63,11 @@ export type DirectorGameRow = {
   uniform_requirements: string | null;
   hirer_note: string | null;
   payment_status?: string | null;
+  payment_refund_status?: "none" | "partial" | "full";
+  refunded_amount_cents?: number;
+  payment_dispute_status?: "none" | "open" | "won" | "lost";
+  payment_issue_requires_review?: boolean;
+  payment_review_reason?: "refund" | "dispute" | null;
 };
 
 export type ApplicantRow = {
@@ -194,6 +200,7 @@ export async function createTournament(
     venueName?: string;
     venueCity: string;
     venueState: string;
+    timezone: string;
     ruleset?: string;
     rulesetModifications?: string;
     gameFormat?: "quarters" | "halves";
@@ -213,6 +220,7 @@ export async function createTournament(
       venue_name: args.venueName || null,
       venue_city: args.venueCity,
       venue_state: args.venueState,
+      timezone: args.timezone,
       ruleset: args.ruleset || null,
       ruleset_modifications: args.rulesetModifications || null,
       game_format: args.gameFormat ?? null,
@@ -366,44 +374,16 @@ export async function fetchGameApplicants(
   return { applicants, error: null };
 }
 
-/**
- * Recomputes a game's status: 'staffed' once every crew slot is filled by an
- * accepted ref, otherwise 'open'. No-op for completed/cancelled games.
- */
-export async function recomputeJobStaffing(jobId: string): Promise<void> {
-  const { data: job } = await supabase
-    .from("jobs")
-    .select("crew_size, status")
-    .eq("id", jobId)
-    .maybeSingle();
-  if (!job || job.status === "completed" || job.status === "cancelled") return;
-
-  const { data: accepted } = await supabase
-    .from("job_assignments")
-    .select("id")
-    .eq("job_id", jobId)
-    .in("status", ["accepted", "needs_reconfirm"]);
-
-  const filled = (accepted ?? []).length >= (job.crew_size ?? 1);
-  const next = filled ? "staffed" : "open";
-  if (next !== job.status) {
-    await supabase.from("jobs").update({ status: next }).eq("id", jobId);
-  }
-}
-
 export async function approveApplicant(
   jobId: string,
   refId: string
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase
-    .from("job_assignments")
-    .update({ status: "accepted", responded_at: new Date().toISOString() })
-    .eq("job_id", jobId)
-    .eq("ref_id", refId);
+  const { error } = await supabase.rpc("director_respond_to_application", {
+    p_job_id: jobId,
+    p_ref_id: refId,
+    p_accept: true,
+  });
   if (error) return { error: new Error(error.message) };
-
-  // Flip the game to 'staffed' if this filled the crew
-  await recomputeJobStaffing(jobId);
 
   // Notify the ref they're confirmed
   const { data: job } = await supabase.from("jobs").select("title").eq("id", jobId).maybeSingle();
@@ -438,11 +418,11 @@ export async function declineApplicantForGame(
   jobId: string,
   refId: string
 ): Promise<{ error: Error | null }> {
-  const { error } = await supabase
-    .from("job_assignments")
-    .update({ status: "declined", responded_at: new Date().toISOString() })
-    .eq("job_id", jobId)
-    .eq("ref_id", refId);
+  const { error } = await supabase.rpc("director_respond_to_application", {
+    p_job_id: jobId,
+    p_ref_id: refId,
+    p_accept: false,
+  });
   return { error: error ? new Error(error.message) : null };
 }
 
@@ -604,13 +584,13 @@ export async function updateGame(
 
   if (!materialChange) return { error: null, refsNeedReconfirm: false };
 
-  // Accepted refs must re-confirm
+  // Migration 0030 flips accepted refs transactionally from the database
+  // trigger. Read the affected crew for push delivery and UI feedback.
   const { data: flipped } = await supabase
     .from("job_assignments")
-    .update({ status: "needs_reconfirm" })
+    .select("ref_id")
     .eq("job_id", gameId)
-    .eq("status", "accepted")
-    .select("ref_id");
+    .eq("status", "needs_reconfirm");
 
   const hadAccepted = (flipped ?? []).length > 0;
 
@@ -624,21 +604,13 @@ export async function updateGame(
     );
   }
 
-  // Post a system note to the crew thread if one exists
+  // Post a one-way director update. The RPC owns the read-only announcement
+  // thread and keeps it separate from referee-to-referee crew chat.
   if (hadAccepted) {
-    const { data: convo } = await supabase
-      .from("conversations")
-      .select("id")
-      .eq("job_id", gameId)
-      .eq("kind", "game_crew")
-      .maybeSingle();
-    if (convo) {
-      await supabase.from("messages").insert({
-        conversation_id: convo.id,
-        sender_id: editorUserId,
-        body: `⚠ GAME DETAILS UPDATED — "${args.homeTeam} vs ${args.awayTeam}" changed (time, venue, or pay). Please re-confirm your spot from the job page.`,
-      });
-    }
+    await supabase.rpc("post_crew_note", {
+      p_job_id: gameId,
+      p_body: `⚠ GAME DETAILS UPDATED — "${args.homeTeam} vs ${args.awayTeam}" changed (time, venue, or pay). Please re-confirm your spot from the job page.`,
+    });
   }
 
   return { error: null, refsNeedReconfirm: hadAccepted };
@@ -654,6 +626,7 @@ export async function updateTournament(
     venueName?: string;
     venueCity: string;
     venueState: string;
+    timezone: string;
     ruleset?: string;
     rulesetModifications?: string;
     gameFormat?: "quarters" | "halves";
@@ -671,6 +644,7 @@ export async function updateTournament(
       venue_name: args.venueName || null,
       venue_city: args.venueCity,
       venue_state: args.venueState,
+      timezone: args.timezone,
       ruleset: args.ruleset || null,
       ruleset_modifications: args.rulesetModifications || null,
       game_format: args.gameFormat ?? null,
@@ -712,34 +686,15 @@ export async function completeGame(
   gameId: string,
   directorUserId: string
 ): Promise<{ error: Error | null }> {
-  const { data: job, error: jErr } = await supabase
-    .from("jobs")
-    .select("title, pay_per_game, num_games, status")
-    .eq("id", gameId)
-    .maybeSingle();
-  if (jErr || !job) return { error: new Error(jErr?.message ?? "Game not found") };
-  if (job.status === "completed" || job.status === "cancelled") {
-    return { error: new Error("Game is already closed.") };
-  }
-
-  const { error: updErr } = await supabase
-    .from("jobs")
-    .update({ status: "completed", completed_at: new Date().toISOString() })
-    .eq("id", gameId);
-  if (updErr) return { error: new Error(updErr.message) };
-
-  const fullPay = job.pay_per_game * (job.num_games ?? 1);
-  const { error: aErr } = await supabase
-    .from("job_assignments")
-    .update({ status: "completed", amount_due: fullPay })
-    .eq("job_id", gameId)
-    .in("status", ["accepted", "needs_reconfirm"]);
-  if (aErr) return { error: new Error(aErr.message) };
+  const { data, error } = await supabase.rpc("complete_game", { p_job_id: gameId });
+  if (error) return { error: new Error(error.message) };
+  const result = data as { title?: string; amount_due?: number } | null;
+  const fullPay = result?.amount_due ?? 0;
 
   await postCrewNote(
     gameId,
     directorUserId,
-    `✓ GAME COMPLETED — "${job.title}" is wrapped. Pay of $${fullPay} per ref is locked in. Thanks, crew!`
+    `✓ GAME COMPLETED — "${result?.title ?? "Game"}" is wrapped. Pay of $${fullPay} per ref is locked in. Thanks, crew!`
   );
   return { error: null };
 }
@@ -752,51 +707,22 @@ export async function cancelGame(
   gameId: string,
   directorUserId: string
 ): Promise<{ error: Error | null; feePaid: boolean; feeAmount: number }> {
-  const { data: job, error: jErr } = await supabase
-    .from("jobs")
-    .select("title, starts_at, pay_per_game, num_games, status")
-    .eq("id", gameId)
-    .maybeSingle();
-  if (jErr || !job) {
-    return { error: new Error(jErr?.message ?? "Game not found"), feePaid: false, feeAmount: 0 };
-  }
-  if (job.status === "completed" || job.status === "cancelled") {
-    return { error: new Error("Game is already closed."), feePaid: false, feeAmount: 0 };
-  }
-
-  const msToStart = new Date(job.starts_at).getTime() - Date.now();
-  const lateCancel = msToStart < CANCEL_FEE_WINDOW_HOURS * 3_600_000;
-  const feeAmount = lateCancel
-    ? Math.round(job.pay_per_game * (job.num_games ?? 1) * 0.5)
-    : 0;
-
-  const { error: updErr } = await supabase
-    .from("jobs")
-    .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
-    .eq("id", gameId);
-  if (updErr) return { error: new Error(updErr.message), feePaid: false, feeAmount: 0 };
-
-  // Confirmed refs → cancelled with (possible) bust fee
-  const { error: aErr } = await supabase
-    .from("job_assignments")
-    .update({ status: "cancelled", amount_due: feeAmount })
-    .eq("job_id", gameId)
-    .in("status", ["accepted", "needs_reconfirm"]);
-  if (aErr) return { error: new Error(aErr.message), feePaid: false, feeAmount: 0 };
-
-  // Pending applicants → cancelled, no fee
-  await supabase
-    .from("job_assignments")
-    .update({ status: "cancelled", amount_due: 0 })
-    .eq("job_id", gameId)
-    .eq("status", "pending");
+  const { data, error } = await supabase.rpc("cancel_game", { p_job_id: gameId });
+  if (error) return { error: new Error(error.message), feePaid: false, feeAmount: 0 };
+  const result = data as {
+    title?: string;
+    fee_paid?: boolean;
+    fee_amount?: number;
+  } | null;
+  const lateCancel = result?.fee_paid ?? false;
+  const feeAmount = result?.fee_amount ?? 0;
 
   await postCrewNote(
     gameId,
     directorUserId,
     lateCancel
-      ? `✕ GAME CANCELLED — "${job.title}" was cancelled inside ${CANCEL_FEE_WINDOW_HOURS}h of tip-off. A 50% fee ($${feeAmount}) is owed to each confirmed ref.`
-      : `✕ GAME CANCELLED — "${job.title}" was cancelled. No fees apply.`
+      ? `✕ GAME CANCELLED — "${result?.title ?? "Game"}" was cancelled inside ${CANCEL_FEE_WINDOW_HOURS}h of tip-off. A 50% fee ($${feeAmount}) is owed to each confirmed ref.`
+      : `✕ GAME CANCELLED — "${result?.title ?? "Game"}" was cancelled. No fees apply.`
   );
 
   return { error: null, feePaid: lateCancel, feeAmount };
@@ -907,31 +833,15 @@ export async function inviteAssignorToTournament(
   assignorId: string,
   suggested?: { feeType: "flat" | "percentage"; feeAmount?: number; feePct?: number }
 ): Promise<{ error: Error | null }> {
-  const { error: tErr } = await supabase
-    .from("tournaments")
-    .update({
-      assignor_id: assignorId,
-      assignor_status: "inviting",
-      assignor_fee_type: suggested?.feeType ?? "flat",
-      assignor_fee: suggested?.feeType === "percentage" ? null : suggested?.feeAmount ?? null,
-      assignor_fee_pct: suggested?.feeType === "percentage" ? suggested?.feePct ?? null : null,
-    })
-    .eq("id", tournamentId);
-  if (tErr) return { error: new Error(tErr.message) };
-
-  const { error: pErr } = await supabase.from("assignor_proposals").upsert(
-    {
-      tournament_id: tournamentId,
-      assignor_id: assignorId,
-      status: "invited",
-      fee_type: suggested?.feeType ?? "flat",
-      fee_amount: suggested?.feeType === "percentage" ? null : suggested?.feeAmount ?? null,
-      fee_pct: suggested?.feeType === "percentage" ? suggested?.feePct ?? null : null,
-      invited_at: new Date().toISOString(),
-    },
-    { onConflict: "tournament_id,assignor_id" }
-  );
-  return { error: pErr ? new Error(pErr.message) : null };
+  const feeType = suggested?.feeType ?? "flat";
+  const { error } = await supabase.rpc("director_invite_assignor", {
+    p_tournament_id: tournamentId,
+    p_assignor_id: assignorId,
+    p_fee_type: feeType,
+    p_fee_amount: feeType === "flat" ? suggested?.feeAmount ?? null : null,
+    p_fee_pct: feeType === "percentage" ? suggested?.feePct ?? null : null,
+  });
+  return { error: error ? new Error(error.message) : null };
 }
 
 export type ProposalWithAssignorRow = {
@@ -965,38 +875,20 @@ export async function acceptAssignorProposal(
   assignorId: string,
   fee: { feeType: "flat" | "percentage"; feeAmount: number | null; feePct: number | null }
 ): Promise<{ error: Error | null }> {
-  const { error: tErr } = await supabase
-    .from("tournaments")
-    .update({
-      assignor_id: assignorId,
-      assignor_status: "accepted",
-      assignor_fee_type: fee.feeType,
-      assignor_fee: fee.feeType === "flat" ? fee.feeAmount : null,
-      assignor_fee_pct: fee.feeType === "percentage" ? fee.feePct : null,
-    })
-    .eq("id", tournamentId);
-  if (tErr) return { error: new Error(tErr.message) };
-
-  const { error: acceptErr } = await supabase
-    .from("assignor_proposals")
-    .update({ status: "accepted", responded_at: new Date().toISOString() })
-    .eq("id", proposalId);
-  if (acceptErr) return { error: new Error(acceptErr.message) };
-
-  await supabase
-    .from("assignor_proposals")
-    .update({ status: "declined", responded_at: new Date().toISOString() })
-    .eq("tournament_id", tournamentId)
-    .neq("id", proposalId)
-    .in("status", ["invited", "submitted"]);
-
-  return { error: null };
+  void tournamentId;
+  void assignorId;
+  void fee;
+  const { error } = await supabase.rpc("director_respond_to_assignor_proposal", {
+    p_proposal_id: proposalId,
+    p_accept: true,
+  });
+  return { error: error ? new Error(error.message) : null };
 }
 
 export async function declineAssignorProposal(proposalId: string): Promise<{ error: Error | null }> {
-  const { error } = await supabase
-    .from("assignor_proposals")
-    .update({ status: "declined", responded_at: new Date().toISOString() })
-    .eq("id", proposalId);
+  const { error } = await supabase.rpc("director_respond_to_assignor_proposal", {
+    p_proposal_id: proposalId,
+    p_accept: false,
+  });
   return { error: error ? new Error(error.message) : null };
 }
