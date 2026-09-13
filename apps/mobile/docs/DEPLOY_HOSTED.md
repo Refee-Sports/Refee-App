@@ -19,7 +19,7 @@ Prereqs: Supabase CLI (`npx supabase`), your Stripe test keys, and an Expo accou
 
 ## 2. Link the CLI to the project
 ```bash
-cd refee
+# from the repo root — supabase/ lives there
 npx supabase login                 # opens browser, authorizes the CLI
 npx supabase link --project-ref <YOUR_PROJECT_REF>
 # it will prompt for the DB password from step 1

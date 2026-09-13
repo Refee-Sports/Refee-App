@@ -78,10 +78,10 @@ Use **three Supabase projects** (or local Supabase for development): development
 | Staging | `EXPO_PUBLIC_APP_ENV=staging` | `npm run start:stg` | QA, TestFlight/internal tracks |
 | Production | `EXPO_PUBLIC_APP_ENV=production` | `npm run start:prod` | Smoke-test prod config only — real installs use EAS |
 
-Env files live in `refee/` and are gitignored. Copy the examples once per environment:
+Env files live in `apps/mobile/` and are gitignored. Copy the examples once per environment:
 
 ```bash
-cd refee
+cd apps/mobile
 cp .env.dev.example .env.dev
 cp .env.stg.example .env.stg
 cp .env.prod.example .env.prod
@@ -93,28 +93,30 @@ Fill each file with that environment’s Supabase URL and anon key (and Stripe/P
 
 ## Prerequisites
 
-- **Node.js ≥ 20.19.4** — required by Expo SDK 54 and Metro (upgrade with `nvm install 20` or from [nodejs.org](https://nodejs.org)); `package.json` lists this under `engines`.
+- **Node.js ≥ 22** — the web app's `@supabase/*` packages need it, and Expo SDK 54 supports it (`nvm install 22` or [nodejs.org](https://nodejs.org)); the root `package.json` lists this under `engines`.
 - **Xcode** (Mac App Store) if you use the **iOS Simulator** — open Xcode once to accept the license.
 - **Expo Go** on a phone must be a build that supports **SDK 54** (update from the store).
 
 ## Setup
 
 ```bash
-cd refee
-
-# 1. Install dependencies
+# 1. Install dependencies — one npm workspace for both apps, from the repo root
 npm install
 
 # 2. Env files (see Environments above)
-cp .env.dev.example .env.dev
-# Edit .env.dev — at minimum EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
+cp apps/mobile/.env.dev.example apps/mobile/.env.dev
+# Edit it — at minimum EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY
 
-# 3. Run Supabase migrations (requires Supabase CLI; run from refee with linked project)
-supabase db push
+# 3. Run Supabase migrations (supabase/ lives at the repo root; needs a linked project)
+npm run db:push
 
-# 4. Start the dev server (loads .env.dev)
-npm start
+# 4. Start the dev server (loads apps/mobile/.env.dev)
+npm run mobile
 ```
+
+The repo is one workspace: `apps/mobile` (this Expo app), `apps/web` (the Next.js
+web app), `packages/core` (backend calls both apps share) and `supabase/` (the
+backend). Web: `npm run web`.
 
 Scan the QR code with Expo Go (iOS/Android) to run on your device.
 

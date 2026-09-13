@@ -4,7 +4,7 @@ This guide walks through the first-time setup. About 20 minutes start to finish.
 
 ## Prerequisites
 
-- **Node 20+** (`node -v`)
+- **Node 22+** (`node -v`)
 - **npm** or **pnpm**
 - **Expo Go** app on your phone (App Store / Play Store)
 - **Supabase account** (free) — supabase.com
@@ -17,8 +17,8 @@ of the optional simulator stuff.
 ## 1. Install dependencies
 
 ```bash
-cd refee
-npm install
+npm install        # from the repo root — one workspace for both apps
+cd apps/mobile     # the mobile app's env files and scripts live here
 ```
 
 ## 2. Set up Supabase

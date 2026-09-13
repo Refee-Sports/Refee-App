@@ -9,8 +9,9 @@ App Store review cycle. So this is not a cut-down companion site. It runs the
 tournament director can sign in here or in the app with one account and do the
 same things either way.
 
-The React Native app lives in
-[`Refee-Sports/Refee-Mobile`](https://github.com/Refee-Sports/Refee-Mobile).
+It lives in the same repo as the React Native app (`apps/mobile`). The calls
+into the backend are written once in `packages/core` (`@refee/core`), and the
+backend itself is `supabase/` at the repo root.
 
 ## Shared backend (the important part)
 
@@ -20,7 +21,7 @@ server-side, and there is no web-only API.
 
 Point the web env at the same project the app uses:
 
-| Mobile (`refee-mobile/refee/.env.dev`) | Web (`.env.local`)               |
+| Mobile (`apps/mobile/.env.dev`)        | Web (`apps/web/.env.local`)      |
 | -------------------------------------- | -------------------------------- |
 | `EXPO_PUBLIC_SUPABASE_URL`             | `NEXT_PUBLIC_SUPABASE_URL`       |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY`        | `NEXT_PUBLIC_SUPABASE_ANON_KEY`  |
@@ -33,22 +34,19 @@ earnings are already there.
 ### Using the mobile test accounts locally
 
 The seeded test users — `(555) 555-0100` through `0105`, OTP always `123456` —
-live in the **local** Supabase stack (`refee/supabase/seed.sql`), and the OTP
-comes from `[auth.sms.test_otp]` in `refee/supabase/config.toml`. They are not
+live in the **local** Supabase stack (`supabase/seed.sql`), and the OTP
+comes from `[auth.sms.test_otp]` in `supabase/config.toml`. They are not
 in any hosted project, so the web app has to point at that same local stack:
 
 ```bash
-# 1. start the local backend from the mobile repo
-cd ../Refee-Mobile/refee && supabase start
+# 1. start the local backend (from the repo root)
+npm run db:start
 
-# 2. point the web app at it (reads `supabase status`, writes .env.local)
-cd ../../Refee-Web
-npm run setup:local
-#   …or pass the path if the repo lives elsewhere:
-#   npm run setup:local -- ../path/to/refee
+# 2. point the web app at it (reads `supabase status`, writes apps/web/.env.local)
+cd apps/web && npm run setup:local && cd ../..
 
 # 3. run
-npm run dev
+npm run web
 ```
 
 `setup:local` only ever writes the publishable/anon key — it refuses the
@@ -74,7 +72,7 @@ Two things to configure once in the Supabase dashboard (hosted only):
 
 - **Next.js 15** (App Router) + **React 19** — the signed-in app is client-side,
   like the RN app, so the query layer is shared rather than reimplemented
-- **Tailwind CSS 3** — tokens mirror `refee-mobile/refee/tailwind.config.js`
+- **Tailwind CSS 3** — tokens mirror `apps/mobile/tailwind.config.js`
 - **@supabase/supabase-js** — same client library, same queries
 - **@stripe/stripe-js** — Elements stands in for the app's native PaymentSheet
 - **next/font** — Inter Tight (display) + JetBrains Mono (telemetry)
@@ -99,9 +97,9 @@ referee vs director by `primary_role`.
 ## Getting started
 
 ```bash
-npm install
-cp .env.example .env.local   # fill in from the same Supabase project as the app
-npm run dev
+npm install                                        # from the repo root
+cp apps/web/.env.example apps/web/.env.local      # same Supabase project as the app
+npm run web
 ```
 
 Open http://localhost:3000.
@@ -119,7 +117,7 @@ Open http://localhost:3000.
 ## Structure
 
 ```
-Refee-Web/
+apps/web/
 ├── app/
 │   ├── page.tsx              # Marketing landing page
 │   ├── layout.tsx            # Fonts + AuthProvider + RouteGate
@@ -137,14 +135,18 @@ Refee-Web/
 │   ├── payments/             # StripePaymentModal
 │   └── ratings/              # RateRefereeModal
 ├── hooks/                    # useJobsFeed, useJobAssignment, useFocusEffect
-└── lib/                      # Ported from the app — see below
+└── lib/                      # Platform edges + re-exports of @refee/core — see below
 ```
 
-## How the port works
+## How the two apps share code
 
-`lib/` is carried over from `refee-mobile/refee/lib/` with the query logic
-**unchanged**, so both clients hit the backend identically and RLS behaves the
-same. Only the platform edges differ:
+Every call into the backend lives once, in `packages/core` (`@refee/core`).
+Each app's `lib/<area>/queries.ts` is a one-line re-export of it, and
+`lib/core.ts` hands core this app's Supabase client — so both clients hit the
+backend identically and RLS behaves the same. Business rules live in the
+database (RPCs, triggers); `npm run check:writes` at the repo root fails on any
+direct table write that isn't an allow-listed owner-only edit. Only the
+platform edges differ:
 
 | Concern | Mobile | Web |
 | --- | --- | --- |
@@ -164,8 +166,8 @@ breakpoint, centred on desktop, so the two surfaces read as one product.
 
 ## Known gaps
 
-These mirror open items in the app itself (see the mobile repo's
-`docs/PROJECT_STATUS.md`), not web-specific shortfalls:
+These mirror open items in the app itself (see
+`apps/mobile/docs/PROJECT_STATUS.md`), not web-specific shortfalls:
 
 - Web push notifications aren't wired up. The web app *sends* push (so a
   director acting here still reaches a ref's phone) but doesn't register the
