@@ -5,7 +5,7 @@ import { useFocusEffect } from "@/hooks/useFocusEffect";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getMockJobDetail, getMockJobs } from "@/lib/jobs/mock-data";
 import { resolveCounts, resolveTabRows } from "@/lib/jobs/feed-source";
-import { fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
+import { fetchActionableAssignments, fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
 import { getCurrentCoords } from "@/lib/geo/location";
 import type { Coords } from "@/lib/geo/geocode";
 import type { FeedTab, JobDetail, JobListRow } from "@/lib/jobs/types";
@@ -15,6 +15,8 @@ export type LocationMode = "home" | "near_me";
 type JobsFeedState = {
   /** Jobs loaded from Supabase (open / partially filled) */
   dbAvailable: JobListRow[];
+  /** Assignment offers and changed games waiting on this ref (Invited tab) */
+  dbInvited: JobListRow[];
   loading: boolean;
   error: string | null;
   usedMockForAvailable: boolean;
@@ -23,6 +25,7 @@ type JobsFeedState = {
 export function useJobsFeed() {
   const [state, setState] = useState<JobsFeedState>({
     dbAvailable: [],
+    dbInvited: [],
     loading: true,
     error: null,
     usedMockForAvailable: false,
@@ -36,6 +39,7 @@ export function useJobsFeed() {
       if (!isSupabaseConfigured) {
         setState({
           dbAvailable: [],
+          dbInvited: [],
           loading: false,
           error: null,
           usedMockForAvailable: true,
@@ -44,16 +48,19 @@ export function useJobsFeed() {
       }
       setState((s) => ({ ...s, loading: true, error: null }));
       const { data: { session } } = await supabase.auth.getSession();
-      const { jobs, error } = await fetchOpenJobs(
-        supabase,
-        session?.user.id ?? null,
-        origin ?? undefined
-      );
+      const [availableResult, invitedResult] = await Promise.all([
+        fetchOpenJobs(supabase, session?.user.id ?? null, origin ?? undefined),
+        session?.user.id
+          ? fetchActionableAssignments(supabase, session.user.id)
+          : Promise.resolve({ jobs: [], error: null }),
+      ]);
+      const error = availableResult.error ?? invitedResult.error;
       if (error) {
         // Configured but the fetch failed — surface the error and show an empty
         // feed, NOT the offline demo list (that would look like out-of-area jobs).
         setState({
           dbAvailable: [],
+          dbInvited: [],
           loading: false,
           error: error.message,
           usedMockForAvailable: false,
@@ -61,7 +68,8 @@ export function useJobsFeed() {
         return;
       }
       setState({
-        dbAvailable: jobs,
+        dbAvailable: availableResult.jobs,
+        dbInvited: invitedResult.jobs,
         loading: false,
         error: null,
         usedMockForAvailable: false,
@@ -107,9 +115,10 @@ export function useJobsFeed() {
         configured: isSupabaseConfigured,
         tab,
         dbAvailable: state.dbAvailable,
+        dbInvited: state.dbInvited,
         mockRows: mockAll,
       }),
-    [mockAll, state.dbAvailable]
+    [mockAll, state.dbAvailable, state.dbInvited]
   );
 
   const counts = useMemo(
@@ -117,9 +126,10 @@ export function useJobsFeed() {
       resolveCounts({
         configured: isSupabaseConfigured,
         dbAvailable: state.dbAvailable,
+        dbInvited: state.dbInvited,
         mockRows: mockAll,
       }),
-    [mockAll, state.dbAvailable]
+    [mockAll, state.dbAvailable, state.dbInvited]
   );
 
   return {

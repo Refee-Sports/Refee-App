@@ -100,11 +100,7 @@ describe("director lifecycle mutations use server-authoritative RPCs", () => {
   it("accepts proposal terms from the locked database row", async () => {
     mocks.rpc.mockResolvedValue({ data: "accepted", error: null });
 
-    await acceptAssignorProposal("ignored", "proposal-1", "ignored", {
-      feeType: "flat",
-      feeAmount: 999999,
-      feePct: null,
-    });
+    await acceptAssignorProposal("proposal-1");
 
     expect(mocks.rpc).toHaveBeenCalledWith("director_respond_to_assignor_proposal", {
       p_proposal_id: "proposal-1",

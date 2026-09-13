@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * Points this web app at the local Supabase stack the mobile app uses, so the
+ * Points this web app at the local Supabase stack both apps use, so the
  * seeded test accounts ((555) 555-0100 … 0105, OTP 123456) work here too.
  *
- * Reads `supabase status` from the mobile repo and writes .env.local. Run:
+ * Reads `supabase status` from the repo root (where supabase/ lives) and
+ * writes .env.local. Run:
  *   npm run setup:local
- *   npm run setup:local -- ../some/other/path/to/refee
+ *   npm run setup:local -- ../some/other/path/with/a/supabase/dir
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -13,13 +14,8 @@ import { resolve } from "node:path";
 
 const ENV_FILE = resolve(process.cwd(), ".env.local");
 
-/** Where the mobile repo's supabase/ directory usually sits, relative to here. */
-const CANDIDATE_DIRS = [
-  "../Refee-Mobile/refee",
-  "../refee-mobile/refee",
-  "../Refee-App/refee",
-  "../Refee-Mobile",
-];
+/** The monorepo root, which holds supabase/, relative to apps/web. */
+const CANDIDATE_DIRS = ["../.."];
 
 /**
  * Parses `supabase status -o env` output: KEY="value" lines.
@@ -47,7 +43,7 @@ export function pickAnonKey(vars) {
   return candidate;
 }
 
-function findMobileDir() {
+function findSupabaseDir() {
   const fromArg = process.argv[2];
   const dirs = fromArg ? [fromArg] : CANDIDATE_DIRS;
   for (const d of dirs) {
@@ -58,12 +54,12 @@ function findMobileDir() {
 }
 
 function main() {
-  const dir = findMobileDir();
+  const dir = findSupabaseDir();
   if (!dir) {
     console.error(
-      `Couldn't find the mobile repo's supabase/ directory.\n` +
+      `Couldn't find a supabase/ directory.\n` +
         `Looked in: ${CANDIDATE_DIRS.join(", ")}\n` +
-        `Pass the path explicitly:  npm run setup:local -- ../path/to/refee`
+        `Pass the path explicitly:  npm run setup:local -- ../path/containing/supabase`
     );
     process.exit(1);
   }
@@ -114,7 +110,7 @@ function main() {
     : [];
 
   const body = [
-    "# Written by `npm run setup:local` — points at the mobile app's local Supabase.",
+    "# Written by `npm run setup:local` — points at the repo's local Supabase.",
     "# Test accounts: (555) 555-0100 … 0105, OTP 123456.",
     `NEXT_PUBLIC_SUPABASE_URL=${url}`,
     `NEXT_PUBLIC_SUPABASE_ANON_KEY=${key}`,

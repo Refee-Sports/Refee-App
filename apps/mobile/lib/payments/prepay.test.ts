@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 // Pure module shared with the Deno edge functions.
-import { prepayQuote, prepaySettlement } from "../../supabase/functions/_shared/prepay";
+import { prepayQuote, prepaySettlement } from "../../../../supabase/functions/_shared/prepay";
 
 describe("prepayQuote", () => {
   it("charges every crew slot at the posted pay, plus the 5% fee", () => {

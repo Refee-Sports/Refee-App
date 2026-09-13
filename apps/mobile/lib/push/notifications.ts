@@ -3,6 +3,10 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { supabase } from "@/lib/supabase";
+import "@/lib/core";
+
+// Sending is shared with the web app; see @refee/core.
+export { sendPush } from "@refee/core/push/send";
 
 // Foreground behaviour: show a banner even when the app is open.
 Notifications.setNotificationHandler({
@@ -71,22 +75,5 @@ export async function unregisterPushToken(): Promise<void> {
     if (data) await supabase.from("push_tokens").delete().eq("token", data);
   } catch {
     /* best-effort */
-  }
-}
-
-/** Fire a push to one or more users via the edge function (best-effort). */
-export async function sendPush(
-  userIds: string[],
-  title: string,
-  body: string,
-  data?: Record<string, unknown>
-): Promise<void> {
-  if (userIds.length === 0) return;
-  try {
-    await supabase.functions.invoke("send-push", {
-      body: { userIds, title, body, data },
-    });
-  } catch {
-    /* best-effort — never block the triggering action */
   }
 }

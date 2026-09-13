@@ -6,7 +6,7 @@ import {
   platformFee,
   chargeTotal,
   decidePayment,
-} from "../../supabase/functions/_shared/pay-math";
+} from "../../../../supabase/functions/_shared/pay-math";
 
 describe("platformFee", () => {
   it("is 5% of crew total, rounded to whole dollars", () => {

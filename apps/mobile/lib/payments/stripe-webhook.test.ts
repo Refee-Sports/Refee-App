@@ -4,7 +4,7 @@ import {
   closedDisputeStatus,
   refundStatus,
   transferIdempotencyKey,
-} from "../../supabase/functions/_shared/stripe-events";
+} from "../../../../supabase/functions/_shared/stripe-events";
 
 describe("Stripe webhook reconciliation", () => {
   it("routes successful and failed PaymentIntents", () => {
