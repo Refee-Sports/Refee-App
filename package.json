@@ -16,6 +16,7 @@
     "db:push": "supabase db push",
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local --schema public > packages/core/src/database.types.ts",
+    "check:writes": "node scripts/check-direct-writes.mjs",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present"
   },

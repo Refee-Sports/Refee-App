@@ -75,6 +75,8 @@ jobs:
           cache: npm
 
       - run: npm ci
+      - name: Business writes go through the backend
+        run: npm run check:writes
       - name: Start local Supabase
         run: npm run db:start
       - name: Prove a clean migration and seed reset
