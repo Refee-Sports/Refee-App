@@ -126,3 +126,32 @@ export async function runAutoPay(
   if (data?.error) return { result: null, error: new Error(data.error) };
   return { result: data as AutoPayResult, error: null };
 }
+
+export type PrepayResult =
+  | { status: "prepaid"; totalCents: number; alreadyPrepaid: boolean }
+  | { status: "no_card" }
+  | { status: "skipped"; reason: string }
+  | { status: "failed"; reason: string }
+  /** The environment doesn't have prepay-game deployed — fall back quietly. */
+  | { status: "unavailable"; reason: string };
+
+/**
+ * Charge the director's saved card for the whole crew right after a game is
+ * created. The agreement: the crew's pay is collected at booking and paid out
+ * within 48 hours of the game completing. "no_card" means ask for a card and
+ * call again.
+ */
+export async function prepayGame(jobId: string): Promise<PrepayResult> {
+  const { data, error } = await supabase.functions.invoke("prepay-game", { body: { jobId } });
+  if (error) {
+    const message = await invokeErrorMessage(error);
+    // An environment without prepay-game answers 404 from the gateway. Creating
+    // the game must still work there; it just keeps the pay-after-the-game flow.
+    const status = (error as { context?: { status?: number } })?.context?.status;
+    if (status === 404 && !/game not found/i.test(message)) {
+      return { status: "unavailable", reason: message };
+    }
+    return { status: "failed", reason: message };
+  }
+  return data as PrepayResult;
+}

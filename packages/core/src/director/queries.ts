@@ -74,6 +74,11 @@ export type DirectorGameRow = {
   confirmedCount?: number;
   /** payout_status of each ref who worked the game (completed assignments). */
   refPayouts?: string[];
+  /** Charged at creation (games created after prepay went live). */
+  prepay_required?: boolean;
+  prepaid_crew_cents?: number | null;
+  prepaid_fee_cents?: number | null;
+  prepaid_at?: string | null;
 };
 
 export type ApplicantRow = {

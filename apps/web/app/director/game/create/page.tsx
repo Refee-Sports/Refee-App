@@ -32,6 +32,8 @@ import {
   QUARTER_MINUTES,
   RULESETS,
 } from "@/lib/basketball/options";
+import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
+import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -74,6 +76,9 @@ function CreateGameInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reconfirmNote, setReconfirmNote] = useState<string | null>(null);
+  // Set while the director saves a card so the new game can be charged.
+  const [cardSetupSecret, setCardSetupSecret] = useState<string | null>(null);
+  const [pendingGameId, setPendingGameId] = useState<string | null>(null);
   const [tournament, setTournament] = useState<TournamentRow | null>(null);
 
   const [form, setForm] = useState({
@@ -252,8 +257,42 @@ function CreateGameInner() {
       setLoading(false);
       return;
     }
-    router.replace(`/director/game/${gameId}`);
+    await chargeAtBooking(gameId);
   };
+
+  // Charge the saved card for the whole crew now. With no card on file, ask for
+  // one and try again; any other outcome still lands on the game, which shows
+  // whether it has been charged and offers a retry.
+  const chargeAtBooking = async (gameId: string) => {
+    const result = await prepayGame(gameId);
+    if (result.status === "no_card") {
+      const { params, error: setupErr } = await getCardSetupParams();
+      if (setupErr || !params) {
+        router.replace(`/director/game/${gameId}?payment=needs_card`);
+        return;
+      }
+      setPendingGameId(gameId);
+      setCardSetupSecret(params.setupIntentClientSecret);
+      setLoading(false);
+      return;
+    }
+    const flag =
+      result.status === "prepaid" ? "charged" : result.status === "failed" ? "failed" : null;
+    router.replace(`/director/game/${gameId}${flag ? `?payment=${flag}` : ""}`);
+  };
+
+  // What booking this game will charge. Mirrors the backend's prepayQuote:
+  // every crew slot at the posted pay, plus the 5% platform fee
+  // (PLATFORM_FEE_PCT in supabase/functions/_shared/pay-math.ts).
+  const payNum = parseInt(form.payPerGame, 10) || 0;
+  const chargePreview =
+    payNum > 0
+      ? {
+          crew: form.crewSize * payNum,
+          fee: Math.round(form.crewSize * payNum * 0.05),
+          total: form.crewSize * payNum + Math.round(form.crewSize * payNum * 0.05),
+        }
+      : null;
 
   const minuteOptions = (form.gameFormat === "quarters" ? QUARTER_MINUTES : HALF_MINUTES).map(
     (m) => ({ id: m, label: `${m} MINUTES` })
@@ -535,6 +574,16 @@ function CreateGameInner() {
             {reconfirmNote}
           </p>
         )}
+        {!isEdit && chargePreview ? (
+          <p
+            className="mb-3 font-mono text-[10px] uppercase leading-4 text-ink-60"
+            style={{ letterSpacing: 0.8 }}
+          >
+            Creating this game charges your card ${chargePreview.total} now — {form.crewSize} refs ×
+            ${payNum} + ${chargePreview.fee} fee. Unfilled slots are refunded after the game, and refs
+            are paid within 48h of it.
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={handleSubmit}
@@ -554,6 +603,37 @@ function CreateGameInner() {
           )}
         </button>
       </div>
+
+      {cardSetupSecret && pendingGameId ? (
+        <StripePaymentModal
+          clientSecret={cardSetupSecret}
+          mode="setup"
+          title="Save a card to book this game"
+          summary={
+            chargePreview
+              ? [
+                  { label: "Crew", value: `$${chargePreview.crew}` },
+                  { label: "Platform fee", value: `$${chargePreview.fee}` },
+                  { label: "Charged now", value: `$${chargePreview.total}` },
+                ]
+              : undefined
+          }
+          submitLabel="SAVE CARD & BOOK"
+          onCancel={() => {
+            const id = pendingGameId;
+            setCardSetupSecret(null);
+            setPendingGameId(null);
+            router.replace(`/director/game/${id}?payment=needs_card`);
+          }}
+          onSuccess={async () => {
+            const id = pendingGameId;
+            setCardSetupSecret(null);
+            setPendingGameId(null);
+            setLoading(true);
+            await chargeAtBooking(id);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

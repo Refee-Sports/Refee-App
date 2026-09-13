@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { use, useCallback, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
@@ -34,7 +34,13 @@ import {
 } from "@/lib/messages/queries";
 import { hasSeenLatest, seenCount } from "@/lib/messages/receipts";
 import { supabase } from "@/lib/supabase";
-import { confirmCrewPayout, runAutoPay, startCrewPayment, type PayCrewQuote } from "@/lib/payments/queries";
+import {
+  confirmCrewPayout,
+  prepayGame,
+  runAutoPay,
+  startCrewPayment,
+  type PayCrewQuote,
+} from "@/lib/payments/queries";
 
 const TZ = "America/Chicago";
 
@@ -82,6 +88,19 @@ export default function DirectorGameDetailPage({
   const [postingNote, setPostingNote] = useState(false);
   const [crewThread, setCrewThread] = useState<CrewThread | null>(null);
   const [savingAccept, setSavingAccept] = useState(false);
+  const [charging, setCharging] = useState(false);
+
+  // The create flow hands over how the booking charge went (?payment=…).
+  useEffect(() => {
+    const flag = new URLSearchParams(window.location.search).get("payment");
+    if (flag === "charged") {
+      setNotice("Card charged at booking — the crew is paid from it within 48 hours of the game completing.");
+    } else if (flag === "failed") {
+      setNotice("The booking charge didn't go through. Try again below.");
+    } else if (flag === "needs_card") {
+      setNotice("Not charged yet — save a card to book this game.");
+    }
+  }, []);
 
   const reload = useCallback(async () => {
     const [{ game: g, error: gErr }, { applicants: apps, error: aErr }] = await Promise.all([
@@ -289,6 +308,25 @@ export default function DirectorGameDetailPage({
     setActioning(null);
   };
 
+  const handleChargeNow = async () => {
+    setCharging(true);
+    setNotice(null);
+    const result = await prepayGame(id);
+    setCharging(false);
+    if (result.status === "prepaid") {
+      setNotice(
+        result.alreadyPrepaid
+          ? "Already charged."
+          : `Charged $${(result.totalCents / 100).toFixed(2)} — the crew's pay is collected.`
+      );
+      await reload();
+    } else if (result.status === "no_card") {
+      setNotice("No card on file — add one under Profile → Set up auto-pay, then charge again.");
+    } else {
+      setNotice(result.status === "failed" ? `Charge failed: ${result.reason}` : result.reason);
+    }
+  };
+
   const handleAutoAccept = async (next: boolean) => {
     if (!game || next === !!game.auto_accept) return;
     setSavingAccept(true);
@@ -350,7 +388,14 @@ export default function DirectorGameDetailPage({
   const isClosed = isCompleted || isCancelled;
   const unratedCount = accepted.filter((a) => !ratedRefIds.has(a.ref_id)).length;
   const isPaid = game.payment_status === "paid";
-  const showPayCrew = isClosed && !isPaid && accepted.length > 0;
+  // Charged at booking: the crew is paid from that charge automatically.
+  const isPrepaid = game.payment_status === "prepaid";
+  const prepaidTotal = ((game.prepaid_crew_cents ?? 0) + (game.prepaid_fee_cents ?? 0)) / 100;
+  const needsBookingCharge =
+    !!game.prepay_required &&
+    !isClosed &&
+    (!game.payment_status || game.payment_status === "unpaid" || game.payment_status === "failed");
+  const showPayCrew = isClosed && !isPaid && !isPrepaid && accepted.length > 0;
 
   return (
     <div className="app-canvas bg-paper pb-10">
@@ -478,6 +523,58 @@ export default function DirectorGameDetailPage({
           </span>
         </div>
       )}
+
+      {/* Booking charge — collected when the game was created */}
+      {isPrepaid ? (
+        <div className="mx-5 mb-4 flex items-start gap-3 border border-court bg-court/10 px-4 py-3 text-court">
+          <span className="mt-px">
+            <Icon name="check-circle" size={14} />
+          </span>
+          <span className="flex-1">
+            <span
+              className="block font-mono-bold text-[11px] uppercase text-ink"
+              style={{ letterSpacing: 1.2 }}
+            >
+              Charged ${prepaidTotal.toFixed(2)} at booking
+            </span>
+            <span
+              className="mt-0.5 block font-mono text-[9px] uppercase text-ink-60"
+              style={{ letterSpacing: 1 }}
+            >
+              Crew paid from it within 48h of completion · unfilled slots refunded
+            </span>
+          </span>
+        </div>
+      ) : needsBookingCharge ? (
+        <div className="mx-5 mb-4 border border-whistle bg-whistle/10 px-4 py-3">
+          <span
+            className="block font-mono-bold text-[11px] uppercase text-ink"
+            style={{ letterSpacing: 1.2 }}
+          >
+            {game.payment_status === "failed" ? "Booking charge failed" : "Not charged yet"}
+          </span>
+          <span
+            className="mt-0.5 block font-mono text-[9px] uppercase text-ink-60"
+            style={{ letterSpacing: 1 }}
+          >
+            The crew&apos;s pay is collected at booking and paid out within 48h of the game.
+          </span>
+          <button
+            type="button"
+            onClick={() => void handleChargeNow()}
+            disabled={charging}
+            className="mt-3 flex w-full items-center justify-center gap-2 bg-ink py-3 text-paper hover:opacity-80 disabled:opacity-60"
+          >
+            {charging ? (
+              <Spinner />
+            ) : (
+              <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
+                Charge card now
+              </span>
+            )}
+          </button>
+        </div>
+      ) : null}
 
       {/* Pay crew */}
       {showPayCrew && (
