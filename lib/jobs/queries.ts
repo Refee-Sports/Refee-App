@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { JobDetail, JobListRow } from "./types";
 import { mapDbJobToDetail, mapDbJobToListRow, type JobDbRow } from "./map-db-job";
 import { distanceMiles } from "@/lib/geo/geocode";
-import { isMissingRpc } from "@/lib/rpc-fallback";
 
 export type AssignmentStatus =
   | "accepted"
@@ -120,7 +119,6 @@ export async function acceptJob(
     p_job_id: jobId,
     p_accept: true,
   });
-  if (isMissingRpc(error)) return legacyRespond(supabase, userId, jobId, "accepted");
   return {
     status: error ? null : ((data as AssignmentStatus) ?? null),
     error: error ? new Error(error.message) : null,
@@ -129,6 +127,7 @@ export async function acceptJob(
 
 export async function declineJob(
   supabase: SupabaseClient,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   userId: string,
   jobId: string
 ): Promise<{ status: AssignmentStatus; error: Error | null }> {
@@ -137,29 +136,10 @@ export async function declineJob(
     p_job_id: jobId,
     p_accept: false,
   });
-  if (isMissingRpc(error)) return legacyRespond(supabase, userId, jobId, "declined");
   return {
     status: error ? null : ((data as AssignmentStatus) ?? null),
     error: error ? new Error(error.message) : null,
   };
-}
-
-/**
- * Pre-0030 databases (hosted, until migration 0030 ships): refs write their own
- * assignment row. The same upsert the live mobile app does — there, accepting
- * confirms the spot straight away, with no organizer approval step.
- */
-async function legacyRespond(
-  supabase: SupabaseClient,
-  userId: string,
-  jobId: string,
-  status: "accepted" | "declined"
-): Promise<{ status: AssignmentStatus; error: Error | null }> {
-  const { error } = await supabase.from("job_assignments").upsert(
-    { ref_id: userId, job_id: jobId, status, responded_at: new Date().toISOString() },
-    { onConflict: "job_id,ref_id" }
-  );
-  return { status: error ? null : status, error: error ? new Error(error.message) : null };
 }
 
 /** @deprecated Use declineJob */

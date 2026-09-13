@@ -1,11 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { Icon } from "@/components/ui/Icon";
 import { supabase } from "@/lib/supabase";
-import { fetchAssignorSupport } from "@/lib/assignor/availability";
 
 type Role = "referee" | "director" | "assignor";
 
@@ -37,12 +36,6 @@ const ROLES: { id: Role; title: string; subtitle: string; description: string }[
 export default function RoleSelectPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<Role | null>(null);
-  // Assignors need migration 0030; hide the option where it isn't applied yet.
-  const [assignorSupported, setAssignorSupported] = useState(false);
-  useEffect(() => {
-    void fetchAssignorSupport().then(setAssignorSupported);
-  }, []);
-  const roles = ROLES.filter((r) => r.id !== "assignor" || assignorSupported);
 
   const leaveSetup = async () => {
     if (
@@ -105,7 +98,7 @@ export default function RoleSelectPage() {
       </div>
 
       <div className="flex flex-1 flex-col gap-3 px-5">
-        {roles.map((role) => {
+        {ROLES.map((role) => {
           const isSelected = selected === role.id;
           return (
             <button
