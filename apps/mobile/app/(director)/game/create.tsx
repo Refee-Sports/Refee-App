@@ -78,6 +78,8 @@ export default function CreateGame() {
     gameFormat: "" as "" | "quarters" | "halves",
     periodMinutes: "",
     venueName: "",
+    venueAddress: "",
+    venueZip: "",
     venueCity: "",
     venueState: "",
     uniformRequirements: "",
@@ -104,6 +106,12 @@ export default function CreateGame() {
           gameFormat: (f.gameFormat || t.game_format || "") as "" | "quarters" | "halves",
           periodMinutes: f.periodMinutes || (t.period_minutes ? String(t.period_minutes) : ""),
           uniformRequirements: f.uniformRequirements || t.uniform_requirements || "",
+          // The game is at the tournament's venue unless the director changes it.
+          venueName: f.venueName || t.venue_name || "",
+          venueAddress: f.venueAddress || t.venue_address || "",
+          venueZip: f.venueZip || t.venue_zip || "",
+          venueCity: f.venueCity || t.venue_city || "",
+          venueState: f.venueState || t.venue_state || "",
         }));
       }
     })();
@@ -133,6 +141,8 @@ export default function CreateGame() {
           gameFormat: (game.game_format ?? "") as "" | "quarters" | "halves",
           periodMinutes: game.period_minutes ? String(game.period_minutes) : "",
           venueName: game.venue_name ?? "",
+          venueAddress: game.venue_address ?? "",
+          venueZip: game.venue_zip ?? "",
           venueCity: game.venue_city ?? "",
           venueState: game.venue_state ?? "",
           uniformRequirements: game.uniform_requirements ?? "",
@@ -164,6 +174,8 @@ export default function CreateGame() {
     form.gameDate.length === 10 &&
     form.gameTime.length >= 4 &&
     form.venueName.trim().length >= 1 &&
+    form.venueAddress.trim().length >= 3 &&
+    /^\d{5}$/.test(form.venueZip) &&
     form.venueCity.trim().length >= 1 &&
     form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
@@ -198,6 +210,8 @@ export default function CreateGame() {
       gameFormat: form.gameFormat || undefined,
       periodMinutes: periodMin,
       venueName: form.venueName.trim(),
+      venueAddress: form.venueAddress.trim(),
+      venueZip: form.venueZip.trim(),
       venueCity: form.venueCity.trim(),
       venueState: form.venueState.trim().toUpperCase(),
       uniformRequirements: form.uniformRequirements.trim() || undefined,
@@ -481,7 +495,7 @@ export default function CreateGame() {
       {/* Section: Game format */}
       <Sect style={{ marginTop: 28 }}>GAME FORMAT</Sect>
 
-      <FLabel>PERIODS (OPTIONAL)</FLabel>
+      <FLabel>PERIODS *</FLabel>
       <View className="flex-row gap-2">
         {([
           { id: "quarters", num: "4", label: "QUARTERS" },
@@ -495,7 +509,7 @@ export default function CreateGame() {
                 Haptics.selectionAsync();
                 setForm((f) => ({
                   ...f,
-                  gameFormat: selected ? "" : opt.id,
+                  gameFormat: opt.id,
                   periodMinutes: "",
                 }));
               }}
@@ -551,6 +565,15 @@ export default function CreateGame() {
       <FLabel>VENUE NAME *</FLabel>
       <FInput value={form.venueName} onChangeText={set("venueName")} placeholder="Austin Rec Center – Court A" autoCapitalize="words" />
 
+      <FLabel style={{ marginTop: 16 }}>STREET ADDRESS *</FLabel>
+      <FInput
+        value={form.venueAddress}
+        onChangeText={set("venueAddress")}
+        placeholder="1301 Shoal Creek Blvd"
+        autoCapitalize="words"
+        textContentType="streetAddressLine1"
+      />
+
       <FLabel style={{ marginTop: 16 }}>CITY *</FLabel>
       <FInput value={form.venueCity} onChangeText={set("venueCity")} placeholder="Austin" autoCapitalize="words" />
 
@@ -562,6 +585,17 @@ export default function CreateGame() {
         autoCapitalize="characters"
         maxLength={2}
         error={form.venueState.length === 2 && !stateValid ? "Invalid state" : undefined}
+      />
+
+      <FLabel style={{ marginTop: 16 }}>ZIP *</FLabel>
+      <FInput
+        value={form.venueZip}
+        onChangeText={(v) => set("venueZip")(v.replace(/\D/g, "").slice(0, 5))}
+        placeholder="78701"
+        keyboardType="number-pad"
+        maxLength={5}
+        textContentType="postalCode"
+        error={form.venueZip.length > 0 && form.venueZip.length !== 5 ? "5-digit ZIP" : undefined}
       />
 
       {/* Section: Requirements */}

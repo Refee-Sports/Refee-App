@@ -6,9 +6,12 @@ select plan(18);
 
 -- Director 111...101 (seeded hirer). A second organizer owns a tournament
 -- the director must not be able to add games to.
-insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_city, venue_state, status)
+insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_city, venue_state, status,
+                                venue_name, venue_address, venue_zip, ruleset, uniform_requirements, game_format,
+                                period_minutes)
 select '94000000-0000-4000-8000-000000000001'::uuid, h.id, 'Guard Test Cup', 'basketball',
-       current_date + 20, current_date + 21, 'Austin', 'TX', 'open'
+       current_date + 20, current_date + 21, 'Austin', 'TX', 'open',
+       'Guard Gym', '1301 Shoal Creek Blvd', '78701', 'NFHS', 'Stripes', 'quarters', 8
 from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid;
 
 insert into public.jobs (id, hirer_id, sport_id, title, level, crew_size, pay_per_game, starts_at,
@@ -66,9 +69,12 @@ select throws_ok(
 -- A new game's backend fields start at their defaults whatever the client sends.
 insert into public.jobs (id, hirer_id, sport_id, title, level, crew_size, pay_per_game, starts_at,
                          venue_name, venue_city, venue_state, job_type, num_games,
+                         home_team, away_team, venue_address, venue_zip, game_format, period_minutes, ruleset,
+                         uniform_requirements,
                          status, payment_status, prepay_required, prepaid_crew_cents, payout_window_hours)
 select '94000000-0000-4000-8000-0000000000a2'::uuid, h.id, 'basketball', 'Guard Insert', 'high_school', 2, 70,
        now() + interval '12 days', 'Guard Gym', 'Austin', 'TX', 'single', 1,
+       'Guard', 'Insert', '1301 Shoal Creek Blvd', '78701', 'quarters', 8, 'NFHS', 'Stripes',
        'completed', 'paid', false, 99999, 1
 from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid;
 
@@ -113,9 +119,12 @@ select throws_ok(
 );
 
 insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_city, venue_state, status,
+                                venue_name, venue_address, venue_zip, ruleset, uniform_requirements, game_format,
+                                period_minutes,
                                 assignor_id, assignor_status, assignor_fee, platform_fee_pct)
 select '94000000-0000-4000-8000-000000000003'::uuid, h.id, 'Guard Insert Cup', 'basketball',
        current_date + 25, current_date + 26, 'Austin', 'TX', 'open',
+       'Guard Gym', '1301 Shoal Creek Blvd', '78701', 'NFHS', 'Stripes', 'quarters', 8,
        '11111111-1111-4111-8111-111111111101', 'accepted', 1, 0
 from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid;
 

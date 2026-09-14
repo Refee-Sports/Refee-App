@@ -71,13 +71,23 @@ function rowErrors(row: Row, t: TournamentRow | null): string[] {
   }
   if (!/^\d{2}:\d{2}$/.test(row.time)) errors.push("Tip-off time needed");
   if (!row.level) errors.push("Level needed");
+  if (row.level === "youth_rec" && !row.ageGroup.trim()) errors.push("Age group needed");
   return errors;
 }
 
 const cell =
   "w-full min-w-0 border border-ink-20 bg-paper px-2 py-1.5 font-mono text-[11px] text-ink focus:border-ink focus:outline-none";
 
-export function ScheduleImport({ tournamentId, backHref }: { tournamentId: string; backHref: string }) {
+export function ScheduleImport({
+  tournamentId,
+  backHref,
+  canEditTournament,
+}: {
+  tournamentId: string;
+  backHref: string;
+  /** Directors can fix missing tournament details; assignors ask the director. */
+  canEditTournament: boolean;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [tournament, setTournament] = useState<TournamentRow | null>(null);
@@ -115,6 +125,17 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
 
   const singleDay =
     tournament && tournament.starts_on === tournament.ends_on ? tournament.starts_on.slice(0, 10) : "";
+
+  // Imported games take the tournament's address, ruleset and uniform, so the
+  // tournament has to be complete first (the backend refuses otherwise).
+  const missingDetails = tournament
+    ? [
+        !tournament.venue_address?.trim() && "street address",
+        !/^\d{5}$/.test(tournament.venue_zip ?? "") && "ZIP code",
+        !tournament.ruleset && "ruleset",
+        !tournament.uniform_requirements?.trim() && "uniform",
+      ].filter((d): d is string => typeof d === "string")
+    : [];
 
   const downloadTemplate = () => {
     const csv = buildScheduleTemplate({ date: tournament?.starts_on.slice(0, 10), courts: tournament?.courts });
@@ -207,7 +228,7 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
   const periods = defaults.gameFormat === "quarters" ? 4 : defaults.gameFormat === "halves" ? 2 : 0;
   // Game clock total, stored the same way the single-game form stores it.
   const duration = periods && periodMinutes ? periods * periodMinutes : 0;
-  const canPost = ready.length > 0 && pay >= 1 && duration >= 15 && !posting;
+  const canPost = ready.length > 0 && pay >= 1 && duration >= 15 && missingDetails.length === 0 && !posting;
   const minuteOptions = (defaults.gameFormat === "quarters" ? QUARTER_MINUTES : HALF_MINUTES).map((m) => ({
     id: m,
     label: `${m} MINUTES`,
@@ -286,6 +307,31 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
         </p>
       </div>
 
+      {missingDetails.length > 0 ? (
+        <div role="alert" className="mx-5 mb-5 border border-foul bg-foul/10 px-4 py-3.5 sm:mx-0">
+          <p className="font-mono-bold text-[10px] uppercase text-foul" style={{ letterSpacing: 1.5 }}>
+            Finish the tournament before importing
+          </p>
+          <p className="mt-1 text-[13px] leading-5 text-ink">
+            Imported games use the tournament&apos;s details, and referees need them to find and work the game.
+            Missing: {missingDetails.join(", ")}.
+          </p>
+          {canEditTournament ? (
+            <Link
+              href={`/director/tournament/create?editId=${tournamentId}`}
+              className="mt-3 inline-flex h-9 items-center bg-ink px-3 font-mono-bold text-[9px] uppercase text-paper hover:opacity-80"
+              style={{ letterSpacing: 1.5 }}
+            >
+              Edit tournament
+            </Link>
+          ) : (
+            <p className="mt-2 font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+              Ask the tournament director to add them.
+            </p>
+          )}
+        </div>
+      ) : null}
+
       {/* 1 · Upload */}
       <div className="px-5 sm:px-0">
         <SectionLabel>1 · Upload</SectionLabel>
@@ -342,7 +388,7 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
             <button
               type="button"
               onClick={() => void readFile()}
-              disabled={!file || reading}
+              disabled={!file || reading || missingDetails.length > 0}
               className="flex items-center gap-2 bg-ink px-4 py-2.5 font-mono-bold text-[9px] uppercase text-paper hover:opacity-80 disabled:bg-ink-20 disabled:text-ink-40"
               style={{ letterSpacing: 1.5 }}
             >

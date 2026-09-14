@@ -50,6 +50,8 @@ export default function CreateTournament() {
     startsOn: "",
     endsOn: "",
     venueName: "",
+    venueAddress: "",
+    venueZip: "",
     venueCity: "",
     venueState: "",
     timezone: "",
@@ -71,6 +73,8 @@ export default function CreateTournament() {
           startsOn: t.starts_on,
           endsOn: t.ends_on,
           venueName: t.venue_name ?? "",
+          venueAddress: t.venue_address ?? "",
+          venueZip: t.venue_zip ?? "",
           venueCity: t.venue_city,
           venueState: t.venue_state,
           timezone: t.timezone ?? "",
@@ -93,6 +97,8 @@ export default function CreateTournament() {
     form.startsOn.trim().length >= 1 &&
     form.endsOn.trim().length >= 1 &&
     form.venueName.trim().length >= 1 &&
+    form.venueAddress.trim().length >= 3 &&
+    /^\d{5}$/.test(form.venueZip) &&
     form.venueCity.trim().length >= 1 &&
     !!form.ruleset &&
     !!form.gameFormat &&
@@ -122,6 +128,8 @@ export default function CreateTournament() {
       startsOn: form.startsOn.trim(),
       endsOn: form.endsOn.trim(),
       venueName: form.venueName.trim(),
+      venueAddress: form.venueAddress.trim(),
+      venueZip: form.venueZip.trim(),
       venueCity: form.venueCity.trim(),
       venueState: form.venueState.trim().toUpperCase(),
       timezone: form.timezone || undefined,
@@ -352,12 +360,21 @@ export default function CreateTournament() {
       {/* Section: Venue */}
       <SectionLabel style={{ marginTop: 28 }}>VENUE</SectionLabel>
 
-      <FLabel>VENUE NAME</FLabel>
+      <FLabel>VENUE NAME *</FLabel>
       <FInput
         value={form.venueName}
         onChangeText={set("venueName")}
         placeholder="e.g. Austin Recreation Center"
         autoCapitalize="words"
+      />
+
+      <FLabel style={{ marginTop: 16 }}>STREET ADDRESS *</FLabel>
+      <FInput
+        value={form.venueAddress}
+        onChangeText={set("venueAddress")}
+        placeholder="1301 Shoal Creek Blvd"
+        autoCapitalize="words"
+        textContentType="streetAddressLine1"
       />
 
       <FLabel style={{ marginTop: 16 }}>CITY *</FLabel>
@@ -376,6 +393,17 @@ export default function CreateTournament() {
         autoCapitalize="characters"
         maxLength={2}
         error={form.venueState.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
+      />
+
+      <FLabel style={{ marginTop: 16 }}>ZIP *</FLabel>
+      <FInput
+        value={form.venueZip}
+        onChangeText={(v) => set("venueZip")(v.replace(/\D/g, "").slice(0, 5))}
+        placeholder="78701"
+        keyboardType="number-pad"
+        maxLength={5}
+        textContentType="postalCode"
+        error={form.venueZip.length > 0 && form.venueZip.length !== 5 ? "5-digit ZIP" : undefined}
       />
 
       <FLabel style={{ marginTop: 16 }}>TOURNAMENT TIMEZONE *</FLabel>

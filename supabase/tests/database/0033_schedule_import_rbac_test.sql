@@ -11,7 +11,8 @@ on conflict do nothing;
 insert into public.tournaments (
   id, hirer_id, name, sport_id, starts_on, ends_on, venue_name,
   venue_city, venue_state, timezone, staffing_model, status,
-  assignor_id, assignor_status
+  assignor_id, assignor_status,
+  venue_address, venue_zip, ruleset, uniform_requirements, game_format, period_minutes
 )
 select
   '93000000-0000-4000-8000-000000000001'::uuid,
@@ -27,7 +28,8 @@ select
   'assignor_managed',
   'open',
   '22222222-2222-4222-8222-222222222200'::uuid,
-  'accepted'
+  'accepted',
+  '1301 Shoal Creek Blvd', '78701', 'NFHS', 'Stripes', 'quarters', 8
 from public.hirers h
 where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid;
 

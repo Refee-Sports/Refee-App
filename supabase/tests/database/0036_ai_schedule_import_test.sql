@@ -7,10 +7,10 @@ select plan(10);
 -- Director 111...101 owns a tournament with a full venue on file.
 insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_name, venue_address, venue_zip,
                                 venue_city, venue_state, venue_lat, venue_lng, courts, arrival_notes, timezone, status,
-                                ruleset, uniform_requirements)
+                                ruleset, uniform_requirements, game_format, period_minutes)
 select '96000000-0000-4000-8000-000000000001'::uuid, h.id, 'AI Import Cup', 'basketball', date '2026-09-20', date '2026-09-20',
        'Adelphi University', '1 South Ave', '11530', 'Garden City', 'NY', 40.7197638, -73.6519719,
-       array['Main floor'], 'Doors 1:00 PM.', 'America/New_York', 'open', 'NFHS', 'Stripes'
+       array['Main floor'], 'Doors 1:00 PM.', 'America/New_York', 'open', 'NFHS', 'Stripes', 'quarters', 8
 from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid;
 
 set local role authenticated;

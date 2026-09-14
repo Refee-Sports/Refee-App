@@ -255,7 +255,7 @@ function CreateGameInner() {
     form.gameTime.length >= 4 &&
     form.venueName.trim().length >= 1 &&
     form.venueAddress.trim().length >= 3 &&
-    (form.venueZip === "" || /^\d{5}$/.test(form.venueZip)) &&
+    /^\d{5}$/.test(form.venueZip) &&
     form.venueCity.trim().length >= 1 &&
     form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
@@ -695,7 +695,7 @@ function CreateGameInner() {
           maxLength={2}
           error={form.venueState.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
         />
-        <Label className="mt-4">ZIP</Label>
+        <Label className="mt-4">ZIP *</Label>
         <TextField
           value={form.venueZip}
           onChange={(e) => set("venueZip")(e.target.value.replace(/\D/g, "").slice(0, 5))}
