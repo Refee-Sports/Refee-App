@@ -30,6 +30,7 @@ import {
   HALF_MINUTES,
   AGE_REQUIRED_LEVELS,
 } from "@/lib/basketball/options";
+import { US_STATES } from "@refee/core/geo/regions";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -42,13 +43,6 @@ const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
   return { value, label: `${h12}:${String(m).padStart(2, "0")} ${ampm}` };
 });
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 const PAPER = "#E5E1D6";
 

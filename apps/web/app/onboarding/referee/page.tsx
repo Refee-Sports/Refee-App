@@ -7,14 +7,8 @@ import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, type CertEntry } from "@/lib/profile/queries";
+import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
 
@@ -338,7 +332,7 @@ function LocationStep({ form, set }: { form: FormData; set: SetFn }) {
         maxLength={2}
         autoComplete="address-level1"
         error={
-          form.state.length === 2 && !stateValid ? "Enter a valid US state code" : undefined
+          form.state.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined
         }
       />
     </div>

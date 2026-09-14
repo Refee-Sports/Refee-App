@@ -20,14 +20,8 @@ import {
 import { CalendarRangePicker } from "@/components/ui/CalendarRangePicker";
 import { DropdownSelect } from "@/components/ui/DropdownSelect";
 import { RULESETS, QUARTER_MINUTES, HALF_MINUTES } from "@/lib/basketball/options";
+import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 const US_TIMEZONES = [
   { value: "America/New_York", label: "EASTERN" },
@@ -378,7 +372,7 @@ export default function CreateTournament() {
         placeholder="TX"
         autoCapitalize="characters"
         maxLength={2}
-        error={form.venueState.length === 2 && !stateValid ? "Invalid state code" : undefined}
+        error={form.venueState.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
       />
 
       <FLabel style={{ marginTop: 16 }}>TOURNAMENT TIMEZONE *</FLabel>

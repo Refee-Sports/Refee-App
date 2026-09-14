@@ -15,14 +15,8 @@ import {
   updateFullProfile,
   type CertEntry,
 } from "@/lib/profile/queries";
+import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 const CERT_BODIES = [
   { id: "iaabo", label: "IAABO", full: "Intl. Association of Approved Basketball Officials" },
@@ -269,7 +263,7 @@ export default function EditProfilePage() {
             maxLength={2}
             error={
               form.state.length === 2 && !stateValid
-                ? "Enter a valid 2-letter state code"
+                ? REGION_CODE_ERROR
                 : undefined
             }
           />

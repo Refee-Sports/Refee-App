@@ -36,6 +36,7 @@ import {
 } from "@/lib/basketball/options";
 import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
+import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -50,13 +51,6 @@ const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
   };
 });
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 export default function CreateGamePage() {
   return (
@@ -586,7 +580,7 @@ function CreateGameInner() {
           onChange={(e) => set("venueState")(e.target.value.toUpperCase().slice(0, 2))}
           placeholder="TX"
           maxLength={2}
-          error={form.venueState.length === 2 && !stateValid ? "Invalid state code" : undefined}
+          error={form.venueState.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
         />
         <Label className="mt-4">ZIP</Label>
         <TextField

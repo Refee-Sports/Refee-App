@@ -23,14 +23,8 @@ import {
   updateTournament,
 } from "@/lib/director/queries";
 import { HALF_MINUTES, QUARTER_MINUTES, RULESETS } from "@/lib/basketball/options";
+import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 export default function CreateTournamentPage() {
   return (
@@ -307,7 +301,7 @@ function CreateTournamentInner() {
           onChange={(e) => set("venueState")(e.target.value.toUpperCase().slice(0, 2))}
           placeholder="TX"
           maxLength={2}
-          error={form.venueState.length === 2 && !stateValid ? "Invalid state code" : undefined}
+          error={form.venueState.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
         />
         <Label className="mt-4">ZIP</Label>
         <TextField

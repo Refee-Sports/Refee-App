@@ -14,14 +14,8 @@ import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createAssignorProfile } from "@/lib/assignor/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
+import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
-  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
-  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
-  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
-];
 
 const STEPS = ["NAME", "LOCATION"];
 
@@ -295,7 +289,7 @@ function LocationStep({
         placeholder="TX"
         autoCapitalize="characters"
         maxLength={2}
-        error={form.state.length === 2 && !stateValid ? "Enter a valid US state code" : undefined}
+        error={form.state.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
       />
 
       <View className="mt-6 border border-ink-20 bg-chalk px-4 py-3.5">
