@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rowErrors, type ReviewRow } from "./review";
+import { checkRows, rowErrors, type ReviewRow } from "./review";
 
 const row = (patch: Partial<ReviewRow> = {}): ReviewRow => ({
   homeTeam: "Long Island Friars",
@@ -55,6 +55,15 @@ describe("import review: what blocks a row", () => {
     expect(rowErrors(row({ level: "youth_rec" }), tournament)).toEqual(["Age group needed"]);
     expect(rowErrors(row({ level: "youth_rec", ageGroup: " " }), tournament)).toEqual(["Age group needed"]);
     expect(rowErrors(row({ level: "youth_rec", ageGroup: "U14" }), tournament)).toEqual([]);
+  });
+
+  it("applies the default level to rows that don't name one", () => {
+    const [blank, youth] = checkRows([row({ level: "" }), row({ level: "youth_rec" })], "high_school", tournament);
+    expect(blank.effective.level).toBe("high_school");
+    expect(blank.row.level).toBe("");
+    expect(blank.errors).toEqual([]);
+    expect(youth.errors).toEqual(["Age group needed"]);
+    expect(checkRows([row({ level: "" })], "", tournament)[0].errors).toEqual(["Level needed"]);
   });
 
   it("lists every problem at once, in reading order", () => {

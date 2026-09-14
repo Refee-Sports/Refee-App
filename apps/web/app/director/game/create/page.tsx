@@ -38,7 +38,8 @@ import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { zoneName } from "@refee/core/time";
-import { extractSchedule, readUpload } from "@refee/core/schedule/ai-import";
+import { extractSchedule, readUpload, type ExtractedSchedule } from "@refee/core/schedule/ai-import";
+import { carrySchedule } from "@/lib/schedule/rows";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -91,6 +92,8 @@ function CreateGameInner() {
   const [aiBusy, setAiBusy] = useState(false);
   const [aiNote, setAiNote] = useState<string | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  // A file with several games: offer the tournament (or its import) instead.
+  const [multiGame, setMultiGame] = useState<ExtractedSchedule | null>(null);
 
   const [form, setForm] = useState({
     homeTeam: "",
@@ -141,6 +144,7 @@ function CreateGameInner() {
           venueCity: f.venueCity || t.venue_city || "",
           venueState: f.venueState || t.venue_state || "",
           arrivalNotes: f.arrivalNotes || t.arrival_notes || "",
+          payPerGame: f.payPerGame || (t.pay_per_game ? String(t.pay_per_game) : ""),
         }));
       }
     })();
@@ -195,6 +199,7 @@ function CreateGameInner() {
     setAiBusy(true);
     setAiError(null);
     setAiNote(null);
+    setMultiGame(null);
     const upload = await readUpload(file);
     const { schedule, error: err } = await extractSchedule(upload, {
       tournamentId: tournamentId ?? undefined,
@@ -233,11 +238,12 @@ function CreateGameInner() {
       arrivalNotes: f.arrivalNotes || schedule.event_notes || "",
       ...Object.fromEntries(Object.entries(venue).filter(([, v]) => v)),
     }));
-    const more =
+    setAiNote(
       schedule.games.length > 1
-        ? ` The file has ${schedule.games.length} games — Import with AI on the tournament page adds them all.`
-        : "";
-    setAiNote(`Filled from ${file.name}. Check every field before creating.${more}`);
+        ? `Filled from ${file.name} with its first game. Check every field before creating.`
+        : `Filled from ${file.name}. Check every field before creating.`
+    );
+    if (schedule.games.length > 1) setMultiGame(schedule);
   };
 
   const ageRequired = AGE_REQUIRED_LEVELS.includes(form.level);
@@ -450,6 +456,37 @@ function CreateGameInner() {
               <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court" style={{ letterSpacing: 1 }}>
                 {aiNote}
               </p>
+            ) : null}
+            {multiGame ? (
+              <div className="mt-3 border border-ink bg-paper px-3 py-3">
+                <p className="text-[13px] leading-5 text-ink">
+                  This file has {multiGame.games.length} games.{" "}
+                  {tournamentId ? "Import them all into this tournament instead?" : "Make it a tournament with all of them?"}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      carrySchedule(multiGame);
+                      router.push(tournamentId ? `/director/tournament/${tournamentId}/import` : "/director/tournament/create");
+                    }}
+                    className="flex h-9 items-center bg-ink px-3 font-mono-bold text-[9px] uppercase text-paper hover:opacity-80"
+                    style={{ letterSpacing: 1.5 }}
+                  >
+                    {tournamentId
+                      ? `Import all ${multiGame.games.length}`
+                      : `Create a tournament with all ${multiGame.games.length}`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMultiGame(null)}
+                    className="flex h-9 items-center border border-ink px-3 font-mono-bold text-[9px] uppercase text-ink hover:bg-ink hover:text-paper"
+                    style={{ letterSpacing: 1.5 }}
+                  >
+                    Just this game
+                  </button>
+                </div>
+              </div>
             ) : null}
             {aiError ? (
               <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>

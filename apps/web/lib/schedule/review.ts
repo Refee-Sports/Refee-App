@@ -27,3 +27,15 @@ export function rowErrors(row: ReviewRow, t: { starts_on: string; ends_on: strin
   if (row.level === "youth_rec" && !row.ageGroup.trim()) errors.push("Age group needed");
   return errors;
 }
+
+/** Each row with the default level applied and what's blocking it. */
+export function checkRows<T extends ReviewRow>(
+  rows: T[],
+  defaultLevel: string,
+  t: { starts_on: string; ends_on: string } | null
+): { row: T; effective: T; errors: string[] }[] {
+  return rows.map((row) => {
+    const effective = { ...row, level: row.level || defaultLevel };
+    return { row, effective, errors: rowErrors(effective, t) };
+  });
+}

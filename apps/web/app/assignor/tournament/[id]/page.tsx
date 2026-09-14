@@ -237,7 +237,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
               >
                 <Icon name="upload" size={12} />
                 <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-                  Import with AI
+                  Import a schedule
                 </span>
               </Link>
             </div>

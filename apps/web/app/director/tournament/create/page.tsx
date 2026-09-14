@@ -1,8 +1,10 @@
 "use client";
 
+import "@/lib/core";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import {
+  AffixField,
   BigChoice,
   Chip,
   ChipRow,
@@ -14,7 +16,9 @@ import {
   TextField,
 } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
+import { Icon } from "@/components/ui/Icon";
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
+import { ReviewTable } from "@/components/schedule/ReviewTable";
 import { supabase } from "@/lib/supabase";
 import {
   createTournament,
@@ -22,9 +26,28 @@ import {
   fetchTournamentById,
   updateTournament,
 } from "@/lib/director/queries";
-import { HALF_MINUTES, QUARTER_MINUTES, RULESETS } from "@/lib/basketball/options";
+import { HALF_MINUTES, LEVELS, QUARTER_MINUTES, RULESETS } from "@/lib/basketball/options";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import {
+  extractSchedule,
+  importScheduleGames,
+  readUpload,
+  type ExtractedSchedule,
+} from "@refee/core/schedule/ai-import";
+import { parseTemplateCsv } from "@refee/core/schedule/template";
+import { tournamentDraftFromSchedule } from "@refee/core/schedule/prefill";
+import { checkRows } from "@/lib/schedule/review";
+import {
+  emptyRow,
+  rowsFromSchedule,
+  savePendingImport,
+  soleLevel,
+  takeCarriedSchedule,
+  type ReviewRowState,
+} from "@/lib/schedule/rows";
 
+const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,.csv,text/csv,.txt";
+const LIMITS = { image: 5 * 1024 * 1024, pdf: 10 * 1024 * 1024, text: 1024 * 1024 };
 
 export default function CreateTournamentPage() {
   return (
@@ -34,14 +57,11 @@ export default function CreateTournamentPage() {
   );
 }
 
-/** Port of refee-mobile/refee/app/(director)/tournament/create.tsx. */
+/** Port of refee-mobile/refee/app/(director)/tournament/create.tsx, plus start-from-a-file. */
 function CreateTournamentInner() {
   const router = useRouter();
-  const params = useSearchParams();
-  const editId = params.get("editId");
+  const editId = useSearchParams().get("editId");
   const isEdit = !!editId;
-  // From "Tournament from a schedule": go straight to import after creating.
-  const thenImport = !isEdit && params.get("then") === "import";
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +82,18 @@ function CreateTournamentInner() {
     gameFormat: "" as "" | "quarters" | "halves",
     periodMinutes: "",
     uniformRequirements: "",
+    payPerGame: "",
   });
+
+  // Start from a file: one read fills the tournament and lists its games.
+  const [reading, setReading] = useState(false);
+  const [readError, setReadError] = useState<string | null>(null);
+  const [readNote, setReadNote] = useState<string | null>(null);
+  const [problems, setProblems] = useState<string[]>([]);
+  const [gamesElsewhere, setGamesElsewhere] = useState(0);
+  const [rows, setRows] = useState<ReviewRowState[]>([]);
+  const [defaultLevel, setDefaultLevel] = useState("high_school");
+  const [crewSize, setCrewSize] = useState<2 | 3>(2);
 
   useEffect(() => {
     if (!editId) return;
@@ -86,15 +117,95 @@ function CreateTournamentInner() {
         gameFormat: (t.game_format ?? "") as "" | "quarters" | "halves",
         periodMinutes: t.period_minutes ? String(t.period_minutes) : "",
         uniformRequirements: t.uniform_requirements ?? "",
+        payPerGame: t.pay_per_game ? String(t.pay_per_game) : "",
       });
     })();
   }, [editId]);
 
+  const applySchedule = (s: ExtractedSchedule, source: string) => {
+    const d = tournamentDraftFromSchedule(s);
+    // Fill what's still blank; anything the director already typed stays.
+    setForm((f) => ({
+      ...f,
+      name: f.name || d.name,
+      startsOn: f.startsOn || d.startsOn,
+      endsOn: f.endsOn || d.endsOn,
+      venueName: f.venueName || d.venueName,
+      venueAddress: f.venueAddress || d.venueAddress,
+      venueCity: f.venueCity || d.venueCity,
+      venueState: f.venueState || d.venueState,
+      venueZip: f.venueZip || (/^\d{5}$/.test(d.venueZip) ? d.venueZip : ""),
+      courts: f.courts || d.courts.join("\n"),
+      arrivalNotes: f.arrivalNotes || d.arrivalNotes.slice(0, 280),
+    }));
+    setRows(rowsFromSchedule(s, d.startsOn && d.startsOn === d.endsOn ? d.startsOn : ""));
+    setDefaultLevel((lvl) => soleLevel(s) ?? lvl);
+    setProblems(s.problems);
+    setGamesElsewhere(d.gamesElsewhere);
+    const n = s.games.length;
+    setReadNote(
+      `Filled from ${source}${n ? `, with ${n} game${n !== 1 ? "s" : ""}` : ""}. Check the details, add what the file couldn't say, and review the games below.`
+    );
+  };
+
+  // A multi-game file read on the single-game form arrives here already read.
+  useEffect(() => {
+    if (isEdit) return;
+    const carried = takeCarriedSchedule();
+    if (carried) applySchedule(carried, "your file");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit]);
+
+  const readFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    setReadError(null);
+    setReadNote(null);
+    const kind = file.type === "application/pdf" ? "pdf" : file.type.startsWith("image/") ? "image" : "text";
+    if (file.size > LIMITS[kind]) {
+      setReadError(
+        kind === "image"
+          ? "Photos must be 5 MB or smaller."
+          : kind === "pdf"
+            ? "PDFs must be 10 MB or smaller."
+            : "CSV files must be 1 MB or smaller."
+      );
+      return;
+    }
+    setReading(true);
+    const upload = await readUpload(file);
+    // A sheet in the Refee template is read right here: instant, and no AI.
+    const isText = upload.mimeType.startsWith("text/") || /\.(csv|tsv|txt)$/i.test(file.name);
+    const local = isText ? parseTemplateCsv(upload.data) : null;
+    if (local) {
+      setReading(false);
+      applySchedule(local, file.name);
+      return;
+    }
+    const { schedule, error: err } = await extractSchedule(upload, { mode: "tournament" });
+    setReading(false);
+    if (err || !schedule) {
+      setReadError(err?.message ?? "Couldn't read that file.");
+      return;
+    }
+    applySchedule(schedule, file.name);
+  };
+
   const set = (key: keyof typeof form) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
+  const hasGames = !isEdit && rows.length > 0;
+  const range = /^\d{4}-\d{2}-\d{2}$/.test(form.startsOn) && /^\d{4}-\d{2}-\d{2}$/.test(form.endsOn)
+    ? { starts_on: form.startsOn, ends_on: form.endsOn }
+    : null;
+  const checked = checkRows(rows, defaultLevel, range);
+  const ready = hasGames ? checked.filter((c) => c.row.include && c.errors.length === 0) : [];
+  const skipped = hasGames ? checked.filter((c) => c.row.include && c.errors.length > 0).length : 0;
+  const pay = parseInt(form.payPerGame, 10);
+  const periodMin = parseInt(form.periodMinutes, 10);
+  const periods = form.gameFormat === "quarters" ? 4 : form.gameFormat === "halves" ? 2 : 0;
+
   const stateValid = !form.venueState || US_STATES.includes(form.venueState.toUpperCase());
-  const canSubmit =
+  const detailsComplete =
     form.name.trim().length >= 2 &&
     form.startsOn.trim().length >= 1 &&
     form.endsOn.trim().length >= 1 &&
@@ -107,8 +218,11 @@ function CreateTournamentInner() {
     !!form.periodMinutes &&
     form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
+  // Games need their pay; a tournament created on its own doesn't.
+  const payNeeded = ready.length > 0 && !(pay >= 1);
+  const canSubmit = detailsComplete && !payNeeded;
 
-  const handleSubmit = async (next: "tournament" | "import" = thenImport ? "import" : "tournament") => {
+  const handleSubmit = async () => {
     if (!canSubmit) return;
     setLoading(true);
     setError(null);
@@ -146,8 +260,9 @@ function CreateTournamentInner() {
       ruleset: form.ruleset,
       rulesetModifications: form.rulesetModifications.trim() || undefined,
       gameFormat: (form.gameFormat || undefined) as "quarters" | "halves" | undefined,
-      periodMinutes: form.periodMinutes ? parseInt(form.periodMinutes, 10) : undefined,
+      periodMinutes: periodMin || undefined,
       uniformRequirements: form.uniformRequirements.trim() || undefined,
+      payPerGame: pay >= 1 ? pay : null,
     };
 
     if (isEdit && editId) {
@@ -162,19 +277,55 @@ function CreateTournamentInner() {
     }
 
     const { tournamentId, error: createErr } = await createTournament(hirerId, args);
-    setLoading(false);
     if (createErr || !tournamentId) {
+      setLoading(false);
       setError(createErr?.message ?? "Could not create tournament.");
       return;
     }
-    router.push(
-      next === "import" ? `/director/tournament/${tournamentId}/import` : `/director/tournament/${tournamentId}`
+    if (ready.length === 0) {
+      router.push(`/director/tournament/${tournamentId}`);
+      return;
+    }
+
+    // The games inherit the tournament's venue, address, map pin and arrival notes.
+    const { count, error: importErr } = await importScheduleGames(
+      tournamentId,
+      ready.map(({ effective: r }) => ({
+        homeTeam: r.homeTeam.trim(),
+        awayTeam: r.awayTeam.trim(),
+        startsLocal: `${r.date}T${r.time}`,
+        level: r.level,
+        teamLevel: r.level === "high_school" ? r.teamLevel || null : null,
+        ageGroup: r.level === "youth_rec" ? r.ageGroup.trim() || null : null,
+        crewSize,
+        payPerGame: pay,
+        durationMinutes: periods * periodMin,
+        gameFormat: form.gameFormat || null,
+        periodMinutes: periodMin,
+        court: r.court.trim() || null,
+      }))
     );
+    if (importErr) {
+      // The tournament exists; its import page picks up the reviewed games.
+      savePendingImport(tournamentId, { rows, level: defaultLevel, crewSize, error: importErr.message });
+      router.push(`/director/tournament/${tournamentId}/import`);
+      return;
+    }
+    router.push(`/director/tournament/${tournamentId}?imported=${count}`);
   };
 
   const minuteOptions = (form.gameFormat === "quarters" ? QUARTER_MINUTES : HALF_MINUTES).map(
     (m) => ({ id: m, label: `${m} MINUTES` })
   );
+  const levelOptions = LEVELS.map((l) => ({ id: l.id, label: l.label }));
+
+  const submitLabel = isEdit
+    ? "SAVE CHANGES"
+    : payNeeded
+      ? "SET PAY PER GAME TO ADD THE GAMES"
+      : ready.length > 0
+        ? `CREATE TOURNAMENT + ${ready.length} GAME${ready.length !== 1 ? "S" : ""}`
+        : "CREATE TOURNAMENT";
 
   return (
     <div className="app-canvas app-canvas--form bg-paper">
@@ -190,6 +341,65 @@ function CreateTournamentInner() {
         >
           {isEdit ? "EDIT TOURNAMENT" : "NEW TOURNAMENT"}
         </h1>
+
+        {!isEdit ? (
+          <div className="mb-7 border border-dashed border-ink px-4 py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="min-w-0 flex-1">
+                <span className="block font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
+                  Start from a flyer, schedule or CSV
+                </span>
+                <span className="mt-0.5 block font-mono text-[9px] uppercase leading-4 text-ink-60" style={{ letterSpacing: 1 }}>
+                  Fills in the tournament and lists its games. Or skip this and fill it in yourself.
+                </span>
+              </span>
+              <label
+                className={`flex h-9 cursor-pointer items-center gap-1.5 bg-ink px-3 text-paper hover:opacity-80 ${
+                  reading ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                {reading ? <Spinner /> : <Icon name="upload" size={12} />}
+                <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+                  {reading ? "Reading…" : rows.length > 0 ? "Choose another file" : "Choose file"}
+                </span>
+                <input
+                  type="file"
+                  accept={ACCEPT}
+                  className="sr-only"
+                  onChange={(e) => {
+                    void readFile(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {readNote ? (
+              <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court" style={{ letterSpacing: 1 }}>
+                {readNote}
+              </p>
+            ) : null}
+            {readError ? (
+              <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>
+                {readError}
+              </p>
+            ) : null}
+            {problems.length > 0 ? (
+              <div className="mt-2 border-l-[3px] border-whistle bg-whistle/10 px-3 py-2">
+                <span className="mb-1 block font-mono-bold text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1.5 }}>
+                  Check these
+                </span>
+                {problems.map((p) => (
+                  <p key={p} className="text-[12px] leading-5 text-ink">
+                    {p}
+                  </p>
+                ))}
+              </div>
+            ) : null}
+            <p className="mt-2 font-mono text-[8px] uppercase text-ink-40" style={{ letterSpacing: 1 }}>
+              JPG · PNG · WebP · PDF · CSV · The file is read to fill this page and isn&apos;t kept.
+            </p>
+          </div>
+        ) : null}
 
         <SectionLabel>Tournament details</SectionLabel>
         <Label>Tournament name *</Label>
@@ -267,6 +477,19 @@ function CreateTournamentInner() {
           </>
         )}
 
+        <SectionLabel className="mt-7">Pay</SectionLabel>
+        <Label>{`Pay per game ($)${hasGames ? " *" : " (optional)"}`}</Label>
+        <AffixField
+          prefix="$"
+          value={form.payPerGame}
+          onChange={(e) => set("payPerGame")(e.target.value.replace(/\D/g, "").slice(0, 4))}
+          placeholder="75"
+          inputMode="numeric"
+        />
+        <p className="mt-1.5 font-mono text-[9px] uppercase text-ink-40" style={{ letterSpacing: 1 }}>
+          Per referee · every game in the tournament starts with it
+        </p>
+
         <SectionLabel className="mt-7">Uniform *</SectionLabel>
         <Label>Required uniform — applies to every game</Label>
         <TextField
@@ -337,6 +560,75 @@ function CreateTournamentInner() {
         >
           {form.arrivalNotes.length}/280 · shown to every crew above the map
         </p>
+
+        {hasGames ? (
+          <div className="mt-7">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <SectionLabel>{`Games from your file (${rows.length})`}</SectionLabel>
+              <div className="flex shrink-0 items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setRows((rs) => [...rs, emptyRow(range && range.starts_on === range.ends_on ? range.starts_on : "")])}
+                  className="flex items-center gap-1 font-mono-bold text-[9px] uppercase text-signal hover:underline"
+                  style={{ letterSpacing: 1.5 }}
+                >
+                  <Icon name="plus" size={11} /> Add row
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRows([]);
+                    setProblems([]);
+                    setReadNote(null);
+                  }}
+                  className="font-mono-bold text-[9px] uppercase text-ink-60 hover:text-foul"
+                  style={{ letterSpacing: 1.5 }}
+                >
+                  Don&apos;t add games
+                </button>
+              </div>
+            </div>
+            {gamesElsewhere > 0 ? (
+              <p className="mb-2 font-mono text-[9px] uppercase leading-4 text-ink-60" style={{ letterSpacing: 1 }}>
+                {gamesElsewhere} game{gamesElsewhere !== 1 ? "s" : ""} in the file list another venue. They&apos;ll be
+                posted at this tournament&apos;s venue; change them after creating if needed.
+              </p>
+            ) : null}
+            <ReviewTable
+              rows={rows}
+              onChange={setRows}
+              defaultLevel={defaultLevel}
+              range={range}
+              courts={form.courts.split("\n").map((c) => c.trim()).filter(Boolean)}
+              listId="new-tournament-courts"
+            />
+            <div className="mt-4 grid gap-x-8 gap-y-2 lg:grid-cols-2">
+              <div>
+                <Label>Level (when a game doesn&apos;t say)</Label>
+                <SelectField
+                  value={defaultLevel}
+                  onChange={setDefaultLevel}
+                  options={levelOptions}
+                  placeholder="SELECT LEVEL"
+                />
+              </div>
+              <div>
+                <Label>Referees per game</Label>
+                <div className="flex gap-2">
+                  {([2, 3] as const).map((n) => (
+                    <BigChoice
+                      key={n}
+                      num={String(n)}
+                      label="Refs"
+                      selected={crewSize === n}
+                      onClick={() => setCrewSize(n)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="action-bar sticky bottom-0">
@@ -348,6 +640,12 @@ function CreateTournamentInner() {
             {error}
           </p>
         )}
+        {hasGames ? (
+          <p className="mb-3 font-mono text-[10px] uppercase leading-4 text-ink-60" style={{ letterSpacing: 0.8 }}>
+            {ready.length} game{ready.length !== 1 ? "s" : ""} ready
+            {skipped ? ` · ${skipped} need fixing (they'll be skipped)` : ""}
+          </p>
+        ) : null}
         <button
           type="button"
           onClick={() => void handleSubmit()}
@@ -363,23 +661,12 @@ function CreateTournamentInner() {
           ) : (
             <>
               <span className="font-mono-bold" style={{ fontSize: 12, letterSpacing: 2.5 }}>
-                {isEdit ? "SAVE CHANGES" : thenImport ? "CREATE & IMPORT SCHEDULE" : "CREATE TOURNAMENT"}
+                {submitLabel}
               </span>
               <span className="font-mono-bold text-base">→</span>
             </>
           )}
         </button>
-        {!isEdit ? (
-          <button
-            type="button"
-            onClick={() => void handleSubmit(thenImport ? "tournament" : "import")}
-            disabled={!canSubmit || loading}
-            className="mt-2 w-full py-2.5 font-mono-bold text-[10px] uppercase text-ink-60 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-40"
-            style={{ letterSpacing: 1.5 }}
-          >
-            {thenImport ? "Create without importing" : "Create, then import a schedule with AI"}
-          </button>
-        ) : null}
       </div>
     </div>
   );

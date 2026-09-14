@@ -74,6 +74,8 @@ export type CleanSchedule = {
   venue: { name: string | null; address: string | null; city: string | null; state: string | null; zip: string | null };
   event_notes: string | null;
   problems: string[];
+  /** The event as a whole, when the file names it (tournament flyers). */
+  event: { name: string | null; starts_on: string | null; ends_on: string | null };
 };
 
 /** Keep only well-formed games; the review screen shows what's missing. */
@@ -102,8 +104,15 @@ export function clean(input: unknown): CleanSchedule {
     }))
     .filter((g) => g.home_team || g.away_team);
   const venue = record(raw.venue);
+  const event = record(raw.event);
+  let startsOn: string | null = day(event.starts_on) || null;
+  let endsOn: string | null = day(event.ends_on) || null;
+  if (startsOn && !endsOn) endsOn = startsOn;
+  if (endsOn && !startsOn) startsOn = endsOn;
+  if (startsOn && endsOn && endsOn < startsOn) [startsOn, endsOn] = [endsOn, startsOn];
   return {
     games,
+    event: { name: str(event.name, 120) || null, starts_on: startsOn, ends_on: endsOn },
     venue: {
       name: str(venue.name) || null,
       address: str(venue.address) || null,

@@ -241,6 +241,8 @@ export async function createTournament(
     gameFormat?: "quarters" | "halves";
     periodMinutes?: number;
     uniformRequirements?: string;
+    /** Default pay per game; games added to the tournament start with it. */
+    payPerGame?: number | null;
   }
 ): Promise<{ tournamentId: string | null; error: Error | null }> {
   const coords = args.venueAddress?.trim()
@@ -270,6 +272,7 @@ export async function createTournament(
       game_format: args.gameFormat ?? null,
       period_minutes: args.periodMinutes ?? null,
       uniform_requirements: args.uniformRequirements || null,
+      pay_per_game: args.payPerGame ?? null,
       staffing_model: "direct",
       status: "open",
     })
@@ -893,6 +896,8 @@ export async function updateTournament(
     gameFormat?: "quarters" | "halves";
     periodMinutes?: number;
     uniformRequirements?: string;
+    /** Default pay per game; left unchanged when omitted. */
+    payPerGame?: number | null;
   }
 ): Promise<{ error: Error | null }> {
   const coords = args.venueAddress?.trim()
@@ -920,6 +925,7 @@ export async function updateTournament(
       game_format: args.gameFormat ?? null,
       period_minutes: args.periodMinutes ?? null,
       uniform_requirements: args.uniformRequirements || null,
+      ...(args.payPerGame !== undefined ? { pay_per_game: args.payPerGame } : {}),
     })
     .eq("id", tournamentId);
   return { error: error ? new Error(error.message) : null };

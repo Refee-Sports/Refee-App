@@ -38,6 +38,8 @@ export type ExtractedSchedule = {
   /** Doors time, check-in, parking — goes into arrival notes. */
   event_notes: string | null;
   problems: string[];
+  /** The event as a whole, when the file names it (AI only; CSV templates leave it out). */
+  event?: { name: string | null; starts_on: string | null; ends_on: string | null };
 };
 
 export type ScheduleUpload = {

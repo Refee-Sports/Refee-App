@@ -1,8 +1,8 @@
 "use client";
 
-// Import a tournament's games from a photo, PDF or CSV. AI reads the file into
-// an editable table; nothing is posted until the director (or the tournament's
-// accepted assignor) reviews it and presses Create.
+// Add games to an existing tournament from a photo, PDF or CSV. The file is
+// read into an editable table; nothing is posted until the director (or the
+// tournament's accepted assignor) reviews it and presses Create.
 import "@/lib/core";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,8 +10,9 @@ import { useEffect, useRef, useState } from "react";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { AffixField, BigChoice, Label, SectionLabel, SelectField, TextArea } from "@/components/ui/Field";
+import { ReviewTable } from "@/components/schedule/ReviewTable";
 import { fetchTournamentById, type TournamentRow } from "@/lib/director/queries";
-import { HALF_MINUTES, LEVELS, QUARTER_MINUTES, TEAM_LEVELS } from "@/lib/basketball/options";
+import { HALF_MINUTES, LEVELS, QUARTER_MINUTES } from "@/lib/basketball/options";
 import {
   extractSchedule,
   importScheduleGames,
@@ -20,48 +21,18 @@ import {
 } from "@refee/core/schedule/ai-import";
 import { buildScheduleTemplate, parseTemplateCsv, TEMPLATE_FILE_NAME } from "@refee/core/schedule/template";
 import { formatDateOnly, zoneName } from "@refee/core/time";
-import { rowErrors } from "@/lib/schedule/review";
+import { checkRows } from "@/lib/schedule/review";
+import {
+  emptyRow,
+  rowsFromSchedule,
+  soleLevel,
+  takeCarriedSchedule,
+  takePendingImport,
+  type ReviewRowState,
+} from "@/lib/schedule/rows";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,.csv,text/csv,.txt";
 const LIMITS = { image: 5 * 1024 * 1024, pdf: 10 * 1024 * 1024, text: 1024 * 1024 };
-
-type Row = {
-  key: string;
-  include: boolean;
-  homeTeam: string;
-  awayTeam: string;
-  date: string;
-  time: string;
-  court: string;
-  level: string;
-  teamLevel: string;
-  ageGroup: string;
-  notes: string | null;
-  confidence: "high" | "medium" | "low";
-};
-
-let seq = 0;
-const nextKey = () => `row-${++seq}`;
-
-function emptyRow(date: string): Row {
-  return {
-    key: nextKey(),
-    include: true,
-    homeTeam: "",
-    awayTeam: "",
-    date,
-    time: "",
-    court: "",
-    level: "",
-    teamLevel: "",
-    ageGroup: "",
-    notes: null,
-    confidence: "high",
-  };
-}
-
-const cell =
-  "w-full min-w-0 border border-ink-20 bg-paper px-2 py-1.5 font-mono text-[11px] text-ink focus:border-ink focus:outline-none";
 
 export function ScheduleImport({
   tournamentId,
@@ -82,7 +53,7 @@ export function ScheduleImport({
   const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [problems, setProblems] = useState<string[]>([]);
-  const [rows, setRows] = useState<Row[]>([]);
+  const [rows, setRows] = useState<ReviewRowState[]>([]);
   const [read, setRead] = useState(false);
   const [defaults, setDefaults] = useState({
     level: "high_school",
@@ -96,16 +67,28 @@ export function ScheduleImport({
   useEffect(() => {
     void fetchTournamentById(tournamentId).then(({ tournament: t }) => {
       setTournament(t);
-      // Start from the tournament's own format, as the single-game form does.
-      if (t?.game_format === "quarters" || t?.game_format === "halves") {
-        const format = t.game_format;
-        setDefaults((d) => ({
-          ...d,
-          gameFormat: d.gameFormat || format,
-          periodMinutes: d.periodMinutes || (t.period_minutes ? String(t.period_minutes) : ""),
-        }));
-      }
+      if (!t) return;
+      // Start from the tournament's own format and pay, as the single-game form does.
+      setDefaults((d) => ({
+        ...d,
+        gameFormat: d.gameFormat || (t.game_format === "quarters" || t.game_format === "halves" ? t.game_format : ""),
+        periodMinutes: d.periodMinutes || (t.period_minutes ? String(t.period_minutes) : ""),
+        payPerGame: d.payPerGame || (t.pay_per_game ? String(t.pay_per_game) : ""),
+      }));
     });
+    // Games reviewed while creating this tournament that didn't post: pick up where they left off.
+    const pending = takePendingImport(tournamentId);
+    if (pending) {
+      setRows(pending.rows);
+      setDefaults((d) => ({ ...d, level: pending.level || d.level, crewSize: pending.crewSize }));
+      setError(`The tournament was created, but its games weren't posted: ${pending.error} Check them and create them here.`);
+      setRead(true);
+      return;
+    }
+    // A multi-game file read on the single-game form, already read: no re-upload.
+    const carried = takeCarriedSchedule();
+    if (carried) apply(carried);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tournamentId]);
 
   const singleDay =
@@ -152,27 +135,12 @@ export function ScheduleImport({
   };
 
   const apply = (s: ExtractedSchedule) => {
-    setRows(
-      s.games.map((g) => ({
-        key: nextKey(),
-        include: true,
-        homeTeam: g.home_team,
-        awayTeam: g.away_team,
-        date: g.date || singleDay,
-        time: g.time,
-        court: g.court ?? "",
-        level: g.level ?? "",
-        teamLevel: g.team_level ?? "",
-        ageGroup: g.age_group ?? "",
-        notes: g.notes,
-        confidence: g.confidence,
-      }))
-    );
+    setRows(rowsFromSchedule(s, singleDay));
     setProblems(s.problems);
-    const levels = [...new Set(s.games.map((g) => g.level).filter(Boolean))] as string[];
+    const level = soleLevel(s);
     setDefaults((d) => ({
       ...d,
-      level: levels.length === 1 ? levels[0] : d.level,
+      level: level ?? d.level,
       arrivalNotes: d.arrivalNotes || (!tournament?.arrival_notes ? s.event_notes ?? "" : ""),
     }));
     setRead(true);
@@ -201,11 +169,7 @@ export function ScheduleImport({
     apply(schedule);
   };
 
-  const update = (key: string, patch: Partial<Row>) =>
-    setRows((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)));
-
-  const effective = (r: Row): Row => ({ ...r, level: r.level || defaults.level });
-  const checked = rows.map((row) => ({ row, errors: rowErrors(effective(row), tournament) }));
+  const checked = checkRows(rows, defaults.level, tournament);
   const ready = checked.filter((c) => c.row.include && c.errors.length === 0);
   const skipped = checked.filter((c) => c.row.include && c.errors.length > 0).length;
   const pay = parseInt(defaults.payPerGame, 10);
@@ -225,24 +189,21 @@ export function ScheduleImport({
     setError(null);
     const { count, error: err } = await importScheduleGames(
       tournamentId,
-      ready.map(({ row }) => {
-        const r = effective(row);
-        return {
-          homeTeam: r.homeTeam.trim(),
-          awayTeam: r.awayTeam.trim(),
-          startsLocal: `${r.date}T${r.time}`,
-          level: r.level,
-          teamLevel: r.level === "high_school" ? r.teamLevel || null : null,
-          ageGroup: r.level === "youth_rec" ? r.ageGroup.trim() || null : null,
-          crewSize: defaults.crewSize,
-          payPerGame: pay,
-          durationMinutes: duration,
-          gameFormat: defaults.gameFormat || null,
-          periodMinutes: periodMinutes || null,
-          court: r.court.trim() || null,
-          arrivalNotes: defaults.arrivalNotes.trim() || null,
-        };
-      })
+      ready.map(({ effective: r }) => ({
+        homeTeam: r.homeTeam.trim(),
+        awayTeam: r.awayTeam.trim(),
+        startsLocal: `${r.date}T${r.time}`,
+        level: r.level,
+        teamLevel: r.level === "high_school" ? r.teamLevel || null : null,
+        ageGroup: r.level === "youth_rec" ? r.ageGroup.trim() || null : null,
+        crewSize: defaults.crewSize,
+        payPerGame: pay,
+        durationMinutes: duration,
+        gameFormat: defaults.gameFormat || null,
+        periodMinutes: periodMinutes || null,
+        court: r.court.trim() || null,
+        arrivalNotes: defaults.arrivalNotes.trim() || null,
+      }))
     );
     setPosting(false);
     if (err) {
@@ -277,7 +238,7 @@ export function ScheduleImport({
           Import games<span className="text-signal">.</span>
         </h1>
         <p className="mt-2 max-w-xl font-mono text-[10px] uppercase leading-4 text-ink-60" style={{ letterSpacing: 1 }}>
-          Upload a flyer, a screenshot, a PDF or a spreadsheet. AI reads the games into a table you check before
+          Upload a flyer, a screenshot, a PDF or a spreadsheet. The games are read into a table you check before
           anything is posted.
           {tournament
             ? ` ${
@@ -432,123 +393,14 @@ export function ScheduleImport({
               <Icon name="plus" size={11} /> Add row
             </button>
           </div>
-          {rows.length === 0 ? (
-            <p className="border border-dashed border-ink-20 px-4 py-6 text-center font-mono text-[10px] uppercase text-ink-60">
-              No games found. Add rows by hand, or try a clearer photo.
-            </p>
-          ) : (
-            <div className="overflow-x-auto border border-ink bg-chalk">
-              <table className="w-full min-w-[860px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-ink">
-                    {["", "Home", "Away", "Date", "Tip-off", "Court", "Level", "Team level / age", ""].map((h, i) => (
-                      <th
-                        key={i}
-                        className="px-2 py-2 font-mono-bold text-[8px] uppercase text-ink-60"
-                        style={{ letterSpacing: 1.4 }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {checked.map(({ row, errors }) => {
-                    const lvl = row.level || defaults.level;
-                    return (
-                      <tr key={row.key} className={`border-b border-ink-20 align-top ${row.include ? "" : "opacity-40"}`}>
-                        <td className="px-2 py-2">
-                          <input
-                            type="checkbox"
-                            checked={row.include}
-                            onChange={(e) => update(row.key, { include: e.target.checked })}
-                            aria-label="Include this game"
-                          />
-                        </td>
-                        <td className="px-1 py-2">
-                          <input className={cell} value={row.homeTeam} onChange={(e) => update(row.key, { homeTeam: e.target.value })} />
-                        </td>
-                        <td className="px-1 py-2">
-                          <input className={cell} value={row.awayTeam} onChange={(e) => update(row.key, { awayTeam: e.target.value })} />
-                        </td>
-                        <td className="px-1 py-2">
-                          <input
-                            type="date"
-                            className={cell}
-                            value={row.date}
-                            min={tournament?.starts_on.slice(0, 10)}
-                            max={tournament?.ends_on.slice(0, 10)}
-                            onChange={(e) => update(row.key, { date: e.target.value })}
-                          />
-                        </td>
-                        <td className="px-1 py-2">
-                          <input type="time" step={300} className={cell} value={row.time} onChange={(e) => update(row.key, { time: e.target.value })} />
-                        </td>
-                        <td className="px-1 py-2">
-                          <input
-                            className={cell}
-                            value={row.court}
-                            list={`courts-${tournamentId}`}
-                            placeholder="—"
-                            onChange={(e) => update(row.key, { court: e.target.value })}
-                          />
-                        </td>
-                        <td className="px-1 py-2">
-                          <select className={cell} value={row.level} onChange={(e) => update(row.key, { level: e.target.value })}>
-                            <option value="">Default ({LEVELS.find((l) => l.id === defaults.level)?.label ?? "—"})</option>
-                            {levelOptions.map((l) => (
-                              <option key={l.id} value={l.id}>
-                                {l.label}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-1 py-2">
-                          {lvl === "high_school" ? (
-                            <select className={cell} value={row.teamLevel} onChange={(e) => update(row.key, { teamLevel: e.target.value })}>
-                              <option value="">—</option>
-                              {TEAM_LEVELS.map((t) => (
-                                <option key={t.id} value={t.id}>
-                                  {t.label}
-                                </option>
-                              ))}
-                            </select>
-                          ) : lvl === "youth_rec" ? (
-                            <input className={cell} value={row.ageGroup} placeholder="U14" onChange={(e) => update(row.key, { ageGroup: e.target.value })} />
-                          ) : (
-                            <span className="font-mono text-[10px] text-ink-40">—</span>
-                          )}
-                        </td>
-                        <td className="w-40 px-2 py-2">
-                          {row.confidence !== "high" ? (
-                            <span
-                              className="mb-1 inline-block bg-whistle px-1.5 py-0.5 font-mono-bold text-[8px] uppercase text-ink"
-                              style={{ letterSpacing: 1.2 }}
-                            >
-                              {row.confidence} confidence
-                            </span>
-                          ) : null}
-                          {row.include && errors.length > 0 ? (
-                            <span className="block font-mono text-[9px] uppercase text-foul" style={{ letterSpacing: 0.8 }}>
-                              {errors.join(" · ")}
-                            </span>
-                          ) : row.include ? (
-                            <span className="block font-mono-bold text-[9px] uppercase text-court">Ready</span>
-                          ) : null}
-                          {row.notes ? <span className="mt-1 block text-[11px] leading-4 text-ink-60">{row.notes}</span> : null}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              <datalist id={`courts-${tournamentId}`}>
-                {(tournament?.courts ?? []).map((c) => (
-                  <option key={c} value={c} />
-                ))}
-              </datalist>
-            </div>
-          )}
+          <ReviewTable
+            rows={rows}
+            onChange={setRows}
+            defaultLevel={defaults.level}
+            range={tournament}
+            courts={tournament?.courts ?? []}
+            listId={`courts-${tournamentId}`}
+          />
 
           {/* 3 · Defaults */}
           <div className="mt-7 grid gap-x-8 gap-y-2 lg:grid-cols-2">

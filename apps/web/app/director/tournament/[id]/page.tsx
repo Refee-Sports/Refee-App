@@ -43,6 +43,7 @@ export default function TournamentDetailPage({
   const [addedId, setAddedId] = useState<string | null>(null);
   const [addedCharged, setAddedCharged] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
+  const [addOpen, setAddOpen] = useState(false);
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -188,25 +189,48 @@ export default function TournamentDetailPage({
         >
           ── Games ({games.length})
         </h2>
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/director/tournament/${id}/import`}
-            className="flex h-8 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
-          >
-            <Icon name="upload" size={12} />
-            <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-              Import with AI
-            </span>
-          </Link>
-          <Link
-            href={`/director/game/create?tournamentId=${id}`}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setAddOpen((v) => !v)}
+            aria-expanded={addOpen}
             className="flex h-8 items-center gap-1.5 bg-ink px-3 text-paper hover:opacity-80"
           >
             <Icon name="plus" size={12} />
             <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-              Add game
+              Add games
             </span>
-          </Link>
+          </button>
+          {addOpen ? (
+            <div className="absolute right-0 top-9 z-30 w-64 border border-ink bg-chalk shadow-[4px_4px_0_var(--ink)]">
+              <Link
+                href={`/director/tournament/${id}/import`}
+                className="group block border-b border-ink-20 px-4 py-3 font-mono-bold text-[10px] uppercase text-ink hover:bg-ink hover:text-paper"
+                style={{ letterSpacing: 1.5 }}
+              >
+                Import a schedule
+                <span
+                  className="mt-1 block font-mono text-[9px] normal-case text-ink-60 group-hover:text-paper"
+                  style={{ letterSpacing: 0.3 }}
+                >
+                  From a flyer, PDF or CSV. Review before posting.
+                </span>
+              </Link>
+              <Link
+                href={`/director/game/create?tournamentId=${id}`}
+                className="group block px-4 py-3 font-mono-bold text-[10px] uppercase text-ink hover:bg-ink hover:text-paper"
+                style={{ letterSpacing: 1.5 }}
+              >
+                Add one game
+                <span
+                  className="mt-1 block font-mono text-[9px] normal-case text-ink-60 group-hover:text-paper"
+                  style={{ letterSpacing: 0.3 }}
+                >
+                  Fill in a single matchup, or start from a flyer.
+                </span>
+              </Link>
+            </div>
+          ) : null}
         </div>
       </div>
 

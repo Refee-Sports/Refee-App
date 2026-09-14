@@ -33,6 +33,7 @@ describe("clean: AI output is untrusted", () => {
     for (const bad of [null, undefined, "games", 42, [], { games: "nope" }, { games: [null, "x", 3, []] }]) {
       expect(clean(bad)).toEqual({
         games: [],
+        event: { name: null, starts_on: null, ends_on: null },
         venue: { name: null, address: null, city: null, state: null, zip: null },
         event_notes: null,
         problems: [],
@@ -103,6 +104,36 @@ describe("clean: AI output is untrusted", () => {
       "Year missing",
       "Logo mismatch",
     ]);
+  });
+});
+
+describe("clean: the event itself", () => {
+  it("keeps the event's name and first and last day", () => {
+    expect(clean({ event: { name: "  The Initiation ", starts_on: "2026-09-20", ends_on: "2026-09-21" } }).event).toEqual({
+      name: "The Initiation",
+      starts_on: "2026-09-20",
+      ends_on: "2026-09-21",
+    });
+  });
+
+  it("treats a one-day event as starting and ending that day", () => {
+    expect(clean({ event: { starts_on: "2026-09-20" } }).event).toMatchObject({ starts_on: "2026-09-20", ends_on: "2026-09-20" });
+    expect(clean({ event: { ends_on: "2026-09-20" } }).event).toMatchObject({ starts_on: "2026-09-20", ends_on: "2026-09-20" });
+  });
+
+  it("puts reversed days in order", () => {
+    expect(clean({ event: { starts_on: "2026-09-21", ends_on: "2026-09-20" } }).event).toMatchObject({
+      starts_on: "2026-09-20",
+      ends_on: "2026-09-21",
+    });
+  });
+
+  it("drops days that aren't real and names that aren't text", () => {
+    expect(clean({ event: { name: 42, starts_on: "2026-02-30", ends_on: "Sun Sept 20" } }).event).toEqual({
+      name: null,
+      starts_on: null,
+      ends_on: null,
+    });
   });
 });
 
