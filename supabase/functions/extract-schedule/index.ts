@@ -6,18 +6,10 @@
 // Uploaded files are sent to Claude and discarded; ai_events keeps who/what/
 // tokens and the structured result, never the file.
 import { adminClient, getCaller, handleOptions, json } from "../_shared/util.ts";
+import { clean, fileBlock, LEVELS, str } from "../_shared/schedule-extract.ts";
 
 const MODEL = Deno.env.get("ANTHROPIC_MODEL") ?? "claude-opus-5";
 const DAILY_LIMIT = Number(Deno.env.get("AI_EXTRACT_DAILY_LIMIT") ?? "30");
-const MAX_GAMES = 200;
-
-const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // Claude's per-image limit
-const MAX_PDF_BYTES = 10 * 1024 * 1024;
-const MAX_TEXT_CHARS = 200_000;
-
-const LEVELS = ["youth_rec", "high_school", "juco", "naia", "ncaa_mens", "ncaa_womens", "pro_am"];
-
 const SCHEDULE_TOOL = {
   name: "record_schedule",
   description: "Record every game found in the uploaded schedule.",
@@ -86,66 +78,6 @@ type Tournament = {
   assignor_status: string | null;
   hirers: { user_id: string } | { user_id: string }[] | null;
 };
-
-const str = (v: unknown, max = 160) => (typeof v === "string" ? v.trim().slice(0, max) : "");
-
-/** Keep only well-formed games; the review screen shows what's missing. */
-function clean(raw: Record<string, unknown>) {
-  const games = (Array.isArray(raw.games) ? raw.games : [])
-    .slice(0, MAX_GAMES)
-    .map((g: Record<string, unknown>) => {
-      const date = str(g.date, 10);
-      const time = str(g.time, 5);
-      return {
-        home_team: str(g.home_team, 120),
-        away_team: str(g.away_team, 120),
-        date: /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : "",
-        time: /^\d{2}:\d{2}$/.test(time) ? time : "",
-        court: str(g.court, 80) || null,
-        venue_name: str(g.venue_name) || null,
-        venue_address: str(g.venue_address) || null,
-        venue_city: str(g.venue_city, 120) || null,
-        venue_state: str(g.venue_state, 2).toUpperCase() || null,
-        venue_zip: str(g.venue_zip, 10) || null,
-        level: LEVELS.includes(str(g.level)) ? str(g.level) : null,
-        team_level: ["varsity", "jv", "freshman"].includes(str(g.team_level)) ? str(g.team_level) : null,
-        age_group: str(g.age_group, 12) || null,
-        gender: ["boys", "girls", "men", "women", "coed"].includes(str(g.gender)) ? str(g.gender) : null,
-        notes: str(g.notes, 280) || null,
-        confidence: ["high", "medium", "low"].includes(str(g.confidence)) ? str(g.confidence) : "low",
-      };
-    })
-    .filter((g) => g.home_team || g.away_team);
-  const venue = (raw.venue && typeof raw.venue === "object" ? raw.venue : {}) as Record<string, unknown>;
-  return {
-    games,
-    venue: {
-      name: str(venue.name) || null,
-      address: str(venue.address) || null,
-      city: str(venue.city, 120) || null,
-      state: str(venue.state, 2).toUpperCase() || null,
-      zip: str(venue.zip, 10) || null,
-    },
-    event_notes: str(raw.event_notes, 280) || null,
-    problems: (Array.isArray(raw.problems) ? raw.problems : []).map((p) => str(p, 280)).filter(Boolean).slice(0, 20),
-  };
-}
-
-function fileBlock(mimeType: string, data: string, fileName: string) {
-  if (IMAGE_TYPES.includes(mimeType)) {
-    if (data.length * 0.75 > MAX_IMAGE_BYTES) throw new Error("Photos must be 5 MB or smaller.");
-    return { type: "image", source: { type: "base64", media_type: mimeType, data } };
-  }
-  if (mimeType === "application/pdf") {
-    if (data.length * 0.75 > MAX_PDF_BYTES) throw new Error("PDFs must be 10 MB or smaller.");
-    return { type: "document", source: { type: "base64", media_type: "application/pdf", data } };
-  }
-  if (mimeType.startsWith("text/") || /\.(csv|tsv|txt)$/i.test(fileName)) {
-    if (data.length > MAX_TEXT_CHARS) throw new Error("Text files must be under 200,000 characters.");
-    return { type: "text", text: `Uploaded file "${fileName}":\n\n${data}` };
-  }
-  throw new Error("Upload a photo (JPG, PNG, WebP), a PDF, or a CSV. iPhone HEIC photos: share as JPG.");
-}
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);

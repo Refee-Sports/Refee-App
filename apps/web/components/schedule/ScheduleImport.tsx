@@ -20,6 +20,7 @@ import {
 } from "@refee/core/schedule/ai-import";
 import { buildScheduleTemplate, parseTemplateCsv, TEMPLATE_FILE_NAME } from "@refee/core/schedule/template";
 import { formatDateOnly, zoneName } from "@refee/core/time";
+import { rowErrors } from "@/lib/schedule/review";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,.csv,text/csv,.txt";
 const LIMITS = { image: 5 * 1024 * 1024, pdf: 10 * 1024 * 1024, text: 1024 * 1024 };
@@ -57,22 +58,6 @@ function emptyRow(date: string): Row {
     notes: null,
     confidence: "high",
   };
-}
-
-function rowErrors(row: Row, t: TournamentRow | null): string[] {
-  const errors: string[] = [];
-  const home = row.homeTeam.trim();
-  const away = row.awayTeam.trim();
-  if (!home || !away) errors.push("Both teams needed");
-  else if (home.toLowerCase() === away.toLowerCase()) errors.push("Teams must differ");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(row.date)) errors.push("Date needed");
-  else if (t && (row.date < t.starts_on.slice(0, 10) || row.date > t.ends_on.slice(0, 10))) {
-    errors.push("Outside the tournament dates");
-  }
-  if (!/^\d{2}:\d{2}$/.test(row.time)) errors.push("Tip-off time needed");
-  if (!row.level) errors.push("Level needed");
-  if (row.level === "youth_rec" && !row.ageGroup.trim()) errors.push("Age group needed");
-  return errors;
 }
 
 const cell =
