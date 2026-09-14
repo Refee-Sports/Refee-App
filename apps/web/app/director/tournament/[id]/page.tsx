@@ -11,6 +11,7 @@ import { LoadError } from "@/components/ui/LoadError";
 import { friendlyLoadError, withDeadline } from "@/lib/network";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
 import {
+  deleteTournament,
   fetchTournamentById,
   fetchTournamentGames,
   type DirectorGameRow,
@@ -46,6 +47,8 @@ export default function TournamentDetailPage({
   const [addedCharged, setAddedCharged] = useState(false);
   const [importedCount, setImportedCount] = useState(0);
   const [addOpen, setAddOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
@@ -114,6 +117,34 @@ export default function TournamentDetailPage({
       : games.length > 0 && staffedGames === games.length
         ? "staffed"
         : "open";
+
+  // Deletable until a referee accepts any of its games; charges are refunded.
+  const confirmedGames = games.filter((g) => (g.confirmedCount ?? 0) > 0).length;
+  const chargedTotal =
+    games.reduce(
+      (sum, g) => sum + (g.payment_status === "prepaid" ? (g.prepaid_crew_cents ?? 0) + (g.prepaid_fee_cents ?? 0) : 0),
+      0
+    ) / 100;
+
+  const handleDeleteTournament = async () => {
+    if (deleting) return;
+    const lines = [
+      `Delete "${tournament.name}"${games.length ? ` and its ${games.length} game${games.length !== 1 ? "s" : ""}` : ""}?`,
+      "",
+      "It's removed for good, along with any pending applications and offers.",
+    ];
+    if (chargedTotal > 0) lines.push(`$${chargedTotal.toFixed(2)} in booking charges is refunded to your card.`);
+    if (!window.confirm(lines.join("\n"))) return;
+    setDeleting(true);
+    setDeleteError(null);
+    const { error: err } = await deleteTournament(id);
+    setDeleting(false);
+    if (err) {
+      setDeleteError(err.message);
+      return;
+    }
+    router.replace("/director/tournaments");
+  };
 
   return (
     <div className="app-canvas bg-paper pb-6">
@@ -370,6 +401,31 @@ export default function TournamentDetailPage({
           ))}
         </div>
       )}
+
+      {/* Delete */}
+      <div className="mx-5 mt-8 border-t border-ink-20 pt-4 sm:mx-0">
+        {confirmedGames > 0 ? (
+          <p className="font-mono text-[9px] uppercase leading-4 text-ink-40" style={{ letterSpacing: 1 }}>
+            Referees have accepted {confirmedGames} game{confirmedGames !== 1 ? "s" : ""}, so this tournament
+            can&apos;t be deleted. Cancel those games instead.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => void handleDeleteTournament()}
+            disabled={deleting}
+            className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+            style={{ letterSpacing: 2 }}
+          >
+            {deleting ? "Deleting…" : "Delete tournament"}
+          </button>
+        )}
+        {deleteError ? (
+          <p role="alert" className="mt-2 font-mono text-[10px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>
+            {deleteError}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }

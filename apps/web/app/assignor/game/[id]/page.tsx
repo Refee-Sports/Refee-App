@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { use, useCallback, useState } from "react";
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
 import { Spinner } from "@/components/ui/AppButton";
@@ -15,6 +16,7 @@ import {
   type AssignorGameRow,
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
+import { deleteGame } from "@/lib/director/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
@@ -28,11 +30,13 @@ function formatWhen(value: string, tz?: string | null) {
 /** Port of refee-mobile/refee/app/(assignor)/game/[id].tsx. */
 export default function AssignorGamePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [game, setGame] = useState<AssignorGameRow | null>(null);
   const [crew, setCrew] = useState<CrewRow[]>([]);
   const [roster, setRoster] = useState<RosterMemberRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -93,6 +97,22 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
     else load();
   };
 
+  const removeGame = async () => {
+    if (!game || deleting) return;
+    if (
+      !window.confirm(
+        `Delete "${game.title}"?\n\nIt's removed for good, along with any pending offers. A booking charge is refunded to the director.`
+      )
+    )
+      return;
+    setDeleting(true);
+    setError(null);
+    const { error: err } = await deleteGame(id);
+    setDeleting(false);
+    if (err) setError(err.message);
+    else router.replace(game.tournament_id ? `/assignor/tournament/${game.tournament_id}` : "/assignor/tournaments");
+  };
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center bg-paper text-signal">
@@ -112,6 +132,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
   const available = roster.filter((m) => m.status === "accepted" && m.is_available && !assigned.has(m.ref_id));
   const mode = game.assignor_staffing_mode ?? "assignor_direct";
   const full = crew.length >= game.crew_size;
+  const hasAcceptedRef = crew.some((m) => ["accepted", "needs_reconfirm", "completed"].includes(m.status));
 
   return (
     <div className="app-canvas bg-paper pb-8">
@@ -228,6 +249,20 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
             ) : null}
           </div>
         </div>
+
+        {!hasAcceptedRef ? (
+          <div className="mt-8 border-t border-ink-20 pt-4">
+            <button
+              type="button"
+              onClick={() => void removeGame()}
+              disabled={deleting}
+              className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+              style={{ letterSpacing: 2 }}
+            >
+              {deleting ? "Deleting…" : "Delete game"}
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   );

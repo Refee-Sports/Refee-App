@@ -12,6 +12,7 @@ import { useFocusEffect } from "@/hooks/useFocusEffect";
 import {
   approveApplicant,
   cancelGame,
+  deleteGame,
   CANCEL_FEE_WINDOW_HOURS,
   completeGame,
   declineApplicantForGame,
@@ -248,6 +249,34 @@ export default function DirectorGameDetailPage({
       setNotice(`Game cancelled. Each confirmed referee is owed a $${feeAmount} cancellation fee.`);
     }
     await reload();
+  };
+
+  const [deleting, setDeleting] = useState(false);
+
+  /** Before any referee accepts, the game can go entirely; a booking charge is refunded. */
+  const handleDeleteGame = async () => {
+    if (!game || deleting) return;
+    const charged = game.payment_status === "prepaid";
+    const total = ((game.prepaid_crew_cents ?? 0) + (game.prepaid_fee_cents ?? 0)) / 100;
+    const message = [
+      "Delete this game?",
+      "",
+      "It's removed for good, along with any pending applications and offers.",
+      charged ? `The $${total.toFixed(2)} booking charge is refunded to your card.` : "",
+    ]
+      .filter((line, i) => i < 3 || line)
+      .join("\n");
+    if (!window.confirm(message)) return;
+    setDeleting(true);
+    setNotice(null);
+    const { error: err } = await deleteGame(id);
+    setDeleting(false);
+    if (err) {
+      setNotice(err.message);
+      return;
+    }
+    const tournamentId = (game as { tournament_id?: string | null }).tournament_id;
+    router.replace(tournamentId ? `/director/tournament/${tournamentId}` : "/director/tournaments?tab=games");
   };
 
   /** Opens the Stripe Elements sheet — the web counterpart of PaymentSheet. */
@@ -724,6 +753,17 @@ export default function DirectorGameDetailPage({
               Cancel game
             </span>
           </button>
+          {accepted.length === 0 ? (
+            <button
+              type="button"
+              onClick={() => void handleDeleteGame()}
+              disabled={deleting}
+              className="py-2.5 text-center font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+              style={{ letterSpacing: 2 }}
+            >
+              {deleting ? "Deleting…" : "Delete game"}
+            </button>
+          ) : null}
         </div>
       )}
 

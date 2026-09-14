@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { use, useCallback, useState } from "react";
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
 import { Spinner } from "@/components/ui/AppButton";
@@ -17,6 +18,7 @@ import {
   type TournamentInviteRow,
 } from "@/lib/assignor/queries";
 import { Icon } from "@/components/ui/Icon";
+import { deleteTournament } from "@/lib/director/queries";
 
 function formatWhen(value: string, timeZone: string) {
   return new Date(value)
@@ -27,6 +29,7 @@ function formatWhen(value: string, timeZone: string) {
 /** Port of refee-mobile/refee/app/(assignor)/tournament/[id].tsx. */
 export default function AssignorTournamentPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [tournament, setTournament] = useState<TournamentInviteRow | null>(null);
   const [proposal, setProposal] = useState<MyProposalRow | null>(null);
@@ -38,6 +41,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -108,6 +112,22 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
     setSaving(false);
     if (result.error) setError(`Could not withdraw: ${result.error.message}`);
     else load();
+  };
+
+  const removeTournament = async () => {
+    if (!tournament || deleting) return;
+    const lines = [
+      `Delete "${tournament.name}"${games.length ? ` and all ${games.length} of its games` : ""}?`,
+      "",
+      "This removes the director's tournament for good. It's only possible while no referee has accepted any of its games; booking charges are refunded to the director.",
+    ];
+    if (!window.confirm(lines.join("\n"))) return;
+    setDeleting(true);
+    setError(null);
+    const { error: err } = await deleteTournament(id);
+    setDeleting(false);
+    if (err) setError(err.message);
+    else router.replace("/assignor/tournaments");
   };
 
   if (loading) {
@@ -269,6 +289,20 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
                 ))}
               </div>
             )}
+            <div className="mt-8 border-t border-ink-20 pt-4">
+              <button
+                type="button"
+                onClick={() => void removeTournament()}
+                disabled={deleting}
+                className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+                style={{ letterSpacing: 2 }}
+              >
+                {deleting ? "Deleting…" : "Delete tournament"}
+              </button>
+              <p className="mt-1 font-mono text-[8px] uppercase text-ink-40" style={{ letterSpacing: 1 }}>
+                Only before any referee accepts a game
+              </p>
+            </div>
           </>
         ) : null}
       </div>

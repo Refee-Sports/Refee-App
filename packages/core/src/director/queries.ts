@@ -1160,3 +1160,36 @@ export async function declineAssignorProposal(proposalId: string): Promise<{ err
   });
   return { error: error ? new Error(error.message) : null };
 }
+
+// ── Deleting before a referee accepts ───────────────────────────────────────
+// The delete-listing edge function checks who's asking and what's happened,
+// refunds a booking charge in full, then removes the game or tournament.
+
+async function deleteListing(
+  body: { gameId: string } | { tournamentId: string }
+): Promise<{ refundedCents: number; error: Error | null }> {
+  const { data, error } = await supabase.functions.invoke("delete-listing", { body });
+  if (error) {
+    // The function answers with { error } — surface that text, not "non-2xx".
+    const context = (error as { context?: Response }).context;
+    let message = error.message;
+    try {
+      const payload = context ? await context.json() : null;
+      if (payload?.error) message = payload.error;
+    } catch {
+      /* keep the generic message */
+    }
+    return { refundedCents: 0, error: new Error(message) };
+  }
+  return { refundedCents: Number((data as { refundedCents?: number } | null)?.refundedCents ?? 0), error: null };
+}
+
+/** Deletes a game nobody has accepted yet; any booking charge is refunded first. */
+export function deleteGame(gameId: string) {
+  return deleteListing({ gameId });
+}
+
+/** Deletes a tournament and all its games, if no referee has accepted any of them. */
+export function deleteTournament(tournamentId: string) {
+  return deleteListing({ tournamentId });
+}
