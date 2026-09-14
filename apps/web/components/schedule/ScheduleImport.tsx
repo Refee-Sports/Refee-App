@@ -18,6 +18,7 @@ import {
   readUpload,
   type ExtractedSchedule,
 } from "@refee/core/schedule/ai-import";
+import { buildScheduleTemplate, parseTemplateCsv, TEMPLATE_FILE_NAME } from "@refee/core/schedule/template";
 import { formatDateOnly, zoneName } from "@refee/core/time";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,.csv,text/csv,.txt";
@@ -103,6 +104,18 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
   const singleDay =
     tournament && tournament.starts_on === tournament.ends_on ? tournament.starts_on.slice(0, 10) : "";
 
+  const downloadTemplate = () => {
+    const csv = buildScheduleTemplate({ date: tournament?.starts_on.slice(0, 10), courts: tournament?.courts });
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = TEMPLATE_FILE_NAME;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
+
   const choose = (f: File | null | undefined) => {
     setError(null);
     if (!f) return;
@@ -153,6 +166,14 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
     setError(null);
     setProblems([]);
     const upload = await readUpload(file);
+    // A sheet in our template's shape is read right here: instant, and no AI.
+    const isText = upload.mimeType.startsWith("text/") || /\.(csv|tsv|txt)$/i.test(file.name);
+    const local = isText ? parseTemplateCsv(upload.data, { year: tournament?.starts_on.slice(0, 4) }) : null;
+    if (local) {
+      setReading(false);
+      apply(local);
+      return;
+    }
     const { schedule, error: err } = await extractSchedule(upload, { tournamentId, mode: "tournament" });
     setReading(false);
     if (err || !schedule) {
@@ -247,6 +268,25 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
       {/* 1 · Upload */}
       <div className="px-5 sm:px-0">
         <SectionLabel>1 · Upload</SectionLabel>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 border border-ink bg-chalk px-4 py-3">
+          <span className="min-w-0 flex-1">
+            <span className="block font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
+              Working from a spreadsheet?
+            </span>
+            <span className="mt-0.5 block font-mono text-[9px] uppercase leading-4 text-ink-60" style={{ letterSpacing: 1 }}>
+              Fill in the Refee CSV template and it&apos;s read instantly, no AI needed. Excel and Google Sheets both save
+              CSV.
+            </span>
+          </span>
+          <button
+            type="button"
+            onClick={downloadTemplate}
+            className="flex h-9 shrink-0 items-center border border-ink bg-paper px-3 font-mono-bold text-[9px] uppercase text-ink hover:bg-ink hover:text-paper"
+            style={{ letterSpacing: 1.5 }}
+          >
+            Download CSV template
+          </button>
+        </div>
         <div
           onDragOver={(e) => {
             e.preventDefault();

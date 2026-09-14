@@ -1,3 +1,5 @@
+import { parseCsvRecords } from "@refee/core/schedule/template";
+
 export const SCHEDULE_COLUMNS = [
   "home_team",
   "away_team",
@@ -69,46 +71,6 @@ export type ScheduleParseResult = {
   fileErrors: string[];
   canImport: boolean;
 };
-
-function parseCsvRecords(input: string): { records: string[][]; error: string | null } {
-  const records: string[][] = [];
-  let record: string[] = [];
-  let field = "";
-  let quoted = false;
-
-  for (let i = 0; i < input.length; i += 1) {
-    const char = input[i];
-    if (quoted) {
-      if (char === '"' && input[i + 1] === '"') {
-        field += '"';
-        i += 1;
-      } else if (char === '"') {
-        quoted = false;
-      } else {
-        field += char;
-      }
-    } else if (char === '"' && field.length === 0) {
-      quoted = true;
-    } else if (char === ",") {
-      record.push(field);
-      field = "";
-    } else if (char === "\n") {
-      record.push(field.replace(/\r$/, ""));
-      records.push(record);
-      record = [];
-      field = "";
-    } else {
-      field += char;
-    }
-  }
-
-  if (quoted) return { records: [], error: "The CSV contains an unclosed quoted field." };
-  if (field.length > 0 || record.length > 0) {
-    record.push(field.replace(/\r$/, ""));
-    records.push(record);
-  }
-  return { records, error: null };
-}
 
 function isValidTimeZone(timeZone: string) {
   try {
