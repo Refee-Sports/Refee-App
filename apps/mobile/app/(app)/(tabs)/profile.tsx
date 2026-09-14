@@ -32,6 +32,7 @@ import {
   type PayoutStatus,
 } from "@/lib/payments/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -748,20 +749,14 @@ function StatStrip({
   );
 }
 
-const TZ = "America/Chicago";
-
 function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
   const router = useRouter();
-  const d = new Date(game.startsAt);
-  const dateStr = d
-    .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: TZ })
-    .toUpperCase();
-  const timeStr = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
+  const dateStr = formatGameDate(game.startsAt, game.timeZone, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).toUpperCase();
+  const timeStr = formatGameTimeWithZone(game.startsAt, game.timeZone);
 
   return (
     <Pressable

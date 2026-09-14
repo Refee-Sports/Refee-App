@@ -117,9 +117,9 @@ export default function Jobs() {
   const headerDate = useMemo(() => {
     const d = new Date();
     const w = d
-      .toLocaleDateString("en-US", { weekday: "short", timeZone: "America/Chicago" })
+      .toLocaleDateString("en-US", { weekday: "short" })
       .toUpperCase();
-    const ymd = d.toLocaleDateString("en-CA", { timeZone: "America/Chicago" });
+    const ymd = d.toLocaleDateString("en-CA");
     return `${w} · ${ymd.replace(/-/g, ".")}`;
   }, []);
 

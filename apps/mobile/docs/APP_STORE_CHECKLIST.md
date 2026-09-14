@@ -30,7 +30,7 @@ Owners: **G** = Gerda (accounts, dashboards, content) · **C** = Claude (code).
 - [ ] **C** — Minimum-supported-version check at launch (backend row + "Update Refee" screen), so old installs can be forced to update.
 - [ ] **C** — `eas.json` submit profile: App Store Connect app ID (`ascAppId`) and the Google Play service-account key path.
 - [ ] **C** — Versioning: `appVersionSource: remote` + `autoIncrement` already set for production. Bump `version` in `app.json` (0.1.0 → 1.0.0) for launch.
-- [ ] **C** — Time zones: shared job cards/detail already show the venue's zone ("1:30 PM ET"), but 9 mobile screens still format times in Central (home, profile, jobs header, director tournaments + game, assignor game, chat thread + list) and the tournament-create zone picker lacks Atlantic (Puerto Rico). Switch them to `@refee/core/time` like web. Feed "Today / This week" filters (`core/jobs/filters.ts`) still use Central days.
+- [x] **C** — Time zones: every mobile screen shows the venue's zone ("1:30 PM ET"); chat uses the viewer's time; tournament create defaults to the venue's zone and offers Atlantic (Puerto Rico); the feed's "This week" follows the venue's week.
 
 ## 3. Production configuration
 

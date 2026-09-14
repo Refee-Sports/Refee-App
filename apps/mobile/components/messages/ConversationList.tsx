@@ -5,16 +5,14 @@ import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import { fetchConversations, type ConversationRow } from "@/lib/messages/queries";
 
-const TZ = "America/Chicago";
-
 function fmtWhen(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
   const sameDay = d.toDateString() === now.toDateString();
   if (sameDay) {
-    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true, timeZone: TZ });
+    return d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
   }
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: TZ }).toUpperCase();
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" }).toUpperCase();
 }
 
 export function ConversationList({

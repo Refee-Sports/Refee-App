@@ -21,23 +21,18 @@ import {
   respondToRosterInvite,
   type RosterInviteRow,
 } from "@/lib/assignor/queries";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
-const TZ = "America/Chicago";
-
-function formatCardDate(iso: string): string {
-  const d = new Date(iso);
-  const weekday = d.toLocaleDateString("en-US", { weekday: "short", timeZone: TZ }).toUpperCase();
-  const md = d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: TZ }).toUpperCase();
+/** "SAT · SEP 20" in the venue's zone. */
+function formatCardDate(iso: string, tz?: string | null): string {
+  const weekday = formatGameDate(iso, tz, { weekday: "short" }).toUpperCase();
+  const md = formatGameDate(iso, tz, { month: "short", day: "numeric" }).toUpperCase();
   return `${weekday} · ${md}`;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
+/** "1:30 PM ET" in the venue's zone. */
+function formatTime(iso: string, tz?: string | null): string {
+  return formatGameTimeWithZone(iso, tz);
 }
 
 function getGreeting(): string {
@@ -81,10 +76,10 @@ function AssignmentCard({ row }: { row: AssignmentRow }) {
             WHEN
           </Text>
           <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 0.5 }}>
-            {formatCardDate(row.job.starts_at)}
+            {formatCardDate(row.job.starts_at, row.job.timezone)}
           </Text>
           <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 0.5 }}>
-            {formatTime(row.job.starts_at)}
+            {formatTime(row.job.starts_at, row.job.timezone)}
           </Text>
         </View>
         <View className="flex-1 px-4 py-2.5 border-r border-ink-20">

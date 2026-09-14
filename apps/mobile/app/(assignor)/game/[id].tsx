@@ -15,18 +15,14 @@ import {
   type AssignorGameRow,
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
 
-function formatWhen(value: string) {
-  return new Date(value).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: "America/Chicago",
-  }).toUpperCase();
+/** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
+function formatWhen(value: string, tz?: string | null) {
+  const day = formatGameDate(value, tz, { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
+  return `${day} · ${formatGameTimeWithZone(value, tz)}`;
 }
 
 export default function AssignorGameDetail() {
@@ -120,7 +116,7 @@ export default function AssignorGameDetail() {
         ListHeaderComponent={(
           <View>
             <Text className="font-display text-ink uppercase mt-6" style={{ fontSize: 32, lineHeight: 32, letterSpacing: -1 }}>{game.title}</Text>
-            <Text className="font-mono text-[9px] text-ink-60 uppercase mt-2" style={{ letterSpacing: 1 }}>{formatWhen(game.starts_at)} · {game.venue_name}</Text>
+            <Text className="font-mono text-[9px] text-ink-60 uppercase mt-2" style={{ letterSpacing: 1 }}>{formatWhen(game.starts_at, game.timezone)} · {game.venue_name}</Text>
             <Text className="font-mono-bold text-[10px] text-signal uppercase mt-2">${game.pay_per_game}/REF · {crew.length}/{game.crew_size} SLOTS ACTIVE</Text>
 
             <Text className="font-mono-bold text-[9px] text-ink uppercase mt-6 mb-2" style={{ letterSpacing: 1.5 }}>STAFFING MODE</Text>

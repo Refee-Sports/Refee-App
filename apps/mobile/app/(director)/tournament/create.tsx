@@ -24,6 +24,9 @@ import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 
 
 const US_TIMEZONES = [
+  // Empty = the database takes the zone from the venue (map pin or state).
+  { value: "", label: "AUTO (FROM VENUE)" },
+  { value: "America/Puerto_Rico", label: "ATLANTIC (PUERTO RICO)" },
   { value: "America/New_York", label: "EASTERN" },
   { value: "America/Chicago", label: "CENTRAL" },
   { value: "America/Denver", label: "MOUNTAIN" },
@@ -49,7 +52,7 @@ export default function CreateTournament() {
     venueName: "",
     venueCity: "",
     venueState: "",
-    timezone: "America/Chicago",
+    timezone: "",
     ruleset: "",
     rulesetModifications: "",
     gameFormat: "" as "" | "quarters" | "halves",
@@ -70,7 +73,7 @@ export default function CreateTournament() {
           venueName: t.venue_name ?? "",
           venueCity: t.venue_city,
           venueState: t.venue_state,
-          timezone: t.timezone ?? "America/Chicago",
+          timezone: t.timezone ?? "",
           ruleset: t.ruleset ?? "",
           rulesetModifications: t.ruleset_modifications ?? "",
           gameFormat: (t.game_format ?? "") as "" | "quarters" | "halves",
@@ -121,7 +124,7 @@ export default function CreateTournament() {
       venueName: form.venueName.trim(),
       venueCity: form.venueCity.trim(),
       venueState: form.venueState.trim().toUpperCase(),
-      timezone: form.timezone,
+      timezone: form.timezone || undefined,
       ruleset: form.ruleset,
       rulesetModifications: form.rulesetModifications.trim() || undefined,
       gameFormat: (form.gameFormat || undefined) as "quarters" | "halves" | undefined,

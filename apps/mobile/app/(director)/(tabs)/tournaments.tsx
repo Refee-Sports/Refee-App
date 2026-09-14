@@ -16,6 +16,7 @@ import {
 import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { formatDateOnly } from "@refee/core/time";
 
 const STATUS_COLORS: Record<string, string> = {
   open: "#1F4FCC",
@@ -24,13 +25,9 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "#E53E3E",
 };
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "America/Chicago",
-  }).toUpperCase();
+/** A tournament's date-only start/end, shown as the calendar day it is. */
+function formatDate(ymd: string) {
+  return formatDateOnly(ymd, { month: "short", day: "numeric", year: "numeric" }).toUpperCase();
 }
 
 export default function TournamentsScreen() {

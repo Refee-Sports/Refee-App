@@ -40,18 +40,12 @@ import { supabase } from "@/lib/supabase";
 import { useStripe } from "@/lib/payments/stripe";
 import { startCrewPayment, confirmCrewPayout, runAutoPay } from "@/lib/payments/queries";
 import { canOfferCrewPayment, paymentNeedsReview } from "@/lib/payments/status";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
-const TZ = "America/Chicago";
-
-function fmtDatetime(iso: string) {
-  const d = new Date(iso);
-  const date = d.toLocaleDateString("en-US", {
-    weekday: "short", month: "short", day: "numeric", timeZone: TZ,
-  }).toUpperCase();
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric", minute: "2-digit", hour12: true, timeZone: TZ,
-  });
-  return `${date} · ${time}`;
+/** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
+function fmtDatetime(iso: string, tz?: string | null) {
+  const date = formatGameDate(iso, tz, { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
+  return `${date} · ${formatGameTimeWithZone(iso, tz)}`;
 }
 
 export default function GameDetail() {
@@ -425,7 +419,7 @@ export default function GameDetail() {
               {game.title.toUpperCase()}
             </Text>
             <Text className="font-mono text-[10px] text-ink-60 uppercase mt-1.5" style={{ letterSpacing: 1.5 }}>
-              {fmtDatetime(game.starts_at)}
+              {fmtDatetime(game.starts_at, game.timezone)}
             </Text>
             <Text className="font-mono text-[10px] text-ink-60 uppercase" style={{ letterSpacing: 1.5 }}>
               {game.venue_name.toUpperCase()} · {game.venue_city.toUpperCase()}, {game.venue_state}
@@ -578,7 +572,6 @@ export default function GameDetail() {
                     {new Date(m.createdAt).toLocaleTimeString("en-US", {
                       hour: "numeric",
                       minute: "2-digit",
-                      timeZone: TZ,
                     })}
                   </Text>
                 </View>

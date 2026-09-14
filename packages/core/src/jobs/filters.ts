@@ -1,6 +1,6 @@
 import type { JobListRow } from "./types";
+import { DEFAULT_TIME_ZONE } from "../time";
 
-const TZ = "America/Chicago";
 
 export const JOB_FEED_FILTERS = [
   { id: "radius_25", label: "25 MI", showPin: true, radiusMiles: 25 },
@@ -17,10 +17,10 @@ export function parseDistanceMiles(dist: string): number | null {
   return m ? parseFloat(m[1]) : null;
 }
 
-function chicagoDateParts(d: Date) {
-  const ymd = d.toLocaleDateString("en-CA", { timeZone: TZ });
+function datePartsIn(d: Date, tz: string) {
+  const ymd = d.toLocaleDateString("en-CA", { timeZone: tz });
   const [y, m, day] = ymd.split("-").map(Number);
-  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: TZ, weekday: "short" }).format(d);
+  const weekday = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(d);
   const dowMap: Record<string, number> = {
     Sun: 0,
     Mon: 1,
@@ -33,15 +33,23 @@ function chicagoDateParts(d: Date) {
   return { y, m, day, dow: dowMap[weekday] ?? 0 };
 }
 
-/** Same calendar week (Sun–Sat) in America/Chicago */
-export function isThisWeekChicago(iso: string, now = new Date()): boolean {
-  const job = chicagoDateParts(new Date(iso));
-  const cur = chicagoDateParts(now);
+/**
+ * Same calendar week (Sun–Sat) at the venue — the week the game card shows.
+ * "Now" is read in the same zone, so a late-Saturday game out west still
+ * counts as this week for a ref anywhere.
+ */
+export function isThisWeekAtVenue(iso: string, tz?: string | null, now = new Date()): boolean {
+  const zone = tz || DEFAULT_TIME_ZONE;
+  const job = datePartsIn(new Date(iso), zone);
+  const cur = datePartsIn(now, zone);
   const jobUtc = Date.UTC(job.y, job.m - 1, job.day);
   const curUtc = Date.UTC(cur.y, cur.m - 1, cur.day);
-  const jobWeekStart = jobUtc - job.dow * 86_400_000;
-  const curWeekStart = curUtc - cur.dow * 86_400_000;
-  return jobWeekStart === curWeekStart;
+  return jobUtc - job.dow * 86_400_000 === curUtc - cur.dow * 86_400_000;
+}
+
+/** The same check pinned to America/Chicago (kept for existing callers). */
+export function isThisWeekChicago(iso: string, now = new Date()): boolean {
+  return isThisWeekAtVenue(iso, "America/Chicago", now);
 }
 
 export function matchesU18Plus(row: JobListRow): boolean {
@@ -68,7 +76,7 @@ function matchesFilter(row: JobListRow, filterId: JobFeedFilterId): boolean {
       if (row.distanceMiles == null) return true;
       return row.distanceMiles <= 25;
     case "this_week":
-      return isThisWeekChicago(row.startsAtIso);
+      return isThisWeekAtVenue(row.startsAtIso, row.timeZone);
     case "pay_100":
       return row.payPerGame >= 100;
     case "crew_3":

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { JobListRow } from "./types";
 import {
+  isThisWeekAtVenue,
   parseDistanceMiles,
   isThisWeekChicago,
   matchesU18Plus,
@@ -157,5 +158,14 @@ describe("activeRadiusMiles", () => {
   it("returns null when the radius filter is off", () => {
     expect(activeRadiusMiles(new Set<JobFeedFilterId>(["pay_100"]))).toBeNull();
     expect(activeRadiusMiles(new Set<JobFeedFilterId>())).toBeNull();
+  });
+});
+
+describe("isThisWeekAtVenue", () => {
+  it("uses the venue's calendar week, not Central's", () => {
+    const now = new Date("2026-09-19T18:00:00Z"); // Saturday Sep 19 in every US zone
+    const lateSaturdayLA = "2026-09-20T06:30:00Z"; // Sat 11:30 PM PT = Sun 1:30 AM CT
+    expect(isThisWeekAtVenue(lateSaturdayLA, "America/Los_Angeles", now)).toBe(true);
+    expect(isThisWeekChicago(lateSaturdayLA, now)).toBe(false);
   });
 });

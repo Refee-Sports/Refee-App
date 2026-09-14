@@ -143,6 +143,7 @@ export function mapDbJobToListRow(row: JobDbRow): JobListRow {
     footerCta: "VIEW →",
     footerCtaTone: row.is_featured ? "signal" : "muted",
     startsAtIso: row.starts_at,
+    timeZone: row.timezone ?? null,
     payPerGame: row.pay_per_game,
     crewSize: row.crew_size,
     level: row.level,
