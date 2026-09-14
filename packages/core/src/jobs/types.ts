@@ -74,6 +74,8 @@ export type JobDetail = {
   isFeatured: boolean;
   /** Raw ISO start time — absent on mock rows */
   startsAtIso?: string;
+  /** IANA zone of the venue; times on this job are shown in it. */
+  timeZone?: string | null;
   /** For mock / UI-only rows */
   variant?: "hot" | "featured" | "default";
 };

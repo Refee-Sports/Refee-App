@@ -437,7 +437,7 @@ export function JobDetailGames({ job }: { job: JobDetail }) {
                 className="block font-display uppercase text-ink"
                 style={{ fontSize: 16, letterSpacing: -0.3, lineHeight: "18px" }}
               >
-                {i === 0 ? job.whenSecondary.replace(" CT", "") : `GAME ${i + 1}`}
+                {i === 0 ? job.whenSecondary.replace(/ [A-Z]{2,3}$/, "") : `GAME ${i + 1}`}
               </span>
               <span
                 className="mt-0.5 block font-mono text-[10px] uppercase text-ink-80"

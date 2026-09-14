@@ -23,6 +23,7 @@ import {
 } from "@/lib/director/queries";
 import { runAutoPay } from "@/lib/payments/queries";
 import { gameStatusDisplay, isClosedGame, payoutDisplay, type PayoutTone } from "@/lib/director/game-status";
+import { formatDateOnly, formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 const STATUS_COLORS: Record<string, string> = {
   open: "#1F4FCC",
@@ -32,26 +33,17 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "#E53E3E",
 };
 
-const TZ = "America/Chicago";
+const DATE_OPTS: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
 
-function formatDate(iso: string) {
-  return new Date(iso)
-    .toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      timeZone: TZ,
-    })
-    .toUpperCase();
+/** A tournament's date-only start/end, shown as the calendar day it is. */
+function formatDate(ymd: string) {
+  return formatDateOnly(ymd, DATE_OPTS).toUpperCase();
 }
 
-function formatGameWhen(iso: string) {
-  const d = new Date(iso);
-  const day = d
-    .toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: TZ })
-    .toUpperCase();
-  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: TZ });
-  return `${day} · ${time}`;
+/** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
+function formatGameWhen(iso: string, tz?: string | null) {
+  const day = formatGameDate(iso, tz, { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
+  return `${day} · ${formatGameTimeWithZone(iso, tz)}`;
 }
 
 function appliedAgo(iso: string) {
@@ -404,7 +396,7 @@ function DirectorHome() {
                   className="mt-0.5 block truncate font-mono text-[10px] uppercase text-ink-80"
                   style={{ letterSpacing: 1 }}
                 >
-                  {added.title} · {formatGameWhen(added.starts_at)}
+                  {added.title} · {formatGameWhen(added.starts_at, added.timezone)}
                 </span>
               </div>
             );
@@ -553,7 +545,7 @@ function ApprovalGroup({
           className="mt-1 block font-mono text-[10px] uppercase text-ink-60"
           style={{ letterSpacing: 1 }}
         >
-          {formatGameWhen(job.startsAt)} · {job.venueCity.toUpperCase()}, {job.venueState} · $
+          {formatGameWhen(job.startsAt, job.timeZone)} · {job.venueCity.toUpperCase()}, {job.venueState} · $
           {job.payPerGame}/REF
         </span>
         {job.tournamentName ? (
@@ -828,7 +820,7 @@ function SingleGameCard({
           className="block font-mono text-[10px] uppercase text-ink-60"
           style={{ letterSpacing: 1 }}
         >
-          {archived ? `${formatDate(game.starts_at)} · ` : ""}
+          {archived ? `${formatGameDate(game.starts_at, game.timezone, DATE_OPTS).toUpperCase()} · ` : ""}
           {game.venue_city.toUpperCase()}, {game.venue_state} · ${game.pay_per_game}/REF
         </span>
       </div>

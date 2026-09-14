@@ -1,4 +1,5 @@
 import type { JobDetail, JobListRow } from "./types";
+import { formatGameDate, formatGameTime, zoneLabel } from "../time";
 
 type HirerJoin = { org_name: string; is_verified: boolean } | null;
 
@@ -25,6 +26,8 @@ export type JobDbRow = {
   court?: string | null;
   arrival_notes?: string | null;
   team_level?: string | null;
+  /** IANA zone of the venue (migration 0035). */
+  timezone?: string | null;
   pay_per_game: number;
   num_games: number;
   payout_window_hours: number | null;
@@ -38,27 +41,18 @@ export type JobDbRow = {
   hirers: HirerJoin;
 };
 
-const TZ = "America/Chicago";
-
-function formatCardDate(iso: string): string {
-  const d = new Date(iso);
-  const w = d.toLocaleDateString("en-US", { weekday: "short", timeZone: TZ }).toUpperCase();
-  const md = d.toLocaleDateString("en-US", { month: "numeric", day: "numeric", timeZone: TZ });
+function formatCardDate(iso: string, tz?: string | null): string {
+  const w = formatGameDate(iso, tz, { weekday: "short" }).toUpperCase();
+  const md = formatGameDate(iso, tz, { month: "numeric", day: "numeric" });
   return `${w} ${md}`;
 }
 
-function formatDetailDate(iso: string): string {
-  return formatCardDate(iso);
+function formatDetailDate(iso: string, tz?: string | null): string {
+  return formatCardDate(iso, tz);
 }
 
-function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
+function formatTime(iso: string, tz?: string | null): string {
+  return formatGameTime(iso, tz);
 }
 
 function formatDuration(dm: number | null): string {
@@ -128,7 +122,7 @@ export function mapDbJobToListRow(row: JobDbRow): JobListRow {
   const org = row.hirers?.org_name ?? "ORGANIZER";
   const variant = listVariant(row);
   const dm = row.duration_minutes;
-  const timeStr = `${formatTime(row.starts_at)} · ${formatDuration(dm)}`;
+  const timeStr = `${formatTime(row.starts_at, row.timezone)} · ${formatDuration(dm)}`;
 
   return {
     id: row.id,
@@ -139,7 +133,7 @@ export function mapDbJobToListRow(row: JobDbRow): JobListRow {
     orgVerified: row.hirers?.is_verified,
     pay: String(row.pay_per_game),
     payUnit: row.job_type === "multi_day" ? "/ DAY" : "/ GAME",
-    date: formatCardDate(row.starts_at),
+    date: formatCardDate(row.starts_at, row.timezone),
     time: timeStr,
     crew: `${row.crew_size}-PERSON`,
     dist: "—",
@@ -187,8 +181,9 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
     numGames: row.num_games,
     payoutHours: payout,
     startsAtIso: row.starts_at,
-    whenPrimary: formatDetailDate(row.starts_at),
-    whenSecondary: `${formatTime(row.starts_at)} CT`,
+    timeZone: row.timezone ?? null,
+    whenPrimary: formatDetailDate(row.starts_at, row.timezone),
+    whenSecondary: `${formatTime(row.starts_at, row.timezone)} ${zoneLabel(row.timezone)}`,
     whenTertiary: tertiary,
     wherePrimary: row.venue_city.toUpperCase(),
     whereSecondary: row.venue_name.toUpperCase(),

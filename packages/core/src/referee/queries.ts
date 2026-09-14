@@ -7,6 +7,8 @@ export type UpcomingGameRow = {
   jobId: string;
   title: string;
   startsAt: string;
+  /** IANA zone of the venue. */
+  timeZone: string | null;
   venueName: string;
   venueCity: string;
   venueState: string;
@@ -50,7 +52,7 @@ export async function fetchUpcomingGames(
   const { data, error } = await supabase
     .from("job_assignments")
     .select(
-      "id, job_id, status, jobs(id, title, starts_at, venue_name, venue_city, venue_state, pay_per_game, hirers(org_name))"
+      "id, job_id, status, jobs(id, title, starts_at, timezone, venue_name, venue_city, venue_state, pay_per_game, hirers(org_name))"
     )
     .eq("ref_id", userId)
     .in("status", ["accepted", "needs_reconfirm"]);
@@ -67,6 +69,7 @@ export async function fetchUpcomingGames(
         jobId: row.job_id,
         title: job.title,
         startsAt: job.starts_at,
+        timeZone: job.timezone ?? null,
         venueName: job.venue_name,
         venueCity: job.venue_city,
         venueState: job.venue_state,

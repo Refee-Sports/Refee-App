@@ -41,26 +41,12 @@ import {
   startCrewPayment,
   type PayCrewQuote,
 } from "@/lib/payments/queries";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
-const TZ = "America/Chicago";
-
-function fmtDatetime(iso: string) {
-  const d = new Date(iso);
-  const date = d
-    .toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: TZ,
-    })
-    .toUpperCase();
-  const time = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
-  return `${date} · ${time}`;
+/** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
+function fmtDatetime(iso: string, tz?: string | null) {
+  const date = formatGameDate(iso, tz, { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
+  return `${date} · ${formatGameTimeWithZone(iso, tz)}`;
 }
 
 /** Port of refee-mobile/refee/app/(director)/game/[id].tsx. */
@@ -438,7 +424,7 @@ export default function DirectorGameDetailPage({
           className="mt-1.5 font-mono text-[10px] uppercase text-ink-60"
           style={{ letterSpacing: 1.5 }}
         >
-          {fmtDatetime(game.starts_at)}
+          {fmtDatetime(game.starts_at, game.timezone)}
         </p>
         <p className="font-mono text-[10px] uppercase text-ink-60" style={{ letterSpacing: 1.5 }}>
           {game.venue_name.toUpperCase()} · {game.venue_city.toUpperCase()}, {game.venue_state}
@@ -686,7 +672,6 @@ export default function DirectorGameDetailPage({
                 {new Date(m.createdAt).toLocaleTimeString("en-US", {
                   hour: "numeric",
                   minute: "2-digit",
-                  timeZone: TZ,
                 })}
               </span>
             </div>

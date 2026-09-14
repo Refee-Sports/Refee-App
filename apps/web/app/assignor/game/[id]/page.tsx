@@ -15,20 +15,14 @@ import {
   type AssignorGameRow,
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
 
-function formatWhen(value: string) {
-  return new Date(value)
-    .toLocaleString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      timeZone: "America/Chicago",
-    })
-    .toUpperCase();
+/** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
+function formatWhen(value: string, tz?: string | null) {
+  const day = formatGameDate(value, tz, { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
+  return `${day} · ${formatGameTimeWithZone(value, tz)}`;
 }
 
 /** Port of refee-mobile/refee/app/(assignor)/game/[id].tsx. */
@@ -130,7 +124,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
           {game.title}
         </h1>
         <p className="mt-2 font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
-          {formatWhen(game.starts_at)} · {game.venue_name}
+          {formatWhen(game.starts_at, game.timezone)} · {game.venue_name}
         </p>
         <p className="mt-2 font-mono-bold text-[10px] uppercase text-signal">
           ${game.pay_per_game}/ref · {crew.length}/{game.crew_size} slots active

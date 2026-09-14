@@ -7,8 +7,6 @@ import { useFocusEffect } from "@/hooks/useFocusEffect";
 import { supabase } from "@/lib/supabase";
 import { fetchConversations, type ConversationRow } from "@/lib/messages/queries";
 
-const TZ = "America/Chicago";
-
 function fmtWhen(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
@@ -17,11 +15,10 @@ function fmtWhen(iso: string): string {
       hour: "numeric",
       minute: "2-digit",
       hour12: true,
-      timeZone: TZ,
     });
   }
   return d
-    .toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: TZ })
+    .toLocaleDateString("en-US", { month: "short", day: "numeric" })
     .toUpperCase();
 }
 

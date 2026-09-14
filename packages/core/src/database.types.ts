@@ -512,10 +512,12 @@ export type Database = {
           ruleset_modifications: string | null
           sport_id: string
           starts_at: string
+          starts_local: string | null
           status: string | null
           stripe_charge_id: string | null
           stripe_dispute_id: string | null
           team_level: string | null
+          timezone: string | null
           title: string
           tournament_id: string | null
           uniform_requirements: string | null
@@ -574,10 +576,12 @@ export type Database = {
           ruleset_modifications?: string | null
           sport_id: string
           starts_at: string
+          starts_local?: string | null
           status?: string | null
           stripe_charge_id?: string | null
           stripe_dispute_id?: string | null
           team_level?: string | null
+          timezone?: string | null
           title: string
           tournament_id?: string | null
           uniform_requirements?: string | null
@@ -636,10 +640,12 @@ export type Database = {
           ruleset_modifications?: string | null
           sport_id?: string
           starts_at?: string
+          starts_local?: string | null
           status?: string | null
           stripe_charge_id?: string | null
           stripe_dispute_id?: string | null
           team_level?: string | null
+          timezone?: string | null
           title?: string
           tournament_id?: string | null
           uniform_requirements?: string | null
@@ -1205,7 +1211,7 @@ export type Database = {
           staffing_model?: string | null
           starts_on: string
           status?: string | null
-          timezone?: string
+          timezone: string
           total_games?: number | null
           total_ref_budget?: number | null
           uniform_requirements?: string | null
@@ -1499,6 +1505,7 @@ export type Database = {
         Returns: string
       }
       sweep_game_lifecycle: { Args: never; Returns: undefined }
+      tz_for_region: { Args: { p_state: string }; Returns: string }
       withdraw_assignor_proposal: {
         Args: { p_tournament_id: string }
         Returns: string

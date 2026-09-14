@@ -1,4 +1,5 @@
 import type { DirectorGameRow } from "@/lib/director/queries";
+import { formatGameDate } from "@refee/core/time";
 
 export type GameStatusKey = "open" | "partial" | "staffed" | "completed" | "cancelled";
 
@@ -77,15 +78,13 @@ const DEFAULT_GAME_MINUTES = 120;
 /** sweep_game_lifecycle auto-completes a game this long after it ends. */
 const AUTO_COMPLETE_HOURS = 24;
 
-function shortDate(ms: number): string {
-  return new Date(ms)
-    .toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: "America/Chicago",
-    })
-    .toUpperCase();
+/** "TUE, SEP 22" in the venue's zone. */
+function shortDate(ms: number, tz?: string | null): string {
+  return formatGameDate(new Date(ms).toISOString(), tz, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).toUpperCase();
 }
 
 /**
@@ -122,7 +121,7 @@ export function payoutDisplay(game: DirectorGameRow, now: number = Date.now()): 
   const deadline = completedAt + (game.payout_window_hours ?? 48) * 3600 * 1000;
 
   if (now > deadline) {
-    return { tone: "overdue", label: `Payout overdue · was due ${shortDate(deadline)}` };
+    return { tone: "overdue", label: `Payout overdue · was due ${shortDate(deadline, game.timezone)}` };
   }
-  return { tone: "due", label: `Refs paid by ${shortDate(deadline)}` };
+  return { tone: "due", label: `Refs paid by ${shortDate(deadline, game.timezone)}` };
 }

@@ -1,8 +1,10 @@
-// Geocodes a free-text address to { lat, lng }.
+// Geocodes a free-text address to { lat, lng, timezone }.
 // Provider-swappable: defaults to Nominatim (OpenStreetMap) — free, no key,
 // fine for dev + low volume. For production set GEOCODER=google and
 // GOOGLE_MAPS_API_KEY (higher rate limits, commercial terms).
 import { getCaller, json, handleOptions } from "../_shared/util.ts";
+// Offline coordinates → IANA time zone lookup (no API key, no network call).
+import tzlookup from "npm:@photostructure/tz-lookup@11";
 
 async function geocodeNominatim(q: string): Promise<{ lat: number; lng: number } | null> {
   const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(q)}`;
@@ -50,7 +52,13 @@ Deno.serve(async (req) => {
       provider === "google" ? await geocodeGoogle(address) : await geocodeNominatim(address);
 
     if (!coords) return json({ lat: null, lng: null, found: false });
-    return json({ ...coords, found: true });
+    let timezone: string | null = null;
+    try {
+      timezone = tzlookup(coords.lat, coords.lng);
+    } catch {
+      /* ocean or bad coordinates — the database falls back to the state */
+    }
+    return json({ ...coords, timezone, found: true });
   } catch (e) {
     return json({ error: (e as Error).message }, 400);
   }

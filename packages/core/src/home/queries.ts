@@ -7,6 +7,7 @@ export type AssignmentRow = {
     id: string;
     title: string;
     starts_at: string;
+    timezone?: string | null;
     venue_name: string;
     venue_city: string;
     venue_state: string;
@@ -39,7 +40,7 @@ export async function fetchPendingApplications(userId: string): Promise<{
   const { data, error } = await supabase
     .from("job_assignments")
     .select(
-      "id, status, job:jobs(id, title, starts_at, venue_name, venue_city, venue_state, pay_per_game, num_games, sport_id, hirers(org_name))"
+      "id, status, job:jobs(id, title, starts_at, timezone, venue_name, venue_city, venue_state, pay_per_game, num_games, sport_id, hirers(org_name))"
     )
     .eq("ref_id", userId)
     .eq("status", "pending");
@@ -62,7 +63,7 @@ export async function fetchMyAssignments(userId: string): Promise<{
   const { data, error } = await supabase
     .from("job_assignments")
     .select(
-      "id, status, job:jobs(id, title, starts_at, venue_name, venue_city, venue_state, pay_per_game, num_games, sport_id, hirers(org_name))"
+      "id, status, job:jobs(id, title, starts_at, timezone, venue_name, venue_city, venue_state, pay_per_game, num_games, sport_id, hirers(org_name))"
     )
     .eq("ref_id", userId)
     .in("status", ["accepted"]);

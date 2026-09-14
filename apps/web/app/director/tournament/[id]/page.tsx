@@ -14,20 +14,16 @@ import {
   type DirectorGameRow,
   type TournamentRow,
 } from "@/lib/director/queries";
+import { formatDateOnly, formatGameTimeWithZone, zoneName } from "@refee/core/time";
 
-const TZ = "America/Chicago";
-
-function fmt(iso: string, opts: Intl.DateTimeFormatOptions) {
-  return new Date(iso).toLocaleDateString("en-US", { ...opts, timeZone: TZ }).toUpperCase();
+/** Tournament dates are date-only values — shown as the calendar day, never shifted. */
+function fmt(ymd: string, opts: Intl.DateTimeFormatOptions) {
+  return formatDateOnly(ymd, opts).toUpperCase();
 }
 
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
+/** Game times in the venue's zone, e.g. "1:30 PM ET". */
+function fmtTime(iso: string, tz?: string | null) {
+  return formatGameTimeWithZone(iso, tz);
 }
 
 /** Port of refee-mobile/refee/app/(director)/tournament/[id].tsx. */
@@ -157,6 +153,7 @@ export default function TournamentDetailPage({
             {tournament.courts?.length
               ? ` · ${tournament.courts.length} court${tournament.courts.length !== 1 ? "s" : ""}`
               : ""}
+            {` · ${zoneName(tournament.timezone)} time`}
           </p>
         ) : (
           <Link
@@ -219,7 +216,7 @@ export default function TournamentDetailPage({
                 className="mt-0.5 block truncate font-mono text-[10px] uppercase text-ink-80"
                 style={{ letterSpacing: 1 }}
               >
-                {added.title} · {fmtTime(added.starts_at)}
+                {added.title} · {fmtTime(added.starts_at, added.timezone)}
                 {added.court ? ` · ${added.court}` : ""}
               </span>
             </span>
@@ -276,7 +273,7 @@ export default function TournamentDetailPage({
                     className="block font-mono text-[10px] uppercase text-ink-60"
                     style={{ letterSpacing: 1 }}
                   >
-                    {fmtTime(item.starts_at)} ·{" "}
+                    {fmtTime(item.starts_at, item.timezone)} ·{" "}
                     {item.court
                       ? item.court.toUpperCase()
                       : `${item.venue_city.toUpperCase()}, ${item.venue_state}`}

@@ -324,6 +324,7 @@ export type AssignorGameRow = {
   home_team: string | null;
   away_team: string | null;
   starts_at: string;
+  timezone?: string | null;
   venue_name: string;
   crew_size: number;
   pay_per_game: number;
@@ -336,7 +337,7 @@ export async function fetchAssignorTournamentGames(
 ): Promise<{ games: AssignorGameRow[]; error: Error | null }> {
   const { data, error } = await supabase
     .from("jobs")
-    .select("id, title, home_team, away_team, starts_at, venue_name, crew_size, pay_per_game, status, assignor_staffing_mode")
+    .select("id, title, home_team, away_team, starts_at, timezone, venue_name, crew_size, pay_per_game, status, assignor_staffing_mode")
     .eq("tournament_id", tournamentId)
     .order("starts_at", { ascending: true });
 
@@ -349,7 +350,7 @@ export async function fetchAssignorGame(
 ): Promise<{ game: AssignorGameRow | null; error: Error | null }> {
   const { data, error } = await supabase
     .from("jobs")
-    .select("id, title, home_team, away_team, starts_at, venue_name, crew_size, pay_per_game, status, assignor_staffing_mode")
+    .select("id, title, home_team, away_team, starts_at, timezone, venue_name, crew_size, pay_per_game, status, assignor_staffing_mode")
     .eq("id", jobId)
     .maybeSingle();
 

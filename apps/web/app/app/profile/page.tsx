@@ -32,10 +32,9 @@ import { getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { uploadAvatarFile } from "@/lib/profile/avatar";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { fetchPayoutStatus, getPayoutOnboardingLink, type PayoutStatus } from "@/lib/payments/queries";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-const TZ = "America/Chicago";
-
 const CERT_LABELS: Record<string, string> = {
   iaabo: "IAABO",
   nfhs: "NFHS",
@@ -761,21 +760,12 @@ function StatStrip({ label, value }: { label: string; value: string }) {
 
 function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
   const router = useRouter();
-  const d = new Date(game.startsAt);
-  const dateStr = d
-    .toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      timeZone: TZ,
-    })
-    .toUpperCase();
-  const timeStr = d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
+  const dateStr = formatGameDate(game.startsAt, game.timeZone, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).toUpperCase();
+  const timeStr = formatGameTimeWithZone(game.startsAt, game.timeZone);
 
   const openCrew = async () => {
     const {

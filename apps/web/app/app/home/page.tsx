@@ -15,25 +15,18 @@ import {
   type AssignmentRow,
   type EarningsSummary,
 } from "@/lib/home/queries";
+import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
-const TZ = "America/Chicago";
-
-function formatCardDate(iso: string): string {
-  const d = new Date(iso);
-  const weekday = d.toLocaleDateString("en-US", { weekday: "short", timeZone: TZ }).toUpperCase();
-  const md = d
-    .toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: TZ })
-    .toUpperCase();
-  return `${weekday} · ${md}`;
+/** "SAT SEP 20" in the venue's zone. */
+function formatCardDate(iso: string, tz?: string | null): string {
+  const weekday = formatGameDate(iso, tz, { weekday: "short" }).toUpperCase();
+  const md = formatGameDate(iso, tz, { month: "short", day: "numeric" }).toUpperCase();
+  return `${weekday} ${md}`;
 }
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-    timeZone: TZ,
-  });
+/** "1:30 PM ET" in the venue's zone. */
+function formatTime(iso: string, tz?: string | null): string {
+  return formatGameTimeWithZone(iso, tz);
 }
 
 function getGreeting(): string {
@@ -243,8 +236,8 @@ function AssignmentCard({ row, pending }: { row: AssignmentRow; pending?: boolea
       <div className="mt-2 flex border-t border-ink-20">
         <CardCell
           label="When"
-          primary={formatCardDate(row.job.starts_at)}
-          secondary={formatTime(row.job.starts_at)}
+          primary={formatCardDate(row.job.starts_at, row.job.timezone)}
+          secondary={formatTime(row.job.starts_at, row.job.timezone)}
           bordered
         />
         <CardCell

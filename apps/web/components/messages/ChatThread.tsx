@@ -13,14 +13,11 @@ import {
   type MessageRow,
 } from "@/lib/messages/queries";
 
-const TZ = "America/Chicago";
-
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-    timeZone: TZ,
   });
 }
 

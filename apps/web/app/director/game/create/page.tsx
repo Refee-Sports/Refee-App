@@ -37,6 +37,7 @@ import {
 import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { zoneName } from "@refee/core/time";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -506,7 +507,11 @@ function CreateGameInner() {
           min={tournament?.starts_on}
           max={tournament?.ends_on}
         />
-        <Label className="mt-4">Tip-off time *</Label>
+        <Label className="mt-4">
+          {tournament
+            ? `Tip-off time * (${zoneName(tournament.timezone)} time)`
+            : "Tip-off time * (local time at the venue)"}
+        </Label>
         <SelectField
           value={form.gameTime}
           onChange={set("gameTime")}

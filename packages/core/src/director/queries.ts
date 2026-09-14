@@ -70,6 +70,10 @@ export type DirectorGameRow = {
   court?: string | null;
   arrival_notes?: string | null;
   team_level?: string | null;
+  /** IANA zone of the venue; every time for this game is shown in it. */
+  timezone?: string | null;
+  /** Wall-clock start at the venue, e.g. "2026-09-20T13:30:00". */
+  starts_local?: string | null;
   pay_per_game: number;
   crew_size: number;
   status: string;
@@ -225,7 +229,7 @@ export async function createTournament(
     venueName?: string;
     venueCity: string;
     venueState: string;
-    /** IANA zone for the schedule; the column defaults to America/Chicago. */
+    /** IANA zone for the schedule. When omitted, the database takes it from the venue's pin or state. */
     timezone?: string;
     venueAddress?: string;
     venueZip?: string;
@@ -254,7 +258,7 @@ export async function createTournament(
       venue_name: args.venueName || null,
       venue_city: args.venueCity,
       venue_state: args.venueState,
-      ...(args.timezone ? { timezone: args.timezone } : {}),
+      ...(args.timezone || coords?.timezone ? { timezone: args.timezone || coords?.timezone } : {}),
       ...(args.venueAddress !== undefined
         ? { venue_address: args.venueAddress.trim() || null, venue_zip: args.venueZip?.trim() || null,
             venue_lat: coords?.lat ?? null, venue_lng: coords?.lng ?? null }
@@ -342,6 +346,8 @@ export type CreateGameArgs = {
   arrivalNotes?: string;
   /** High school only: varsity | jv | freshman. */
   teamLevel?: string;
+  /** IANA zone override; normally taken from the venue's map pin. */
+  timezone?: string;
   uniformRequirements?: string;
   hirerNote?: string;
   autoAccept?: boolean;
@@ -362,7 +368,11 @@ function venueQuery(v: { venueAddress?: string; venueZip?: string; venueCity: st
     : `${v.venueCity}, ${v.venueState}, USA`;
 }
 
-/** Creates a game. Pass tournamentId = null for a standalone single game. */
+/**
+ * Creates a game. Pass tournamentId = null for a standalone single game.
+ * `startsAt` is the wall-clock time at the venue ("2026-09-20T13:30:00"); the
+ * database turns it into the right instant in the venue's time zone.
+ */
 export async function createGame(
   hirerId: string,
   tournamentId: string | null,
@@ -384,6 +394,8 @@ export async function createGame(
       crew_size: args.crewSize,
       pay_per_game: args.payPerGame,
       starts_at: args.startsAt,
+      starts_local: args.startsAt,
+      timezone: args.timezone || coords?.timezone || null,
       duration_minutes: args.durationMinutes ?? null,
       venue_name: args.venueName,
       venue_city: args.venueCity,
@@ -489,6 +501,7 @@ export type PendingApproval = {
     id: string;
     title: string;
     startsAt: string;
+    timeZone: string | null;
     venueCity: string;
     venueState: string;
     payPerGame: number;
@@ -516,7 +529,7 @@ export async function fetchPendingApprovals(
   const { data, error } = await supabase
     .from("job_assignments")
     .select(
-      "id, ref_id, applied_at, public_profiles(first_name, last_initial, display_name, avatar_url, rating, city, state), jobs!inner(id, title, starts_at, venue_city, venue_state, pay_per_game, crew_size, status, hirer_id, tournaments(name, assignor_id, assignor_status))"
+      "id, ref_id, applied_at, public_profiles(first_name, last_initial, display_name, avatar_url, rating, city, state), jobs!inner(id, title, starts_at, timezone, venue_city, venue_state, pay_per_game, crew_size, status, hirer_id, tournaments(name, assignor_id, assignor_status))"
     )
     .eq("status", "pending")
     .eq("jobs.hirer_id", hirerId)
@@ -563,6 +576,7 @@ export async function fetchPendingApprovals(
           id: job.id,
           title: job.title,
           startsAt: job.starts_at,
+          timeZone: job.timezone ?? null,
           venueCity: job.venue_city,
           venueState: job.venue_state,
           payPerGame: job.pay_per_game,
@@ -737,6 +751,8 @@ export type GameUpdateArgs = {
   arrivalNotes?: string;
   /** High school only: varsity | jv | freshman. */
   teamLevel?: string;
+  /** IANA zone override; normally taken from the venue's map pin. */
+  timezone?: string;
   uniformRequirements?: string;
   hirerNote?: string;
   autoAccept?: boolean;
@@ -759,7 +775,7 @@ export async function updateGame(
 ): Promise<{ error: Error | null; refsNeedReconfirm: boolean }> {
   const { data: before, error: beforeErr } = await supabase
     .from("jobs")
-    .select("starts_at, venue_name, venue_city, venue_state, venue_address, venue_zip, pay_per_game")
+    .select("starts_at, starts_local, venue_name, venue_city, venue_state, venue_address, venue_zip, pay_per_game")
     .eq("id", gameId)
     .maybeSingle();
   if (beforeErr) return { error: new Error(beforeErr.message), refsNeedReconfirm: false };
@@ -785,6 +801,12 @@ export async function updateGame(
       crew_size: args.crewSize,
       pay_per_game: args.payPerGame,
       starts_at: args.startsAt,
+      starts_local: args.startsAt,
+      ...(args.timezone
+        ? { timezone: args.timezone }
+        : locationChanged && coords?.timezone
+          ? { timezone: coords.timezone }
+          : {}),
       duration_minutes: args.durationMinutes ?? null,
       venue_name: args.venueName,
       venue_city: args.venueCity,
@@ -809,7 +831,7 @@ export async function updateGame(
 
   const materialChange =
     !!before &&
-    (new Date(before.starts_at).getTime() !== new Date(args.startsAt).getTime() ||
+    (String(before.starts_local ?? "").slice(0, 16) !== args.startsAt.slice(0, 16) ||
       before.venue_name !== args.venueName ||
       before.venue_city !== args.venueCity ||
       before.venue_state !== args.venueState ||
@@ -859,7 +881,7 @@ export async function updateTournament(
     venueName?: string;
     venueCity: string;
     venueState: string;
-    /** IANA zone for the schedule; the column defaults to America/Chicago. */
+    /** IANA zone for the schedule. When omitted, the database takes it from the venue's pin or state. */
     timezone?: string;
     venueAddress?: string;
     venueZip?: string;
@@ -886,7 +908,7 @@ export async function updateTournament(
       venue_name: args.venueName || null,
       venue_city: args.venueCity,
       venue_state: args.venueState,
-      ...(args.timezone ? { timezone: args.timezone } : {}),
+      ...(args.timezone || coords?.timezone ? { timezone: args.timezone || coords?.timezone } : {}),
       ...(args.venueAddress !== undefined
         ? { venue_address: args.venueAddress.trim() || null, venue_zip: args.venueZip?.trim() || null,
             venue_lat: coords?.lat ?? null, venue_lng: coords?.lng ?? null }

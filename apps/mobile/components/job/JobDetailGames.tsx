@@ -26,7 +26,7 @@ export function JobDetailGames({ job }: Props) {
                 className="text-ink font-display uppercase"
                 style={{ fontSize: 16, letterSpacing: -0.3, lineHeight: 18 }}
               >
-                {i === 0 ? job.whenSecondary.replace(" CT", "") : `GAME ${i + 1}`}
+                {i === 0 ? job.whenSecondary.replace(/ [A-Z]{2,3}$/, "") : `GAME ${i + 1}`}
               </Text>
               <Text
                 className="text-ink-80 font-mono text-[10px] uppercase mt-0.5"

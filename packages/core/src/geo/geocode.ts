@@ -2,13 +2,16 @@ import { supabase } from "../client";
 
 export type Coords = { lat: number; lng: number };
 
+/** A geocoded venue: its pin and, when known, its IANA time zone. */
+export type GeocodedVenue = Coords & { timezone: string | null };
+
 /** Geocode a free-text address via the edge function. Returns null if not found. */
-export async function geocodeAddress(address: string): Promise<Coords | null> {
+export async function geocodeAddress(address: string): Promise<GeocodedVenue | null> {
   const { data, error } = await supabase.functions.invoke("geocode", {
     body: { address },
   });
   if (error || !data?.found) return null;
-  return { lat: data.lat, lng: data.lng };
+  return { lat: data.lat, lng: data.lng, timezone: data.timezone ?? null };
 }
 
 /** Great-circle distance in miles between two points. */
