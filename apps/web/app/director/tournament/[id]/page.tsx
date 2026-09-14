@@ -7,6 +7,8 @@ import { use, useCallback, useEffect, useState } from "react";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
+import { LoadError } from "@/components/ui/LoadError";
+import { friendlyLoadError, withDeadline } from "@/lib/network";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
 import {
   fetchTournamentById,
@@ -55,16 +57,23 @@ export default function TournamentDetailPage({
   const load = useCallback(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
     (async () => {
-      const [{ tournament: t, error: tErr }, { games: g, error: gErr }] = await Promise.all([
-        fetchTournamentById(id),
-        fetchTournamentGames(id),
-      ]);
-      if (cancelled) return;
-      setTournament(t);
-      setGames(g);
-      setError(tErr?.message ?? gErr?.message ?? null);
-      setLoading(false);
+      try {
+        const [{ tournament: t, error: tErr }, { games: g, error: gErr }] = await withDeadline(
+          Promise.all([fetchTournamentById(id), fetchTournamentGames(id)])
+        );
+        if (cancelled) return;
+        setTournament(t);
+        setGames(g);
+        const message = tErr?.message ?? gErr?.message;
+        setError(message ? friendlyLoadError(message) : null);
+      } catch (e) {
+        // A hung or failed request must not leave the page spinning.
+        if (!cancelled) setError(friendlyLoadError((e as Error)?.message));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
@@ -82,10 +91,14 @@ export default function TournamentDetailPage({
   }
 
   if (!tournament) {
-    return (
+    return error ? (
+      <div className="app-canvas bg-paper py-10">
+        <LoadError message={error} onRetry={load} />
+      </div>
+    ) : (
       <div className="flex flex-1 items-center justify-center bg-paper px-6">
         <p className="font-mono-bold uppercase text-ink" style={{ letterSpacing: 1 }}>
-          {error ?? "Tournament not found."}
+          Tournament not found.
         </p>
       </div>
     );

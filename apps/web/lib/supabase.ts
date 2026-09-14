@@ -40,7 +40,24 @@ export const isSupabaseConfigured = getSupabaseSetupError() === null;
 const clientUrl = supabaseUrl.trim() || "https://placeholder.supabase.co";
 const clientKey = supabaseAnonKey.trim() || "placeholder-anon-key";
 
+// A Supabase call that hangs (an outage, a dropped connection) would otherwise
+// leave a screen spinning forever. Sign-in and data calls give up after 20s and
+// come back as ordinary errors the screens already show; edge functions (an AI
+// schedule read can take 15s or more) and storage uploads keep the browser's
+// own limits.
+const REQUEST_TIMEOUT_MS = 20_000;
+
+function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  if (!/\/(auth|rest)\/v1\//.test(url)) return fetch(input, init);
+  const timeout = AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const signal =
+    init?.signal && typeof AbortSignal.any === "function" ? AbortSignal.any([init.signal, timeout]) : init?.signal ?? timeout;
+  return fetch(input, { ...init, signal });
+}
+
 export const supabase = createClient(clientUrl, clientKey, {
+  global: { fetch: fetchWithTimeout },
   auth: {
     autoRefreshToken: true,
     persistSession: true,

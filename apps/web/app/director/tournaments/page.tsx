@@ -7,6 +7,8 @@ import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
+import { LoadError } from "@/components/ui/LoadError";
+import { friendlyLoadError, withDeadline } from "@/lib/network";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
 import { supabase } from "@/lib/supabase";
 import {
@@ -118,48 +120,58 @@ function DirectorHome() {
     setLoading(true);
     setError(null);
     (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        if (!cancelled) setLoading(false);
-        return;
-      }
+      try {
+        const {
+          data: { session },
+        } = await withDeadline(supabase.auth.getSession());
+        if (!session) return;
 
-      // Games auto-complete on the hourly sweep-game-lifecycle job; this only
-      // pays games from before charge-at-booking that finished since last visit.
-      void runAutoPay().then(({ result }) => {
-        if (cancelled || !result || result.paid.length === 0) return;
-        const total = result.paid.reduce((s, p) => s + p.total, 0);
-        setAutoPayNote(
-          `${result.paid.length} completed game${
-            result.paid.length !== 1 ? "s" : ""
-          } charged ($${total} total) and referees paid.`
+        // Games auto-complete on the hourly sweep-game-lifecycle job; this only
+        // pays games from before charge-at-booking that finished since last visit.
+        void runAutoPay()
+          .then(({ result }) => {
+            if (cancelled || !result || result.paid.length === 0) return;
+            const total = result.paid.reduce((s, p) => s + p.total, 0);
+            setAutoPayNote(
+              `${result.paid.length} completed game${
+                result.paid.length !== 1 ? "s" : ""
+              } charged ($${total} total) and referees paid.`
+            );
+          })
+          .catch(() => {
+            /* best-effort; the page works without it */
+          });
+
+        const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }] =
+          await withDeadline(
+            Promise.all([
+              fetchMyTournaments(session.user.id),
+              fetchGamesNeedingCompletion(session.user.id),
+              fetchStandaloneGames(session.user.id),
+              fetchPendingApprovals(session.user.id),
+            ])
+          );
+
+        if (cancelled) return;
+        setTournaments(rows);
+        setNeedsCompletion(nudge);
+        setSingleGames(solo);
+        setApprovals(pending);
+        // With no tab in the URL, open where the work is: approvals if refs are
+        // waiting, otherwise whichever list has something in it. Only decided
+        // once, so a reload of the data never yanks the view out from under you.
+        setDefaultTab(
+          (prev) =>
+            prev ?? (pending.length > 0 ? "approvals" : rows.length > 0 ? "tournaments" : "games")
         );
-      });
-
-      const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }] =
-        await Promise.all([
-          fetchMyTournaments(session.user.id),
-          fetchGamesNeedingCompletion(session.user.id),
-          fetchStandaloneGames(session.user.id),
-          fetchPendingApprovals(session.user.id),
-        ]);
-
-      if (cancelled) return;
-      setTournaments(rows);
-      setNeedsCompletion(nudge);
-      setSingleGames(solo);
-      setApprovals(pending);
-      // With no tab in the URL, open where the work is: approvals if refs are
-      // waiting, otherwise whichever list has something in it. Only decided
-      // once, so a reload of the data never yanks the view out from under you.
-      setDefaultTab(
-        (prev) =>
-          prev ?? (pending.length > 0 ? "approvals" : rows.length > 0 ? "tournaments" : "games")
-      );
-      if (fetchErr) setError(fetchErr.message);
-      setLoading(false);
+        if (fetchErr) setError(friendlyLoadError(fetchErr.message));
+      } catch (e) {
+        // A hung or failed request (an outage, a dropped connection) must not
+        // leave the page spinning.
+        if (!cancelled) setError(friendlyLoadError((e as Error)?.message));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     })();
     return () => {
       cancelled = true;
@@ -364,6 +376,8 @@ function DirectorHome() {
         <div className="flex flex-1 items-center justify-center py-12 text-signal">
           <Spinner />
         </div>
+      ) : error ? (
+        <LoadError message={error} onRetry={load} />
       ) : tab === "tournaments" ? (
         <div className="px-5 sm:px-0" role="tabpanel">
           {tournaments.length === 0 ? (
@@ -434,14 +448,6 @@ function DirectorHome() {
         </div>
       )}
 
-      {error && (
-        <p
-          className="mb-4 px-5 text-center font-mono text-xs text-foul sm:px-0"
-          style={{ letterSpacing: 0.5 }}
-        >
-          {error}
-        </p>
-      )}
     </div>
   );
 }
