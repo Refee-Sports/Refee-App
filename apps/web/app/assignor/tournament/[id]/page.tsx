@@ -16,6 +16,7 @@ import {
   type MyProposalRow,
   type TournamentInviteRow,
 } from "@/lib/assignor/queries";
+import { Icon } from "@/components/ui/Icon";
 
 function formatWhen(value: string, timeZone: string) {
   return new Date(value)
@@ -226,9 +227,20 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
 
         {accepted ? (
           <>
-            <h2 className="mb-3 mt-7 font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 2 }}>
-              ── Game staffing ({games.length})
-            </h2>
+            <div className="mb-3 mt-7 flex items-center justify-between gap-3">
+              <h2 className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 2 }}>
+                ── Game staffing ({games.length})
+              </h2>
+              <Link
+                href={`/assignor/tournament/${id}/import`}
+                className="flex h-8 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
+              >
+                <Icon name="upload" size={12} />
+                <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+                  Import with AI
+                </span>
+              </Link>
+            </div>
             {games.length === 0 ? (
               <p className="py-10 text-center font-mono text-[9px] uppercase text-ink-40">
                 No games have been added yet.

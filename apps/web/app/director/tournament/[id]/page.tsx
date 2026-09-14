@@ -42,11 +42,13 @@ export default function TournamentDetailPage({
   // Set when the director lands here straight after adding a game.
   const [addedId, setAddedId] = useState<string | null>(null);
   const [addedCharged, setAddedCharged] = useState(false);
+  const [importedCount, setImportedCount] = useState(0);
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     setAddedId(sp.get("added"));
     setAddedCharged(sp.get("charged") === "1");
+    setImportedCount(Number(sp.get("imported")) || 0);
   }, []);
 
   const load = useCallback(() => {
@@ -186,16 +188,41 @@ export default function TournamentDetailPage({
         >
           ── Games ({games.length})
         </h2>
-        <Link
-          href={`/director/game/create?tournamentId=${id}`}
-          className="flex h-8 items-center gap-1.5 bg-ink px-3 text-paper hover:opacity-80"
-        >
-          <Icon name="plus" size={12} />
-          <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-            Add game
-          </span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/director/tournament/${id}/import`}
+            className="flex h-8 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
+          >
+            <Icon name="upload" size={12} />
+            <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+              Import with AI
+            </span>
+          </Link>
+          <Link
+            href={`/director/game/create?tournamentId=${id}`}
+            className="flex h-8 items-center gap-1.5 bg-ink px-3 text-paper hover:opacity-80"
+          >
+            <Icon name="plus" size={12} />
+            <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+              Add game
+            </span>
+          </Link>
+        </div>
       </div>
+
+      {importedCount > 0 ? (
+        <div
+          role="status"
+          className="mx-5 mb-3 flex items-center justify-between gap-3 border border-court bg-court/10 px-4 py-3 sm:mx-0"
+        >
+          <span className="font-mono-bold text-[10px] uppercase text-court" style={{ letterSpacing: 1.5 }}>
+            {importedCount} game{importedCount !== 1 ? "s" : ""} imported from your schedule
+          </span>
+          <button type="button" onClick={() => setImportedCount(0)} aria-label="Dismiss" className="text-ink-60 hover:text-ink">
+            <Icon name="x" size={14} />
+          </button>
+        </div>
+      ) : null}
 
       {(() => {
         const added = addedId ? games.find((g) => g.id === addedId) : undefined;

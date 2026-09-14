@@ -9,6 +9,59 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          input_bytes: number | null
+          input_tokens: number | null
+          input_type: string | null
+          kind: string
+          model: string | null
+          output: Json | null
+          output_tokens: number | null
+          tournament_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_bytes?: number | null
+          input_tokens?: number | null
+          input_type?: string | null
+          kind: string
+          model?: string | null
+          output?: Json | null
+          output_tokens?: number | null
+          tournament_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          input_bytes?: number | null
+          input_tokens?: number | null
+          input_type?: string | null
+          kind?: string
+          model?: string | null
+          output?: Json | null
+          output_tokens?: number | null
+          tournament_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_events_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assignor_proposals: {
         Row: {
           assignor_id: string

@@ -38,6 +38,7 @@ import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { zoneName } from "@refee/core/time";
+import { extractSchedule, readUpload } from "@refee/core/schedule/ai-import";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -52,6 +53,13 @@ const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
   };
 });
 
+
+/** TIME_OPTIONS are 15-minute steps; snap an extracted "13:35" to "13:30". */
+function roundToQuarter(hhmm: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = (Math.round((h * 60 + m) / 15) * 15) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
 
 export default function CreateGamePage() {
   return (
@@ -79,6 +87,10 @@ function CreateGameInner() {
   const [cardSetupSecret, setCardSetupSecret] = useState<string | null>(null);
   const [pendingGameId, setPendingGameId] = useState<string | null>(null);
   const [tournament, setTournament] = useState<TournamentRow | null>(null);
+  // "Fill from a photo": AI reads a flyer or schedule and prefills this form.
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     homeTeam: "",
@@ -177,6 +189,56 @@ function CreateGameInner() {
 
   const set = (key: keyof typeof form) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
+
+  const fillFromFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    setAiBusy(true);
+    setAiError(null);
+    setAiNote(null);
+    const upload = await readUpload(file);
+    const { schedule, error: err } = await extractSchedule(upload, {
+      tournamentId: tournamentId ?? undefined,
+      mode: "single",
+    });
+    setAiBusy(false);
+    if (err || !schedule) {
+      setAiError(err?.message ?? "Couldn't read that file.");
+      return;
+    }
+    const g = schedule.games[0];
+    if (!g) {
+      setAiError(schedule.problems[0] ?? "No game found in that file.");
+      return;
+    }
+    // A tournament game keeps the tournament's venue; a single game takes the file's.
+    const venue = tournamentId
+      ? {}
+      : {
+          venueName: g.venue_name || schedule.venue.name || undefined,
+          venueAddress: g.venue_address || schedule.venue.address || undefined,
+          venueCity: g.venue_city || schedule.venue.city || undefined,
+          venueState: (g.venue_state || schedule.venue.state || "").toUpperCase() || undefined,
+          venueZip: g.venue_zip || schedule.venue.zip || undefined,
+        };
+    setForm((f) => ({
+      ...f,
+      homeTeam: g.home_team || f.homeTeam,
+      awayTeam: g.away_team || f.awayTeam,
+      gameDate: g.date || f.gameDate,
+      gameTime: g.time ? roundToQuarter(g.time) : f.gameTime,
+      level: g.level || f.level,
+      teamLevel: g.team_level || f.teamLevel,
+      ageGroup: g.age_group || f.ageGroup,
+      court: g.court || f.court,
+      arrivalNotes: f.arrivalNotes || schedule.event_notes || "",
+      ...Object.fromEntries(Object.entries(venue).filter(([, v]) => v)),
+    }));
+    const more =
+      schedule.games.length > 1
+        ? ` The file has ${schedule.games.length} games — Import with AI on the tournament page adds them all.`
+        : "";
+    setAiNote(`Filled from ${file.name}. Check every field before creating.${more}`);
+  };
 
   const ageRequired = AGE_REQUIRED_LEVELS.includes(form.level);
   const stateValid = !form.venueState || US_STATES.includes(form.venueState.toUpperCase());
@@ -353,6 +415,52 @@ function CreateGameInner() {
       </div>
 
       <div className="flex-1 px-5 py-6">
+        {!isEdit ? (
+          <div className="mb-6 border border-dashed border-ink px-4 py-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span className="min-w-0">
+                <span className="block font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
+                  Have a flyer or schedule?
+                </span>
+                <span className="mt-0.5 block font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+                  Fill this form from a photo, PDF or CSV with AI
+                </span>
+              </span>
+              <label
+                className={`flex h-9 cursor-pointer items-center gap-1.5 bg-ink px-3 text-paper hover:opacity-80 ${
+                  aiBusy ? "pointer-events-none opacity-60" : ""
+                }`}
+              >
+                {aiBusy ? <Spinner /> : <Icon name="upload" size={12} />}
+                <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+                  {aiBusy ? "Reading…" : "Choose file"}
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf,.csv,text/csv"
+                  className="sr-only"
+                  onChange={(e) => {
+                    void fillFromFile(e.target.files?.[0]);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {aiNote ? (
+              <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court" style={{ letterSpacing: 1 }}>
+                {aiNote}
+              </p>
+            ) : null}
+            {aiError ? (
+              <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>
+                {aiError}
+              </p>
+            ) : null}
+            <p className="mt-2 font-mono text-[8px] uppercase text-ink-40" style={{ letterSpacing: 1 }}>
+              The file is read to fill the form and isn&apos;t kept.
+            </p>
+          </div>
+        ) : null}
         <SectionLabel>Matchup</SectionLabel>
         <Label>Home team *</Label>
         <TextField
