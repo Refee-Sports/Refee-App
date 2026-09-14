@@ -37,8 +37,11 @@ export default function CreateTournamentPage() {
 /** Port of refee-mobile/refee/app/(director)/tournament/create.tsx. */
 function CreateTournamentInner() {
   const router = useRouter();
-  const editId = useSearchParams().get("editId");
+  const params = useSearchParams();
+  const editId = params.get("editId");
   const isEdit = !!editId;
+  // From "Tournament from a schedule": go straight to import after creating.
+  const thenImport = !isEdit && params.get("then") === "import";
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,7 +108,7 @@ function CreateTournamentInner() {
     form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (next: "tournament" | "import" = thenImport ? "import" : "tournament") => {
     if (!canSubmit) return;
     setLoading(true);
     setError(null);
@@ -164,7 +167,9 @@ function CreateTournamentInner() {
       setError(createErr?.message ?? "Could not create tournament.");
       return;
     }
-    router.push(`/director/tournament/${tournamentId}`);
+    router.push(
+      next === "import" ? `/director/tournament/${tournamentId}/import` : `/director/tournament/${tournamentId}`
+    );
   };
 
   const minuteOptions = (form.gameFormat === "quarters" ? QUARTER_MINUTES : HALF_MINUTES).map(
@@ -345,7 +350,7 @@ function CreateTournamentInner() {
         )}
         <button
           type="button"
-          onClick={handleSubmit}
+          onClick={() => void handleSubmit()}
           disabled={!canSubmit || loading}
           className={`flex w-full items-center justify-center gap-2 py-4 ${
             canSubmit && !loading
@@ -358,12 +363,23 @@ function CreateTournamentInner() {
           ) : (
             <>
               <span className="font-mono-bold" style={{ fontSize: 12, letterSpacing: 2.5 }}>
-                {isEdit ? "SAVE CHANGES" : "CREATE TOURNAMENT"}
+                {isEdit ? "SAVE CHANGES" : thenImport ? "CREATE & IMPORT SCHEDULE" : "CREATE TOURNAMENT"}
               </span>
               <span className="font-mono-bold text-base">→</span>
             </>
           )}
         </button>
+        {!isEdit ? (
+          <button
+            type="button"
+            onClick={() => void handleSubmit(thenImport ? "tournament" : "import")}
+            disabled={!canSubmit || loading}
+            className="mt-2 w-full py-2.5 font-mono-bold text-[10px] uppercase text-ink-60 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-40"
+            style={{ letterSpacing: 1.5 }}
+          >
+            {thenImport ? "Create without importing" : "Create, then import a schedule with AI"}
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -698,7 +698,7 @@ function NewMenu() {
         </span>
       </button>
       {open && (
-        <div className="absolute right-0 top-10 z-30 w-44 border border-ink bg-chalk shadow-[4px_4px_0_var(--ink)]">
+        <div className="absolute right-0 top-10 z-30 w-64 border border-ink bg-chalk shadow-[4px_4px_0_var(--ink)]">
           <Link
             href="/director/tournament/create"
             onClick={() => setOpen(false)}
@@ -706,6 +706,20 @@ function NewMenu() {
             style={{ letterSpacing: 1.5 }}
           >
             Tournament
+          </Link>
+          <Link
+            href="/director/tournament/create?then=import"
+            onClick={() => setOpen(false)}
+            className="group block border-b border-ink-20 px-4 py-3 font-mono-bold text-[10px] uppercase text-ink hover:bg-ink hover:text-paper"
+            style={{ letterSpacing: 1.5 }}
+          >
+            Tournament from a schedule
+            <span
+              className="mt-1 block font-mono text-[9px] normal-case text-ink-60 group-hover:text-paper"
+              style={{ letterSpacing: 0.3 }}
+            >
+              Create it, then import the games from a flyer, PDF or CSV
+            </span>
           </Link>
           <Link
             href="/director/game/create"
