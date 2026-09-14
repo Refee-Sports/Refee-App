@@ -4,9 +4,15 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(36);
 
--- Refs A, B, C; director D; assignor X.
+-- Seeded users only (CI starts from seed.sql): refs A, B, C; director D.
+-- C also works as an assignor for the roster and proposal checks, as the
+-- 0033 test does with A.
 --   A 22222222-2222-4222-8222-222222222200   B ...201   C ...202
---   D 11111111-1111-4111-8111-111111111101   X 6193817b-5cf4-4901-b529-e456182f48be
+--   D 11111111-1111-4111-8111-111111111101
+
+insert into public.user_roles (user_id, role)
+values ('22222222-2222-4222-8222-222222222202', 'assignor')
+on conflict do nothing;
 
 insert into public.jobs (id, hirer_id, sport_id, title, level, crew_size, pay_per_game, starts_at, duration_minutes,
                          venue_name, venue_city, venue_state, job_type, status, num_games)
@@ -36,19 +42,19 @@ insert into public.job_assignments (job_id, ref_id, status, amount_due) values
 
 -- The seed may already have A on X's roster; make it an active entry either way.
 insert into public.assignor_rosters (assignor_id, ref_id, status)
-values ('6193817b-5cf4-4901-b529-e456182f48be', '22222222-2222-4222-8222-222222222200', 'accepted')
+values ('22222222-2222-4222-8222-222222222202', '22222222-2222-4222-8222-222222222200', 'accepted')
 on conflict (assignor_id, ref_id) do update set status = 'accepted', removed_at = null;
 select set_config('test.roster_id', (
   select id::text from public.assignor_rosters
-  where assignor_id = '6193817b-5cf4-4901-b529-e456182f48be' and ref_id = '22222222-2222-4222-8222-222222222200'), true);
+  where assignor_id = '22222222-2222-4222-8222-222222222202' and ref_id = '22222222-2222-4222-8222-222222222200'), true);
 
 insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_city, venue_state, status,
                                 assignor_id, assignor_status)
 select '98100000-0000-4000-8000-0000000000d1'::uuid, h.id, 'Proposal Cup', 'basketball', current_date + 30,
-       current_date + 31, 'Austin', 'TX', 'open', '6193817b-5cf4-4901-b529-e456182f48be', 'inviting'
+       current_date + 31, 'Austin', 'TX', 'open', '22222222-2222-4222-8222-222222222202', 'inviting'
 from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101';
 insert into public.assignor_proposals (tournament_id, assignor_id, status)
-values ('98100000-0000-4000-8000-0000000000d1', '6193817b-5cf4-4901-b529-e456182f48be', 'submitted');
+values ('98100000-0000-4000-8000-0000000000d1', '22222222-2222-4222-8222-222222222202', 'submitted');
 
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
@@ -136,7 +142,7 @@ select is(public.withdraw_from_job('98100000-0000-4000-8000-0000000000ff')->>'er
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111101', true);
 select throws_ok($$ select public.remove_ref_from_roster(current_setting('test.roster_id')::uuid) $$,
   'P0001', 'Active roster relationship not found', 'only the assignor can remove a ref from their roster');
-select set_config('request.jwt.claim.sub', '6193817b-5cf4-4901-b529-e456182f48be', true);
+select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222202', true);
 select lives_ok($$ select public.remove_ref_from_roster(current_setting('test.roster_id')::uuid) $$,
   'the assignor removes a ref from their roster');
 select throws_ok($$ select public.remove_ref_from_roster(current_setting('test.roster_id')::uuid) $$,
@@ -146,7 +152,7 @@ select throws_ok($$ select public.remove_ref_from_roster(current_setting('test.r
 select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222200', true);
 select throws_ok($$ select public.withdraw_assignor_proposal('98100000-0000-4000-8000-0000000000d1') $$,
   'P0001', 'Tournament invitation not available', 'only the invited assignor can withdraw a proposal');
-select set_config('request.jwt.claim.sub', '6193817b-5cf4-4901-b529-e456182f48be', true);
+select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222202', true);
 select isnt(public.withdraw_assignor_proposal('98100000-0000-4000-8000-0000000000d1'), null,
   'the assignor withdraws their proposal');
 select throws_ok($$ select public.withdraw_assignor_proposal('98100000-0000-4000-8000-0000000000d1') $$,
