@@ -87,6 +87,9 @@ export type ImportGame = {
   crewSize: number;
   payPerGame: number;
   durationMinutes: number;
+  /** Blank keeps the tournament's format. */
+  gameFormat?: "quarters" | "halves" | null;
+  periodMinutes?: number | null;
   court?: string | null;
   arrivalNotes?: string | null;
   venueName?: string | null;
@@ -112,6 +115,8 @@ export async function importScheduleGames(
     crew_size: g.crewSize,
     pay_per_game: g.payPerGame,
     duration_minutes: g.durationMinutes,
+    game_format: g.gameFormat || null,
+    period_minutes: g.periodMinutes || null,
     court: g.court || null,
     arrival_notes: g.arrivalNotes || null,
     venue_name: g.venueName || null,

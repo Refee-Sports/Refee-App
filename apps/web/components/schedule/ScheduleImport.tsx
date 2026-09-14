@@ -11,7 +11,7 @@ import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { AffixField, BigChoice, Label, SectionLabel, SelectField, TextArea } from "@/components/ui/Field";
 import { fetchTournamentById, type TournamentRow } from "@/lib/director/queries";
-import { LEVELS, TEAM_LEVELS } from "@/lib/basketball/options";
+import { HALF_MINUTES, LEVELS, QUARTER_MINUTES, TEAM_LEVELS } from "@/lib/basketball/options";
 import {
   extractSchedule,
   importScheduleGames,
@@ -93,12 +93,24 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
     level: "high_school",
     crewSize: 2 as 2 | 3,
     payPerGame: "",
-    durationMinutes: "60",
+    gameFormat: "" as "" | "quarters" | "halves",
+    periodMinutes: "",
     arrivalNotes: "",
   });
 
   useEffect(() => {
-    void fetchTournamentById(tournamentId).then(({ tournament: t }) => setTournament(t));
+    void fetchTournamentById(tournamentId).then(({ tournament: t }) => {
+      setTournament(t);
+      // Start from the tournament's own format, as the single-game form does.
+      if (t?.game_format === "quarters" || t?.game_format === "halves") {
+        const format = t.game_format;
+        setDefaults((d) => ({
+          ...d,
+          gameFormat: d.gameFormat || format,
+          periodMinutes: d.periodMinutes || (t.period_minutes ? String(t.period_minutes) : ""),
+        }));
+      }
+    });
   }, [tournamentId]);
 
   const singleDay =
@@ -191,8 +203,15 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
   const ready = checked.filter((c) => c.row.include && c.errors.length === 0);
   const skipped = checked.filter((c) => c.row.include && c.errors.length > 0).length;
   const pay = parseInt(defaults.payPerGame, 10);
-  const duration = parseInt(defaults.durationMinutes, 10);
-  const canPost = ready.length > 0 && pay >= 1 && duration >= 15 && duration <= 480 && !posting;
+  const periodMinutes = parseInt(defaults.periodMinutes, 10);
+  const periods = defaults.gameFormat === "quarters" ? 4 : defaults.gameFormat === "halves" ? 2 : 0;
+  // Game clock total, stored the same way the single-game form stores it.
+  const duration = periods && periodMinutes ? periods * periodMinutes : 0;
+  const canPost = ready.length > 0 && pay >= 1 && duration >= 15 && !posting;
+  const minuteOptions = (defaults.gameFormat === "quarters" ? QUARTER_MINUTES : HALF_MINUTES).map((m) => ({
+    id: m,
+    label: `${m} MINUTES`,
+  }));
 
   const post = async () => {
     if (!canPost) return;
@@ -212,6 +231,8 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
           crewSize: defaults.crewSize,
           payPerGame: pay,
           durationMinutes: duration,
+          gameFormat: defaults.gameFormat || null,
+          periodMinutes: periodMinutes || null,
           court: r.court.trim() || null,
           arrivalNotes: defaults.arrivalNotes.trim() || null,
         };
@@ -521,6 +542,41 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
                   />
                 ))}
               </div>
+              <Label className="mt-4">Game format *</Label>
+              <div className="flex gap-2">
+                {(
+                  [
+                    { id: "quarters", num: "4", label: "Quarters" },
+                    { id: "halves", num: "2", label: "Halves" },
+                  ] as const
+                ).map((opt) => (
+                  <BigChoice
+                    key={opt.id}
+                    num={opt.num}
+                    label={opt.label}
+                    selected={defaults.gameFormat === opt.id}
+                    onClick={() => setDefaults((d) => ({ ...d, gameFormat: opt.id, periodMinutes: "" }))}
+                  />
+                ))}
+              </div>
+              {defaults.gameFormat ? (
+                <>
+                  <Label className="mt-4">
+                    {defaults.gameFormat === "quarters" ? "Minutes per quarter *" : "Minutes per half *"}
+                  </Label>
+                  <SelectField
+                    value={defaults.periodMinutes}
+                    onChange={(v) => setDefaults((d) => ({ ...d, periodMinutes: v }))}
+                    options={minuteOptions}
+                    placeholder="SELECT MINUTES"
+                  />
+                  {duration ? (
+                    <p className="mt-1.5 font-mono text-[9px] uppercase text-ink-40" style={{ letterSpacing: 1 }}>
+                      Game clock total: {duration} MIN
+                    </p>
+                  ) : null}
+                </>
+              ) : null}
             </div>
             <div className="lg:pt-8">
               <Label>Pay per game ($) *</Label>
@@ -529,14 +585,6 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
                 value={defaults.payPerGame}
                 onChange={(e) => setDefaults((d) => ({ ...d, payPerGame: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
                 placeholder="75"
-                inputMode="numeric"
-              />
-              <Label className="mt-4">Game length (minutes)</Label>
-              <AffixField
-                prefix="⏱"
-                value={defaults.durationMinutes}
-                onChange={(e) => setDefaults((d) => ({ ...d, durationMinutes: e.target.value.replace(/\D/g, "").slice(0, 3) }))}
-                placeholder="60"
                 inputMode="numeric"
               />
               <Label className="mt-4">Arrival notes (optional)</Label>
@@ -569,7 +617,11 @@ export function ScheduleImport({ tournamentId, backHref }: { tournamentId: strin
               <Spinner />
             ) : (
               <span className="font-mono-bold" style={{ fontSize: 12, letterSpacing: 2.5 }}>
-                {pay >= 1 ? `CREATE ${ready.length} GAME${ready.length !== 1 ? "S" : ""}` : "SET PAY PER GAME TO CONTINUE"}
+                {!(pay >= 1)
+                  ? "SET PAY PER GAME TO CONTINUE"
+                  : !duration
+                    ? "PICK THE GAME FORMAT TO CONTINUE"
+                    : `CREATE ${ready.length} GAME${ready.length !== 1 ? "S" : ""}`}
               </span>
             )}
           </button>
