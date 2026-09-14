@@ -52,6 +52,15 @@ export type JobDetail = {
   whereTertiary: string;
   venueName: string;
   venueAddress: string | null;
+  /** Street, city, state, ZIP in normal case — for maps and copy. Null when only the city is known. */
+  venueFullAddress?: string | null;
+  /** Map pin; null when the venue couldn't be geocoded. */
+  venueLat?: number | null;
+  venueLng?: number | null;
+  /** Which court or gym at the venue. */
+  court?: string | null;
+  /** Entrance, parking, doors time, check-in. */
+  arrivalNotes?: string | null;
   crewSize: number;
   sportLabel: string;
   levelLabel: string;

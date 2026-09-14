@@ -100,6 +100,9 @@ function DirectorHome() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
+  // Set when the director lands here straight after posting a single game.
+  const addedId = searchParams.get("added");
+  const addedCharged = searchParams.get("charged") === "1";
 
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [singleGames, setSingleGames] = useState<DirectorGameRow[]>([]);
@@ -131,18 +134,16 @@ function DirectorHome() {
         return;
       }
 
-      // Fallback for pg_cron: auto-completes games 24h past their end, then
-      // auto-pays freshly-completed games if a card is on file.
-      void supabase.rpc("sweep_game_lifecycle").then(() => {
-        void runAutoPay().then(({ result }) => {
-          if (cancelled || !result || result.paid.length === 0) return;
-          const total = result.paid.reduce((s, p) => s + p.total, 0);
-          setAutoPayNote(
-            `${result.paid.length} completed game${
-              result.paid.length !== 1 ? "s" : ""
-            } charged ($${total} total) and referees paid.`
-          );
-        });
+      // Games auto-complete on the hourly sweep-game-lifecycle job; this only
+      // pays games from before charge-at-booking that finished since last visit.
+      void runAutoPay().then(({ result }) => {
+        if (cancelled || !result || result.paid.length === 0) return;
+        const total = result.paid.reduce((s, p) => s + p.total, 0);
+        setAutoPayNote(
+          `${result.paid.length} completed game${
+            result.paid.length !== 1 ? "s" : ""
+          } charged ($${total} total) and referees paid.`
+        );
       });
 
       const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }] =
@@ -385,6 +386,29 @@ function DirectorHome() {
         </div>
       ) : tab === "games" ? (
         <div className="px-5 sm:px-0" role="tabpanel">
+          {(() => {
+            const added = addedId ? singleGames.find((g) => g.id === addedId) : undefined;
+            if (!added) return null;
+            return (
+              <div
+                role="status"
+                className="mb-3 border border-court bg-court/10 px-4 py-3"
+              >
+                <span
+                  className="block font-mono-bold text-[10px] uppercase text-court"
+                  style={{ letterSpacing: 1.5 }}
+                >
+                  Game posted{addedCharged ? " · card charged" : ""}
+                </span>
+                <span
+                  className="mt-0.5 block truncate font-mono text-[10px] uppercase text-ink-80"
+                  style={{ letterSpacing: 1 }}
+                >
+                  {added.title} · {formatGameWhen(added.starts_at)}
+                </span>
+              </div>
+            );
+          })()}
           {singleGames.length === 0 ? (
             <SingleGamesEmpty />
           ) : (
@@ -399,7 +423,7 @@ function DirectorHome() {
               ) : (
                 <div className="card-grid">
                   {activeGames.map((g) => (
-                    <SingleGameCard key={g.id} game={g} />
+                    <SingleGameCard key={g.id} game={g} highlight={g.id === addedId} />
                   ))}
                 </div>
               )}
@@ -762,7 +786,15 @@ const PAYOUT_TONE: Record<PayoutTone, string> = {
   none: "border-ink-20 text-ink-40",
 };
 
-function SingleGameCard({ game, archived }: { game: DirectorGameRow; archived?: boolean }) {
+function SingleGameCard({
+  game,
+  archived,
+  highlight,
+}: {
+  game: DirectorGameRow;
+  archived?: boolean;
+  highlight?: boolean;
+}) {
   const display = gameStatusDisplay(game);
   const payout = archived ? payoutDisplay(game) : null;
   const title =
@@ -770,7 +802,9 @@ function SingleGameCard({ game, archived }: { game: DirectorGameRow; archived?: 
   return (
     <Link
       href={`/director/game/${game.id}`}
-      className={`block border bg-chalk hover:opacity-75 ${archived ? "border-ink-20" : "border-ink"}`}
+      className={`block border bg-chalk hover:opacity-75 ${
+        highlight ? "border-signal ring-2 ring-signal" : archived ? "border-ink-20" : "border-ink"
+      }`}
     >
       <div className="h-1" style={{ backgroundColor: display.accent }} />
       <div className="px-4 pb-3 pt-3">

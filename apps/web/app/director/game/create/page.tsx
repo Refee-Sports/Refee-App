@@ -31,6 +31,8 @@ import {
   LEVELS,
   QUARTER_MINUTES,
   RULESETS,
+  TEAM_LEVELS,
+  YOUTH_AGE_GROUPS,
 } from "@/lib/basketball/options";
 import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
@@ -71,6 +73,8 @@ function CreateGameInner() {
   const tournamentId = params.get("tournamentId");
   const editId = params.get("editId");
   const copyFromId = params.get("copyFromId");
+  // "Add next game" from the tournament page: copy the last game, same date.
+  const keepDate = params.get("next") === "1";
   const isEdit = !!editId;
 
   const [loading, setLoading] = useState(false);
@@ -92,12 +96,17 @@ function CreateGameInner() {
     gameFormat: "" as "" | "quarters" | "halves",
     periodMinutes: "",
     venueName: "",
+    venueAddress: "",
+    venueZip: "",
     venueCity: "",
     venueState: "",
+    court: "",
+    arrivalNotes: "",
     uniformRequirements: "",
     hirerNote: "",
     autoAccept: false,
     ageGroup: "",
+    teamLevel: "",
     ruleset: "",
     rulesetModifications: "",
   });
@@ -118,6 +127,13 @@ function CreateGameInner() {
           gameFormat: (f.gameFormat || t.game_format || "") as "" | "quarters" | "halves",
           periodMinutes: f.periodMinutes || (t.period_minutes ? String(t.period_minutes) : ""),
           uniformRequirements: f.uniformRequirements || t.uniform_requirements || "",
+          // The tournament's venue, entered once, carries to every game.
+          venueName: f.venueName || t.venue_name || "",
+          venueAddress: f.venueAddress || t.venue_address || "",
+          venueZip: f.venueZip || t.venue_zip || "",
+          venueCity: f.venueCity || t.venue_city || "",
+          venueState: f.venueState || t.venue_state || "",
+          arrivalNotes: f.arrivalNotes || t.arrival_notes || "",
         }));
       }
     })();
@@ -140,7 +156,7 @@ function CreateGameInner() {
         level: game.level ?? "",
         crewSize: (game.crew_size === 3 ? 3 : 2) as 2 | 3,
         payPerGame: String(game.pay_per_game ?? ""),
-        gameDate: isEdit
+        gameDate: isEdit || keepDate
           ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
           : "",
         gameTime: isEdit ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : "",
@@ -149,15 +165,20 @@ function CreateGameInner() {
         venueName: game.venue_name ?? "",
         venueCity: game.venue_city ?? "",
         venueState: game.venue_state ?? "",
+        venueAddress: game.venue_address ?? "",
+        venueZip: game.venue_zip ?? "",
+        court: game.court ?? "",
+        arrivalNotes: game.arrival_notes ?? "",
         uniformRequirements: game.uniform_requirements ?? "",
         hirerNote: game.hirer_note ?? "",
         autoAccept: !!game.auto_accept,
         ageGroup: game.age_group ?? "",
+        teamLevel: game.team_level ?? "",
         ruleset: game.ruleset ?? "",
         rulesetModifications: game.ruleset_modifications ?? "",
       }));
     })();
-  }, [editId, copyFromId, isEdit]);
+  }, [editId, copyFromId, isEdit, keepDate]);
 
   const set = (key: keyof typeof form) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
@@ -176,6 +197,8 @@ function CreateGameInner() {
     form.gameDate.length === 10 &&
     form.gameTime.length >= 4 &&
     form.venueName.trim().length >= 1 &&
+    form.venueAddress.trim().length >= 3 &&
+    (form.venueZip === "" || /^\d{5}$/.test(form.venueZip)) &&
     form.venueCity.trim().length >= 1 &&
     form.uniformRequirements.trim().length >= 1 &&
     US_STATES.includes(form.venueState.toUpperCase());
@@ -216,12 +239,18 @@ function CreateGameInner() {
       gameFormat: form.gameFormat || undefined,
       periodMinutes: periodMin,
       venueName: form.venueName.trim(),
+      venueAddress: form.venueAddress.trim(),
+      venueZip: form.venueZip.trim(),
       venueCity: form.venueCity.trim(),
       venueState: form.venueState.trim().toUpperCase(),
+      court: form.court.trim(),
+      arrivalNotes: form.arrivalNotes.trim(),
       uniformRequirements: form.uniformRequirements.trim() || undefined,
       hirerNote: form.hirerNote.trim() || undefined,
       autoAccept: form.autoAccept,
-      ageGroup: form.ageGroup.trim() || undefined,
+      // Youth games carry an age bracket; high school a team level; others neither.
+      ageGroup: ageRequired ? form.ageGroup.trim() || undefined : undefined,
+      teamLevel: form.level === "high_school" ? form.teamLevel : "",
       ruleset: form.ruleset,
       rulesetModifications: form.rulesetModifications.trim() || undefined,
     };
@@ -276,9 +305,19 @@ function CreateGameInner() {
       setLoading(false);
       return;
     }
-    const flag =
-      result.status === "prepaid" ? "charged" : result.status === "failed" ? "failed" : null;
-    router.replace(`/director/game/${gameId}${flag ? `?payment=${flag}` : ""}`);
+    if (result.status === "failed") {
+      // A declined card needs the director on the game itself to retry.
+      router.replace(`/director/game/${gameId}?payment=failed`);
+      return;
+    }
+    // Back to where the director was working — the tournament's game list or
+    // the Single games tab — with the new game highlighted.
+    const charged = result.status === "prepaid" ? "&charged=1" : "";
+    router.replace(
+      tournamentId
+        ? `/director/tournament/${tournamentId}?added=${gameId}${charged}`
+        : `/director/tournaments?tab=games&added=${gameId}${charged}`
+    );
   };
 
   // What booking this game will charge. Mirrors the backend's prepayQuote:
@@ -343,14 +382,35 @@ function CreateGameInner() {
             />
           ))}
         </ChipRow>
-        <Label className="mt-4">{`Age group ${ageRequired ? "*" : "(optional)"}`}</Label>
-        <TextField
-          value={form.ageGroup}
-          onChange={(e) => set("ageGroup")(e.target.value)}
-          placeholder={
-            ageRequired ? "e.g. U14, U16 — required for this level" : "e.g. U14, U16, Adult"
-          }
-        />
+        {ageRequired ? (
+          <>
+            <Label className="mt-4">Age group *</Label>
+            <ChipRow>
+              {YOUTH_AGE_GROUPS.map((g) => (
+                <Chip
+                  key={g}
+                  label={g}
+                  selected={form.ageGroup === g}
+                  onClick={() => set("ageGroup")(g)}
+                />
+              ))}
+            </ChipRow>
+          </>
+        ) : form.level === "high_school" ? (
+          <>
+            <Label className="mt-4">Team level (optional)</Label>
+            <ChipRow>
+              {TEAM_LEVELS.map((t) => (
+                <Chip
+                  key={t.id}
+                  label={t.label}
+                  selected={form.teamLevel === t.id}
+                  onClick={() => set("teamLevel")(form.teamLevel === t.id ? "" : t.id)}
+                />
+              ))}
+            </ChipRow>
+          </>
+        ) : null}
         <Label className="mt-4">Ruleset *</Label>
         <ChipRow>
           {RULESETS.map((r) => (
@@ -506,7 +566,13 @@ function CreateGameInner() {
         <TextField
           value={form.venueName}
           onChange={(e) => set("venueName")(e.target.value)}
-          placeholder="Austin Rec Center – Court A"
+          placeholder="e.g. Adelphi University"
+        />
+        <Label className="mt-4">Street address *</Label>
+        <TextField
+          value={form.venueAddress}
+          onChange={(e) => set("venueAddress")(e.target.value)}
+          placeholder="e.g. 1 South Ave"
         />
         <Label className="mt-4">City *</Label>
         <TextField
@@ -522,6 +588,52 @@ function CreateGameInner() {
           maxLength={2}
           error={form.venueState.length === 2 && !stateValid ? "Invalid state code" : undefined}
         />
+        <Label className="mt-4">ZIP</Label>
+        <TextField
+          value={form.venueZip}
+          onChange={(e) => set("venueZip")(e.target.value.replace(/\D/g, "").slice(0, 5))}
+          placeholder="11530"
+          maxLength={5}
+          error={form.venueZip !== "" && form.venueZip.length !== 5 ? "5-digit ZIP" : undefined}
+        />
+        <p
+          className="mt-1.5 font-mono text-[9px] uppercase text-ink-40"
+          style={{ letterSpacing: 1 }}
+        >
+          Refs get this address as a map pin in Apple or Google Maps.
+        </p>
+
+        <Label className="mt-4">Court or gym (optional)</Label>
+        {tournament?.courts?.length ? (
+          <ChipRow>
+            {tournament.courts.map((c) => (
+              <Chip
+                key={c}
+                label={c.toUpperCase()}
+                selected={form.court === c}
+                onClick={() => set("court")(form.court === c ? "" : c)}
+              />
+            ))}
+          </ChipRow>
+        ) : null}
+        <TextField
+          value={form.court}
+          onChange={(e) => set("court")(e.target.value)}
+          placeholder="e.g. Main floor, Aux gym · Court 2"
+        />
+        <Label className="mt-4">Arrival notes (optional)</Label>
+        <TextArea
+          value={form.arrivalNotes}
+          onChange={(e) => set("arrivalNotes")(e.target.value.slice(0, 280))}
+          placeholder="e.g. Doors 1:00 PM. Park in Lot 1 and check in at the scorer's table."
+          rows={2}
+        />
+        <p
+          className="mt-1.5 font-mono text-[9px] uppercase text-ink-40"
+          style={{ letterSpacing: 1 }}
+        >
+          {form.arrivalNotes.length}/280 · shown to your crew above the map
+        </p>
 
         <SectionLabel className="mt-7">Requirements &amp; notes</SectionLabel>
         {/* Uniform is inherited from the tournament; only editable standalone. */}

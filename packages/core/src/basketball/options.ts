@@ -17,8 +17,19 @@ export const LEVELS = [
   { id: "pro_am", label: "PRO-AM" },
 ];
 
-/** Levels that require an age group (youth/high-school divisions). */
-export const AGE_REQUIRED_LEVELS = ["youth_rec", "high_school"];
+/** Levels that require an age group. High school uses a team level instead:
+ *  a varsity game spans grades 9–12, so an age bracket means nothing there. */
+export const AGE_REQUIRED_LEVELS = ["youth_rec"];
+
+/** Age brackets for youth / rec games. */
+export const YOUTH_AGE_GROUPS = ["U8", "U9", "U10", "U11", "U12", "U13", "U14", "U15", "U16", "U17", "U18"];
+
+/** High school team levels (stored in jobs.team_level). */
+export const TEAM_LEVELS = [
+  { id: "varsity", label: "VARSITY" },
+  { id: "jv", label: "JV" },
+  { id: "freshman", label: "FRESHMAN" },
+];
 
 export const QUARTER_MINUTES = ["6", "7", "8", "9", "10", "12"];
 export const HALF_MINUTES = ["14", "16", "18", "20", "24"];

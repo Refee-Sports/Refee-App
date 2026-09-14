@@ -56,6 +56,10 @@ function CreateTournamentInner() {
     venueName: "",
     venueCity: "",
     venueState: "",
+    venueAddress: "",
+    venueZip: "",
+    courts: "",
+    arrivalNotes: "",
     ruleset: "",
     rulesetModifications: "",
     gameFormat: "" as "" | "quarters" | "halves",
@@ -76,6 +80,10 @@ function CreateTournamentInner() {
         venueName: t.venue_name ?? "",
         venueCity: t.venue_city,
         venueState: t.venue_state,
+        venueAddress: t.venue_address ?? "",
+        venueZip: t.venue_zip ?? "",
+        courts: (t.courts ?? []).join("\n"),
+        arrivalNotes: t.arrival_notes ?? "",
         ruleset: t.ruleset ?? "",
         rulesetModifications: t.ruleset_modifications ?? "",
         gameFormat: (t.game_format ?? "") as "" | "quarters" | "halves",
@@ -94,6 +102,8 @@ function CreateTournamentInner() {
     form.startsOn.trim().length >= 1 &&
     form.endsOn.trim().length >= 1 &&
     form.venueName.trim().length >= 1 &&
+    form.venueAddress.trim().length >= 3 &&
+    (form.venueZip === "" || /^\d{5}$/.test(form.venueZip)) &&
     form.venueCity.trim().length >= 1 &&
     !!form.ruleset &&
     !!form.gameFormat &&
@@ -129,6 +139,13 @@ function CreateTournamentInner() {
       venueName: form.venueName.trim(),
       venueCity: form.venueCity.trim(),
       venueState: form.venueState.trim().toUpperCase(),
+      venueAddress: form.venueAddress.trim(),
+      venueZip: form.venueZip.trim(),
+      courts: form.courts
+        .split("\n")
+        .map((c) => c.trim())
+        .filter(Boolean),
+      arrivalNotes: form.arrivalNotes.trim(),
       ruleset: form.ruleset,
       rulesetModifications: form.rulesetModifications.trim() || undefined,
       gameFormat: (form.gameFormat || undefined) as "quarters" | "halves" | undefined,
@@ -260,11 +277,23 @@ function CreateTournamentInner() {
         />
 
         <SectionLabel className="mt-7">Venue</SectionLabel>
-        <Label>Venue name</Label>
+        <p
+          className="mb-3 font-mono text-[9px] uppercase text-ink-40"
+          style={{ letterSpacing: 1 }}
+        >
+          Entered once — every game in the tournament starts with it.
+        </p>
+        <Label>Venue name *</Label>
         <TextField
           value={form.venueName}
           onChange={(e) => set("venueName")(e.target.value)}
-          placeholder="e.g. Austin Recreation Center"
+          placeholder="e.g. Adelphi University"
+        />
+        <Label className="mt-4">Street address *</Label>
+        <TextField
+          value={form.venueAddress}
+          onChange={(e) => set("venueAddress")(e.target.value)}
+          placeholder="e.g. 1 South Ave"
         />
         <Label className="mt-4">City *</Label>
         <TextField
@@ -280,6 +309,35 @@ function CreateTournamentInner() {
           maxLength={2}
           error={form.venueState.length === 2 && !stateValid ? "Invalid state code" : undefined}
         />
+        <Label className="mt-4">ZIP</Label>
+        <TextField
+          value={form.venueZip}
+          onChange={(e) => set("venueZip")(e.target.value.replace(/\D/g, "").slice(0, 5))}
+          placeholder="11530"
+          maxLength={5}
+          error={form.venueZip !== "" && form.venueZip.length !== 5 ? "5-digit ZIP" : undefined}
+        />
+
+        <Label className="mt-4">Courts or gyms (optional, one per line)</Label>
+        <TextArea
+          value={form.courts}
+          onChange={(e) => set("courts")(e.target.value)}
+          placeholder={"Main floor\nAux gym · Court 2"}
+          rows={3}
+        />
+        <Label className="mt-4">Arrival notes (optional)</Label>
+        <TextArea
+          value={form.arrivalNotes}
+          onChange={(e) => set("arrivalNotes")(e.target.value.slice(0, 280))}
+          placeholder="e.g. Doors 1:00 PM. Park in Lot 1 and check in at the scorer's table."
+          rows={2}
+        />
+        <p
+          className="mt-1.5 font-mono text-[9px] uppercase text-ink-40"
+          style={{ letterSpacing: 1 }}
+        >
+          {form.arrivalNotes.length}/280 · shown to every crew above the map
+        </p>
       </div>
 
       <div className="action-bar sticky bottom-0">

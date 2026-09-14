@@ -162,9 +162,6 @@ export default function Home() {
         if (!session || cancelled) return;
         const uid = session.user.id;
 
-        // Fallback for pg_cron: auto-completes games 24h past their end
-        void supabase.rpc("sweep_game_lifecycle");
-
         const [profileRes, assignRes, earningsRes, rosterRes] = await Promise.all([
           fetchMyProfile(uid),
           fetchMyAssignments(uid),

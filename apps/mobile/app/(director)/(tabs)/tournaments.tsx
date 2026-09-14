@@ -51,18 +51,16 @@ export default function TournamentsScreen() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); setRefreshing(false); return; }
 
-    // Fallback for pg_cron: auto-completes games 24h past their end,
-    // then auto-pays any freshly-completed games if a card is on file
-    void supabase.rpc("sweep_game_lifecycle").then(() => {
-      void runAutoPay().then(({ result }) => {
-        if (result && result.paid.length > 0) {
-          const total = result.paid.reduce((s, p) => s + p.total, 0);
-          Alert.alert(
-            "Crews paid automatically",
-            `${result.paid.length} completed game${result.paid.length !== 1 ? "s" : ""} charged ($${total} total) and referees paid.`
-          );
-        }
-      });
+    // Games auto-complete on the hourly sweep-game-lifecycle job; this only
+    // pays games from before charge-at-booking that finished since last visit.
+    void runAutoPay().then(({ result }) => {
+      if (result && result.paid.length > 0) {
+        const total = result.paid.reduce((s, p) => s + p.total, 0);
+        Alert.alert(
+          "Crews paid automatically",
+          `${result.paid.length} completed game${result.paid.length !== 1 ? "s" : ""} charged ($${total} total) and referees paid.`
+        );
+      }
     });
 
     const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }] = await Promise.all([

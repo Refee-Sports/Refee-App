@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { DataCard } from "./DataCard";
-import { openVenueDirections } from "@/lib/jobs/open-directions";
+import { appleMapsUrl, googleMapsUrl } from "@/lib/jobs/open-directions";
 import type { AssignmentStatus, CrewProfile } from "@/lib/jobs/queries";
 import type { JobDetail } from "@/lib/jobs/types";
 
@@ -229,35 +230,96 @@ function MapGrid() {
 }
 
 export function JobDetailMapCard({ job }: { job: JobDetail }) {
+  const [copied, setCopied] = useState(false);
+  const venue = {
+    name: job.venueName,
+    address: job.venueFullAddress ?? job.venueAddress,
+    lat: job.venueLat,
+    lng: job.venueLng,
+  };
+  const copyText = job.venueFullAddress
+    ? `${job.venueName}, ${job.venueFullAddress}`
+    : `${job.venueName}, ${job.venueAddress ?? ""}`;
+
+  const copyAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard blocked — the address is on screen to copy by hand */
+    }
+  };
+
+  const action =
+    "flex flex-1 items-center justify-center px-2 py-3 font-mono-bold text-[9px] uppercase hover:opacity-80";
+
   return (
     <DataCard tab="LOCATION" className="overflow-hidden">
       <div className="relative mt-2 h-[140px] border-b border-ink bg-paper-2">
         <MapGrid />
       </div>
-      <div className="flex items-center justify-between px-3.5 py-3">
-        <div className="min-w-0 flex-1 pr-2">
-          <span
-            className="block font-mono-bold text-[10px] uppercase text-ink"
-            style={{ letterSpacing: 1.2 }}
-          >
-            {job.venueName}
-          </span>
-          {job.venueAddress ? (
+      <div className="px-3.5 py-3">
+        <span
+          className="block font-mono-bold text-[11px] uppercase text-ink"
+          style={{ letterSpacing: 1.2 }}
+        >
+          {job.venueName}
+          {job.court ? (
             <span
-              className="mt-0.5 block font-mono text-[9px] uppercase text-ink-60"
-              style={{ letterSpacing: 1 }}
+              className="ml-2 inline-block bg-hi-vis px-1.5 py-0.5 align-[1px] text-[9px] text-ink"
+              style={{ letterSpacing: 1.2 }}
             >
-              {job.venueAddress}
+              {job.court.toUpperCase()}
             </span>
           ) : null}
+        </span>
+        {job.venueAddress ? (
+          <span
+            className="mt-1 block font-mono text-[10px] uppercase text-ink-60"
+            style={{ letterSpacing: 1 }}
+          >
+            {job.venueAddress}
+          </span>
+        ) : null}
+      </div>
+      {job.arrivalNotes ? (
+        <div className="mx-3.5 mb-3 border-l-[3px] border-whistle bg-whistle/10 px-3 py-2">
+          <span
+            className="mb-0.5 block font-mono-bold text-[8px] uppercase text-ink-60"
+            style={{ letterSpacing: 1.6 }}
+          >
+            Arrival
+          </span>
+          <span className="block text-[12px] leading-5 text-ink">{job.arrivalNotes}</span>
         </div>
+      ) : null}
+      <div className="flex border-t border-ink">
+        <a
+          href={appleMapsUrl(venue)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${action} bg-ink text-paper`}
+          style={{ letterSpacing: 1.4 }}
+        >
+          Apple Maps
+        </a>
+        <a
+          href={googleMapsUrl(venue)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${action} border-l border-ink text-ink`}
+          style={{ letterSpacing: 1.4 }}
+        >
+          Google Maps
+        </a>
         <button
           type="button"
-          onClick={() => openVenueDirections(job.venueName, job.venueAddress)}
-          className="shrink-0 font-mono-bold text-[9px] uppercase text-signal hover:underline"
-          style={{ letterSpacing: 1.6 }}
+          onClick={() => void copyAddress()}
+          className={`${action} border-l border-ink text-ink-60`}
+          style={{ letterSpacing: 1.4 }}
         >
-          Directions →
+          {copied ? "Copied ✓" : "Copy address"}
         </button>
       </div>
     </DataCard>

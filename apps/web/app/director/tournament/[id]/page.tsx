@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { gameStatusDisplay } from "@/lib/director/game-status";
 import { useRouter } from "next/navigation";
-import { use, useCallback, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
@@ -43,6 +43,15 @@ export default function TournamentDetailPage({
   const [games, setGames] = useState<DirectorGameRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Set when the director lands here straight after adding a game.
+  const [addedId, setAddedId] = useState<string | null>(null);
+  const [addedCharged, setAddedCharged] = useState(false);
+
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    setAddedId(sp.get("added"));
+    setAddedCharged(sp.get("charged") === "1");
+  }, []);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -139,6 +148,25 @@ export default function TournamentDetailPage({
           {fmt(tournament.starts_on, { month: "short", day: "numeric" })}–
           {fmt(tournament.ends_on, { month: "short", day: "numeric", year: "numeric" })}
         </p>
+        {tournament.venue_address ? (
+          <p
+            className="mt-1 font-mono text-[10px] uppercase text-ink-60"
+            style={{ letterSpacing: 1.2 }}
+          >
+            {[tournament.venue_name, tournament.venue_address].filter(Boolean).join(" · ")}
+            {tournament.courts?.length
+              ? ` · ${tournament.courts.length} court${tournament.courts.length !== 1 ? "s" : ""}`
+              : ""}
+          </p>
+        ) : (
+          <Link
+            href={`/director/tournament/create?editId=${id}`}
+            className="mt-2 inline-block border border-whistle bg-whistle/15 px-2.5 py-1.5 font-mono-bold text-[9px] uppercase text-ink hover:opacity-80"
+            style={{ letterSpacing: 1.3 }}
+          >
+            Add the venue&apos;s street address so refs get a map pin →
+          </Link>
+        )}
       </div>
       <div className="my-3 px-5">
         <ZebraRule thin noMargin />
@@ -172,6 +200,48 @@ export default function TournamentDetailPage({
         </Link>
       </div>
 
+      {(() => {
+        const added = addedId ? games.find((g) => g.id === addedId) : undefined;
+        if (!added) return null;
+        return (
+          <div
+            role="status"
+            className="mx-5 mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 border border-court bg-court/10 px-4 py-3 sm:mx-0"
+          >
+            <span className="min-w-0 flex-1">
+              <span
+                className="block font-mono-bold text-[10px] uppercase text-court"
+                style={{ letterSpacing: 1.5 }}
+              >
+                Game added{addedCharged ? " · card charged" : ""}
+              </span>
+              <span
+                className="mt-0.5 block truncate font-mono text-[10px] uppercase text-ink-80"
+                style={{ letterSpacing: 1 }}
+              >
+                {added.title} · {fmtTime(added.starts_at)}
+                {added.court ? ` · ${added.court}` : ""}
+              </span>
+            </span>
+            <Link
+              href={`/director/game/create?tournamentId=${id}&copyFromId=${added.id}&next=1`}
+              className="bg-ink px-3 py-2 font-mono-bold text-[9px] uppercase text-paper hover:opacity-80"
+              style={{ letterSpacing: 1.5 }}
+            >
+              Add next game →
+            </Link>
+            <button
+              type="button"
+              onClick={() => setAddedId(null)}
+              aria-label="Dismiss"
+              className="text-ink-60 hover:text-ink"
+            >
+              <Icon name="x" size={14} />
+            </button>
+          </div>
+        );
+      })()}
+
       {games.length === 0 ? (
         <div className="mx-5 sm:mx-0 flex items-center justify-center border border-dashed border-ink-20 px-5 py-8">
           <p
@@ -184,7 +254,12 @@ export default function TournamentDetailPage({
       ) : (
         <div>
           {games.map((item) => (
-            <div key={item.id} className="mx-5 sm:mx-0 mb-2 border border-ink bg-chalk">
+            <div
+              key={item.id}
+              className={`mx-5 sm:mx-0 mb-2 border bg-chalk ${
+                item.id === addedId ? "border-signal ring-2 ring-signal" : "border-ink"
+              }`}
+            >
               <div className="h-1" style={{ backgroundColor: gameStatusDisplay(item).accent }} />
               <Link href={`/director/game/${item.id}`} className="block hover:opacity-75">
                 <div className="px-4 pb-3 pt-3.5">
@@ -201,7 +276,10 @@ export default function TournamentDetailPage({
                     className="block font-mono text-[10px] uppercase text-ink-60"
                     style={{ letterSpacing: 1 }}
                   >
-                    {fmtTime(item.starts_at)} · {item.venue_city.toUpperCase()}, {item.venue_state}
+                    {fmtTime(item.starts_at)} ·{" "}
+                    {item.court
+                      ? item.court.toUpperCase()
+                      : `${item.venue_city.toUpperCase()}, ${item.venue_state}`}
                   </span>
                 </div>
               </Link>

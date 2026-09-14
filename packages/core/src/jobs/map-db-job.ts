@@ -21,6 +21,10 @@ export type JobDbRow = {
   venue_state: string;
   venue_lat: number | null;
   venue_lng: number | null;
+  venue_zip?: string | null;
+  court?: string | null;
+  arrival_notes?: string | null;
+  team_level?: string | null;
   pay_per_game: number;
   num_games: number;
   payout_window_hours: number | null;
@@ -162,9 +166,12 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
   const variant = listVariant(row);
   const slotsOpen = row.crew_size;
 
-  const line =
-    row.venue_address?.toUpperCase() ??
-    `${row.venue_city}, ${row.venue_state}`.toUpperCase();
+  // Full street address when the organizer gave one; the city otherwise.
+  const street = row.venue_address?.trim() || null;
+  const fullAddress = street
+    ? `${street}, ${row.venue_city}, ${row.venue_state}${row.venue_zip ? ` ${row.venue_zip}` : ""}`
+    : null;
+  const line = (fullAddress ?? `${row.venue_city}, ${row.venue_state}`).toUpperCase();
 
   return {
     id: row.id,
@@ -188,9 +195,14 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
     whereTertiary: line,
     venueName: row.venue_name.toUpperCase(),
     venueAddress: line,
+    venueFullAddress: fullAddress,
+    venueLat: row.venue_lat,
+    venueLng: row.venue_lng,
+    court: row.court ?? null,
+    arrivalNotes: row.arrival_notes ?? null,
     crewSize: row.crew_size,
     sportLabel: row.sport_id.replace("_", " ").toUpperCase(),
-    levelLabel: [row.level, row.age_group, row.gender]
+    levelLabel: [row.level, row.team_level, row.age_group, row.gender]
       .filter(Boolean)
       .join(" · ")
       .replace(/_/g, " ")

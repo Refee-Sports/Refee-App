@@ -28,6 +28,13 @@ export type TournamentRow = {
   venue_city: string;
   venue_state: string;
   timezone: string;
+  venue_address: string | null;
+  venue_zip: string | null;
+  venue_lat: number | null;
+  venue_lng: number | null;
+  /** Courts or gyms at the venue; games pick one. */
+  courts: string[];
+  arrival_notes: string | null;
   status: string;
   staffing_model: string;
   pay_per_game: number | null;
@@ -56,6 +63,13 @@ export type DirectorGameRow = {
   venue_name: string;
   venue_city: string;
   venue_state: string;
+  venue_address?: string | null;
+  venue_zip?: string | null;
+  venue_lat?: number | null;
+  venue_lng?: number | null;
+  court?: string | null;
+  arrival_notes?: string | null;
+  team_level?: string | null;
   pay_per_game: number;
   crew_size: number;
   status: string;
@@ -213,6 +227,11 @@ export async function createTournament(
     venueState: string;
     /** IANA zone for the schedule; the column defaults to America/Chicago. */
     timezone?: string;
+    venueAddress?: string;
+    venueZip?: string;
+    /** Courts or gyms at the venue, e.g. ["Main floor", "Aux gym · Court 2"]. */
+    courts?: string[];
+    arrivalNotes?: string;
     ruleset?: string;
     rulesetModifications?: string;
     gameFormat?: "quarters" | "halves";
@@ -220,6 +239,9 @@ export async function createTournament(
     uniformRequirements?: string;
   }
 ): Promise<{ tournamentId: string | null; error: Error | null }> {
+  const coords = args.venueAddress?.trim()
+    ? await geocodeAddress(venueQuery({ ...args, venueCity: args.venueCity, venueState: args.venueState }))
+    : null;
   const { data, error } = await supabase
     .from("tournaments")
     .insert({
@@ -233,6 +255,12 @@ export async function createTournament(
       venue_city: args.venueCity,
       venue_state: args.venueState,
       ...(args.timezone ? { timezone: args.timezone } : {}),
+      ...(args.venueAddress !== undefined
+        ? { venue_address: args.venueAddress.trim() || null, venue_zip: args.venueZip?.trim() || null,
+            venue_lat: coords?.lat ?? null, venue_lng: coords?.lng ?? null }
+        : {}),
+      ...(args.courts !== undefined ? { courts: args.courts } : {}),
+      ...(args.arrivalNotes !== undefined ? { arrival_notes: args.arrivalNotes.trim() || null } : {}),
       ruleset: args.ruleset || null,
       ruleset_modifications: args.rulesetModifications || null,
       game_format: args.gameFormat ?? null,
@@ -305,6 +333,15 @@ export type CreateGameArgs = {
   venueName: string;
   venueCity: string;
   venueState: string;
+  /** Street line, e.g. "1 South Ave". Geocoded with city/state/ZIP for the map pin. */
+  venueAddress?: string;
+  venueZip?: string;
+  /** Which court or gym at the venue. */
+  court?: string;
+  /** Entrance, parking, doors time, check-in (max 280). */
+  arrivalNotes?: string;
+  /** High school only: varsity | jv | freshman. */
+  teamLevel?: string;
   uniformRequirements?: string;
   hirerNote?: string;
   autoAccept?: boolean;
@@ -316,6 +353,15 @@ export type CreateGameArgs = {
   rulesetModifications?: string;
 };
 
+/** What the geocoder gets: the full street address when there is one, else the city. */
+function venueQuery(v: { venueAddress?: string; venueZip?: string; venueCity: string; venueState: string }): string {
+  const street = v.venueAddress?.trim();
+  const zip = v.venueZip?.trim();
+  return street
+    ? `${street}, ${v.venueCity}, ${v.venueState}${zip ? ` ${zip}` : ""}, USA`
+    : `${v.venueCity}, ${v.venueState}, USA`;
+}
+
 /** Creates a game. Pass tournamentId = null for a standalone single game. */
 export async function createGame(
   hirerId: string,
@@ -323,7 +369,7 @@ export async function createGame(
   args: CreateGameArgs
 ): Promise<{ gameId: string | null; error: Error | null }> {
   // Geocode the venue for distance-based feed filtering (best-effort).
-  const coords = await geocodeAddress(`${args.venueCity}, ${args.venueState}, USA`);
+  const coords = await geocodeAddress(venueQuery(args));
 
   const { data, error } = await supabase
     .from("jobs")
@@ -342,6 +388,11 @@ export async function createGame(
       venue_name: args.venueName,
       venue_city: args.venueCity,
       venue_state: args.venueState,
+      venue_address: args.venueAddress?.trim() || null,
+      venue_zip: args.venueZip?.trim() || null,
+      court: args.court?.trim() || null,
+      arrival_notes: args.arrivalNotes?.trim() || null,
+      team_level: args.teamLevel || null,
       venue_lat: coords?.lat ?? null,
       venue_lng: coords?.lng ?? null,
       uniform_requirements: args.uniformRequirements || null,
@@ -677,6 +728,15 @@ export type GameUpdateArgs = {
   venueName: string;
   venueCity: string;
   venueState: string;
+  /** Street line, e.g. "1 South Ave". Geocoded with city/state/ZIP for the map pin. */
+  venueAddress?: string;
+  venueZip?: string;
+  /** Which court or gym at the venue. */
+  court?: string;
+  /** Entrance, parking, doors time, check-in (max 280). */
+  arrivalNotes?: string;
+  /** High school only: varsity | jv | freshman. */
+  teamLevel?: string;
   uniformRequirements?: string;
   hirerNote?: string;
   autoAccept?: boolean;
@@ -699,16 +759,20 @@ export async function updateGame(
 ): Promise<{ error: Error | null; refsNeedReconfirm: boolean }> {
   const { data: before, error: beforeErr } = await supabase
     .from("jobs")
-    .select("starts_at, venue_name, venue_city, venue_state, pay_per_game")
+    .select("starts_at, venue_name, venue_city, venue_state, venue_address, venue_zip, pay_per_game")
     .eq("id", gameId)
     .maybeSingle();
   if (beforeErr) return { error: new Error(beforeErr.message), refsNeedReconfirm: false };
 
   // Re-geocode only if the location changed
   const locationChanged =
-    !before || before.venue_city !== args.venueCity || before.venue_state !== args.venueState;
+    !before ||
+    before.venue_city !== args.venueCity ||
+    before.venue_state !== args.venueState ||
+    (args.venueAddress !== undefined && (before.venue_address ?? "") !== args.venueAddress.trim()) ||
+    (args.venueZip !== undefined && (before.venue_zip ?? "") !== args.venueZip.trim());
   const coords = locationChanged
-    ? await geocodeAddress(`${args.venueCity}, ${args.venueState}, USA`)
+    ? await geocodeAddress(venueQuery(args))
     : null;
 
   const { error } = await supabase
@@ -725,6 +789,11 @@ export async function updateGame(
       venue_name: args.venueName,
       venue_city: args.venueCity,
       venue_state: args.venueState,
+      ...(args.venueAddress !== undefined ? { venue_address: args.venueAddress.trim() || null } : {}),
+      ...(args.venueZip !== undefined ? { venue_zip: args.venueZip.trim() || null } : {}),
+      ...(args.court !== undefined ? { court: args.court.trim() || null } : {}),
+      ...(args.arrivalNotes !== undefined ? { arrival_notes: args.arrivalNotes.trim() || null } : {}),
+      ...(args.teamLevel !== undefined ? { team_level: args.teamLevel || null } : {}),
       ...(locationChanged ? { venue_lat: coords?.lat ?? null, venue_lng: coords?.lng ?? null } : {}),
       uniform_requirements: args.uniformRequirements || null,
       hirer_note: args.hirerNote || null,
@@ -792,6 +861,11 @@ export async function updateTournament(
     venueState: string;
     /** IANA zone for the schedule; the column defaults to America/Chicago. */
     timezone?: string;
+    venueAddress?: string;
+    venueZip?: string;
+    /** Courts or gyms at the venue, e.g. ["Main floor", "Aux gym · Court 2"]. */
+    courts?: string[];
+    arrivalNotes?: string;
     ruleset?: string;
     rulesetModifications?: string;
     gameFormat?: "quarters" | "halves";
@@ -799,6 +873,9 @@ export async function updateTournament(
     uniformRequirements?: string;
   }
 ): Promise<{ error: Error | null }> {
+  const coords = args.venueAddress?.trim()
+    ? await geocodeAddress(venueQuery({ ...args, venueCity: args.venueCity, venueState: args.venueState }))
+    : null;
   const { error } = await supabase
     .from("tournaments")
     .update({
@@ -810,6 +887,12 @@ export async function updateTournament(
       venue_city: args.venueCity,
       venue_state: args.venueState,
       ...(args.timezone ? { timezone: args.timezone } : {}),
+      ...(args.venueAddress !== undefined
+        ? { venue_address: args.venueAddress.trim() || null, venue_zip: args.venueZip?.trim() || null,
+            venue_lat: coords?.lat ?? null, venue_lng: coords?.lng ?? null }
+        : {}),
+      ...(args.courts !== undefined ? { courts: args.courts } : {}),
+      ...(args.arrivalNotes !== undefined ? { arrival_notes: args.arrivalNotes.trim() || null } : {}),
       ruleset: args.ruleset || null,
       ruleset_modifications: args.rulesetModifications || null,
       game_format: args.gameFormat ?? null,

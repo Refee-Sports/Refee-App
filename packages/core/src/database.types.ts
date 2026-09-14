@@ -468,12 +468,14 @@ export type Database = {
       jobs: {
         Row: {
           age_group: string | null
+          arrival_notes: string | null
           assignor_staffing_mode: string | null
           auto_accept: boolean | null
           away_team: string | null
           cancelled_at: string | null
           closes_at: string | null
           completed_at: string | null
+          court: string | null
           created_at: string | null
           crew_size: number | null
           duration_minutes: number | null
@@ -513,6 +515,7 @@ export type Database = {
           status: string | null
           stripe_charge_id: string | null
           stripe_dispute_id: string | null
+          team_level: string | null
           title: string
           tournament_id: string | null
           uniform_requirements: string | null
@@ -523,15 +526,18 @@ export type Database = {
           venue_lng: number | null
           venue_name: string
           venue_state: string
+          venue_zip: string | null
         }
         Insert: {
           age_group?: string | null
+          arrival_notes?: string | null
           assignor_staffing_mode?: string | null
           auto_accept?: boolean | null
           away_team?: string | null
           cancelled_at?: string | null
           closes_at?: string | null
           completed_at?: string | null
+          court?: string | null
           created_at?: string | null
           crew_size?: number | null
           duration_minutes?: number | null
@@ -571,6 +577,7 @@ export type Database = {
           status?: string | null
           stripe_charge_id?: string | null
           stripe_dispute_id?: string | null
+          team_level?: string | null
           title: string
           tournament_id?: string | null
           uniform_requirements?: string | null
@@ -581,15 +588,18 @@ export type Database = {
           venue_lng?: number | null
           venue_name: string
           venue_state: string
+          venue_zip?: string | null
         }
         Update: {
           age_group?: string | null
+          arrival_notes?: string | null
           assignor_staffing_mode?: string | null
           auto_accept?: boolean | null
           away_team?: string | null
           cancelled_at?: string | null
           closes_at?: string | null
           completed_at?: string | null
+          court?: string | null
           created_at?: string | null
           crew_size?: number | null
           duration_minutes?: number | null
@@ -629,6 +639,7 @@ export type Database = {
           status?: string | null
           stripe_charge_id?: string | null
           stripe_dispute_id?: string | null
+          team_level?: string | null
           title?: string
           tournament_id?: string | null
           uniform_requirements?: string | null
@@ -639,6 +650,7 @@ export type Database = {
           venue_lng?: number | null
           venue_name?: string
           venue_state?: string
+          venue_zip?: string | null
         }
         Relationships: [
           {
@@ -1128,12 +1140,14 @@ export type Database = {
       tournaments: {
         Row: {
           age_groups: string[] | null
+          arrival_notes: string | null
           assignor_fee: number | null
           assignor_fee_pct: number | null
           assignor_fee_type: string | null
           assignor_id: string | null
           assignor_proposal_message: string | null
           assignor_status: string | null
+          courts: string[]
           created_at: string | null
           description: string | null
           ends_on: string
@@ -1156,18 +1170,24 @@ export type Database = {
           total_ref_budget: number | null
           uniform_requirements: string | null
           updated_at: string | null
+          venue_address: string | null
           venue_city: string
+          venue_lat: number | null
+          venue_lng: number | null
           venue_name: string | null
           venue_state: string
+          venue_zip: string | null
         }
         Insert: {
           age_groups?: string[] | null
+          arrival_notes?: string | null
           assignor_fee?: number | null
           assignor_fee_pct?: number | null
           assignor_fee_type?: string | null
           assignor_id?: string | null
           assignor_proposal_message?: string | null
           assignor_status?: string | null
+          courts?: string[]
           created_at?: string | null
           description?: string | null
           ends_on: string
@@ -1190,18 +1210,24 @@ export type Database = {
           total_ref_budget?: number | null
           uniform_requirements?: string | null
           updated_at?: string | null
+          venue_address?: string | null
           venue_city: string
+          venue_lat?: number | null
+          venue_lng?: number | null
           venue_name?: string | null
           venue_state: string
+          venue_zip?: string | null
         }
         Update: {
           age_groups?: string[] | null
+          arrival_notes?: string | null
           assignor_fee?: number | null
           assignor_fee_pct?: number | null
           assignor_fee_type?: string | null
           assignor_id?: string | null
           assignor_proposal_message?: string | null
           assignor_status?: string | null
+          courts?: string[]
           created_at?: string | null
           description?: string | null
           ends_on?: string
@@ -1224,9 +1250,13 @@ export type Database = {
           total_ref_budget?: number | null
           uniform_requirements?: string | null
           updated_at?: string | null
+          venue_address?: string | null
           venue_city?: string
+          venue_lat?: number | null
+          venue_lng?: number | null
           venue_name?: string | null
           venue_state?: string
+          venue_zip?: string | null
         }
         Relationships: [
           {
