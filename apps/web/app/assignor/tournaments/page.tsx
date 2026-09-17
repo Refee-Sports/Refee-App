@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { VerifyBanner } from "@/components/ui/VerifyBanner";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
@@ -65,6 +66,7 @@ export default function AssignorTournamentsPage() {
 
   return (
     <div className="app-canvas bg-paper pb-6">
+      <VerifyBanner />
       <div className="flex items-center justify-between px-5 pb-3 pt-1 sm:px-0 lg:pt-6">
         <Wordmark className="text-[26px] lg:hidden" />
         <h1

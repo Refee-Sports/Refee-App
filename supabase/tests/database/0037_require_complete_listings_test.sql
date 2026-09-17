@@ -4,6 +4,13 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(11);
 
+-- Posting needs a verified identity (0042), checked before the listing itself
+-- is inspected; this test is about completeness, so its director is verified.
+insert into public.private_profiles (id, identity_status, identity_verified_at)
+values ('11111111-1111-4111-8111-111111111101'::uuid, 'approved', now())
+on conflict (id) do update
+  set identity_status = 'approved', identity_verified_at = now();
+
 -- Backend writes are trusted: an incomplete tournament and game can still be
 -- written by the backend (seed data, older listings), just not by the apps.
 insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_name, venue_city, venue_state,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Label, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
@@ -13,6 +14,7 @@ import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 /** Port of refee-mobile/refee/app/(onboarding)/assignor.tsx — name, then location. */
 export default function AssignorOnboardingPage() {
   const { refreshProfile } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +59,10 @@ export default function AssignorOnboardingPage() {
       setLoading(false);
       return;
     }
-    // Re-read profile + role; RouteGate lands us in the assignor app.
+    // Re-read profile + role, then go and prove who they are — nobody can
+    // staff a game until that's done.
     await refreshProfile();
+    router.replace("/verify");
   };
 
   return (

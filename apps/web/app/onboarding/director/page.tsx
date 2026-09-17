@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Label, OptionRow, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
@@ -29,6 +30,7 @@ type FormData = {
 /** Port of refee-mobile/refee/app/(onboarding)/director.tsx. */
 export default function DirectorOnboardingPage() {
   const { refreshProfile } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -92,8 +94,10 @@ export default function DirectorOnboardingPage() {
         return;
       }
 
-      // Re-read profile + role; RouteGate lands us in the director app.
+      // Re-read profile + role, then go and prove who they are — nobody can
+      // post a game until that's done.
       await refreshProfile();
+      router.replace("/verify");
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred.");
       setLoading(false);

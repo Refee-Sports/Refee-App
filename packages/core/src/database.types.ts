@@ -400,6 +400,39 @@ export type Database = {
           },
         ]
       }
+      didit_webhook_events: {
+        Row: {
+          attempts: number
+          error: string | null
+          event_id: string
+          event_type: string
+          processed_at: string | null
+          received_at: string
+          session_id: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          error?: string | null
+          event_id: string
+          event_type: string
+          processed_at?: string | null
+          received_at?: string
+          session_id?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          error?: string | null
+          event_id?: string
+          event_type?: string
+          processed_at?: string | null
+          received_at?: string
+          session_id?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       hirers: {
         Row: {
           city: string | null
@@ -756,6 +789,45 @@ export type Database = {
         }
         Relationships: []
       }
+      listing_deletions: {
+        Row: {
+          deleted_at: string
+          deleted_by: string
+          hirer_id: string | null
+          id: string
+          job_id: string | null
+          kind: string
+          payment_intent_id: string | null
+          refunded_cents: number
+          title: string | null
+          tournament_id: string | null
+        }
+        Insert: {
+          deleted_at?: string
+          deleted_by: string
+          hirer_id?: string | null
+          id?: string
+          job_id?: string | null
+          kind: string
+          payment_intent_id?: string | null
+          refunded_cents?: number
+          title?: string | null
+          tournament_id?: string | null
+        }
+        Update: {
+          deleted_at?: string
+          deleted_by?: string
+          hirer_id?: string | null
+          id?: string
+          job_id?: string | null
+          kind?: string
+          payment_intent_id?: string | null
+          refunded_cents?: number
+          title?: string | null
+          tournament_id?: string | null
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
@@ -814,6 +886,12 @@ export type Database = {
           date_of_birth: string | null
           email: string | null
           id: string
+          identity_decision_at: string | null
+          identity_last_reason: string | null
+          identity_provider: string
+          identity_session_id: string | null
+          identity_session_url: string | null
+          identity_status: string
           identity_verified_at: string | null
           legal_first_name: string | null
           legal_last_name: string | null
@@ -837,6 +915,12 @@ export type Database = {
           date_of_birth?: string | null
           email?: string | null
           id: string
+          identity_decision_at?: string | null
+          identity_last_reason?: string | null
+          identity_provider?: string
+          identity_session_id?: string | null
+          identity_session_url?: string | null
+          identity_status?: string
           identity_verified_at?: string | null
           legal_first_name?: string | null
           legal_last_name?: string | null
@@ -860,6 +944,12 @@ export type Database = {
           date_of_birth?: string | null
           email?: string | null
           id?: string
+          identity_decision_at?: string | null
+          identity_last_reason?: string | null
+          identity_provider?: string
+          identity_session_id?: string | null
+          identity_session_url?: string | null
+          identity_status?: string
           identity_verified_at?: string | null
           legal_first_name?: string | null
           legal_last_name?: string | null
@@ -1519,6 +1609,7 @@ export type Database = {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_identity_verified: { Args: { p_user: string }; Returns: boolean }
       offer_ref_to_game: {
         Args: { p_job_id: string; p_ref_id: string; p_role?: string }
         Returns: string

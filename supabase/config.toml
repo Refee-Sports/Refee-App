@@ -401,6 +401,11 @@ deno_version = 2
 # Stripe authenticates this public endpoint with its own signature header.
 verify_jwt = false
 
+[functions.didit-webhook]
+# Didit authenticates this public endpoint with its own signature header
+# (X-Signature-V2, an HMAC over the canonical body).
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 

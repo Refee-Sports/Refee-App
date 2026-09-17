@@ -8,6 +8,16 @@ insert into public.user_roles (user_id, role)
 values ('22222222-2222-4222-8222-222222222200'::uuid, 'assignor')
 on conflict do nothing;
 
+-- Importing needs a verified identity (0042), checked after the "whose
+-- tournament is this" question. The director and the accepted assignor here
+-- are verified people; 222...203 below deliberately isn't either.
+insert into public.private_profiles (id, identity_status, identity_verified_at)
+values
+  ('11111111-1111-4111-8111-111111111101'::uuid, 'approved', now()),
+  ('22222222-2222-4222-8222-222222222200'::uuid, 'approved', now())
+on conflict (id) do update
+  set identity_status = 'approved', identity_verified_at = now();
+
 insert into public.tournaments (
   id, hirer_id, name, sport_id, starts_on, ends_on, venue_name,
   venue_city, venue_state, timezone, staffing_model, status,

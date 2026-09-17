@@ -12,6 +12,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { ensureValidSession } from "@/lib/auth/session";
 import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
+import { fetchMyIdentityStatus, type IdentityStatus } from "@/lib/identity/queries";
 import type { PrimaryRole } from "@/lib/stores/onboarding-store";
 
 export type AuthState = {
@@ -20,6 +21,12 @@ export type AuthState = {
   /** null = still resolving */
   profileComplete: boolean | null;
   primaryRole: PrimaryRole | null;
+  /**
+   * Whether Didit has confirmed who this person is. Only "approved" can take,
+   * staff or post games — the database enforces that; this is what the screens
+   * use to explain why a button is off. null = still resolving.
+   */
+  identityStatus: IdentityStatus | null;
   /** Session + profile + role have all been resolved at least once. */
   ready: boolean;
   /** Re-reads profile completeness and role (call after onboarding). */
@@ -39,6 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [primaryRole, setPrimaryRole] = useState<PrimaryRole | null>(null);
+  const [identityStatus, setIdentityStatus] = useState<IdentityStatus | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
@@ -71,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!initialSession) {
         setProfileComplete(null);
         setPrimaryRole(null);
+        setIdentityStatus(null);
         setAuthReady(true);
       }
     })();
@@ -82,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!next) {
         setProfileComplete(null);
         setPrimaryRole(null);
+        setIdentityStatus(null);
         setAuthReady(true);
       }
     });
@@ -99,8 +109,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfileComplete(exists);
     if (exists) {
       setPrimaryRole((await fetchPrimaryRole(uid)) as PrimaryRole);
+      setIdentityStatus((await fetchMyIdentityStatus(uid)).status);
     } else {
       setPrimaryRole(null);
+      setIdentityStatus(null);
     }
     setAuthReady(true);
   }, []);
@@ -120,6 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setProfileComplete(null);
     setPrimaryRole(null);
+    setIdentityStatus(null);
   }, []);
 
   // Mirrors the app's splash gate: hold until the session AND (when signed in)
@@ -134,11 +147,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userId,
       profileComplete,
       primaryRole,
+      identityStatus,
       ready,
       refreshProfile,
       signOut,
     }),
-    [session, userId, profileComplete, primaryRole, ready, refreshProfile, signOut]
+    [session, userId, profileComplete, primaryRole, identityStatus, ready, refreshProfile, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

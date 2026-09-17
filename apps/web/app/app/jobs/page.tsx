@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { VerifyBanner } from "@/components/ui/VerifyBanner";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { JobCard } from "@/components/job/JobCard";
@@ -67,6 +68,7 @@ export default function JobsFeedPage() {
 
   return (
     <div className="app-canvas bg-paper">
+      <VerifyBanner />
       <div className="flex items-end justify-between px-5 pb-2 pt-3 sm:px-0 lg:pt-6">
         <div>
           <p

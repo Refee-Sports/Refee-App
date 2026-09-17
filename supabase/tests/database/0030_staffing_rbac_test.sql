@@ -6,6 +6,17 @@ select plan(21);
 
 -- Stable local seed identities:
 -- assignor/director 111...101, referee 111...100, referees 222...200/201.
+
+-- Taking, staffing and posting games all need a verified identity (0042).
+-- Everyone in this test is a verified person; what's under test is staffing.
+insert into public.private_profiles (id, identity_status, identity_verified_at)
+values
+  ('11111111-1111-4111-8111-111111111100'::uuid, 'approved', now()),
+  ('11111111-1111-4111-8111-111111111101'::uuid, 'approved', now()),
+  ('22222222-2222-4222-8222-222222222200'::uuid, 'approved', now()),
+  ('22222222-2222-4222-8222-222222222201'::uuid, 'approved', now())
+on conflict (id) do update
+  set identity_status = 'approved', identity_verified_at = now();
 insert into public.tournaments (
   id,
   hirer_id,

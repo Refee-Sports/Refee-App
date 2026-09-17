@@ -4,6 +4,13 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(18);
 
+-- Posting a game or tournament needs a verified identity (0042); this test is
+-- about which columns the app may write, so its director is a verified person.
+insert into public.private_profiles (id, identity_status, identity_verified_at)
+values ('11111111-1111-4111-8111-111111111101'::uuid, 'approved', now())
+on conflict (id) do update
+  set identity_status = 'approved', identity_verified_at = now();
+
 -- Director 111...101 (seeded hirer). A second organizer owns a tournament
 -- the director must not be able to add games to.
 insert into public.tournaments (id, hirer_id, name, sport_id, starts_on, ends_on, venue_city, venue_state, status,

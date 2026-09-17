@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { VerifyBanner } from "@/components/ui/VerifyBanner";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { LoadError } from "@/components/ui/LoadError";
@@ -221,6 +222,7 @@ function DirectorHome() {
 
   return (
     <div className="app-canvas bg-paper pb-6">
+      <VerifyBanner />
       {/* Header — the wordmark stands in for the side nav on small screens. */}
       <div className="flex items-center justify-between px-5 pb-3 pt-1 sm:px-0 lg:pt-6">
         <Wordmark className="text-[26px] lg:hidden" />

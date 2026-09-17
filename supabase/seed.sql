@@ -678,3 +678,18 @@ update public.jobs set venue_lat = 29.4241, venue_lng = -98.4936
   where venue_city = 'San Antonio';
 update public.jobs set venue_lat = 32.7767, venue_lng = -96.7970
   where venue_city = 'Dallas';
+
+-- =============================================================================
+-- Identity verification (migrations 0041/0042) — seed accounts are verified
+-- people, so local development can take, post and staff games. Real accounts
+-- start 'unstarted' and go through Didit; there is no way to set this from an
+-- app, which is the point of the guard trigger in 0041.
+-- =============================================================================
+insert into public.private_profiles (id, identity_status, identity_verified_at)
+select u.id, 'approved', now()
+from auth.users u
+on conflict (id) do update
+  set identity_status = 'approved', identity_verified_at = now();
+
+update public.public_profiles set is_verified = true;
+update public.hirers set is_verified = true;

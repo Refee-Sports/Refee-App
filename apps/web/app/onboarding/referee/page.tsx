@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AffixField, Label, OptionRow, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
@@ -51,6 +52,7 @@ type FormData = {
  */
 export default function RefereeOnboardingPage() {
   const { refreshProfile } = useAuth();
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -155,8 +157,11 @@ export default function RefereeOnboardingPage() {
         return;
       }
 
-      // Re-read profile + role; RouteGate then lands us in the referee app.
+      // Re-read profile + role, then go and prove who they are — a referee
+      // can't take a game until that's done. Skipping lands them in the app
+      // with a banner, not a dead end.
       await refreshProfile();
+      router.replace("/verify");
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "An unexpected error occurred. Please try again."
