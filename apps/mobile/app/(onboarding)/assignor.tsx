@@ -101,7 +101,9 @@ export default function AssignorOnboarding() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setProfileComplete(true);
       setPrimaryRole("assignor");
-      router.replace("/(assignor)/(tabs)/tournaments" as any);
+      // Then go and prove who they are — nobody can staff a game until that's
+      // done. Skipping lands them in the app, not a dead end.
+      router.replace("/verify" as any);
     } catch (err: any) {
       setError(err?.message ?? "An unexpected error occurred.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

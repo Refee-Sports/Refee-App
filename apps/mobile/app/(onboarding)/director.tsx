@@ -115,7 +115,9 @@ export default function DirectorOnboarding() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setProfileComplete(true);
       setPrimaryRole("director");
-      router.replace("/(director)/(tabs)/tournaments" as any);
+      // Then go and prove who they are — nobody can post a game until that's
+      // done. Skipping lands them in the app, not a dead end.
+      router.replace("/verify" as any);
     } catch (err: any) {
       setError(err?.message ?? "An unexpected error occurred.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);

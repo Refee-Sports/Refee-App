@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
@@ -55,6 +56,7 @@ type FormData = {
 };
 
 export default function Onboarding() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const setProfileComplete = useOnboardingStore((s) => s.setProfileComplete);
   const setPrimaryRole = useOnboardingStore((s) => s.setPrimaryRole);
@@ -192,6 +194,9 @@ export default function Onboarding() {
       // then let the AuthGate route into the app.
       setPrimaryRole("referee");
       setProfileComplete(true);
+      // Then go and prove who they are — a referee can't take a game until
+      // that's done. Skipping lands them in the app, not a dead end.
+      router.replace("/verify" as any);
     } catch (err: any) {
       setError(err?.message ?? "An unexpected error occurred. Please try again.");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
