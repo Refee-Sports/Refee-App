@@ -57,6 +57,8 @@ export default function AssignorOnboardingPage() {
       city: form.city.trim(),
       state: form.state.trim().toUpperCase(),
       dateOfBirth: form.dateOfBirth,
+        legalFirstName: form.firstName.trim(),
+        legalLastName: form.lastName.trim(),
     });
     if (saveError) {
       setError(saveError.message || "Something went wrong. Please try again.");

@@ -155,6 +155,8 @@ export default function RefereeOnboardingPage() {
         certs: form.certs,
         levelIds: form.levels,
         dateOfBirth: form.dateOfBirth,
+        legalFirstName: form.firstName.trim(),
+        legalLastName: form.lastName.trim(),
       });
 
       if (saveError) {

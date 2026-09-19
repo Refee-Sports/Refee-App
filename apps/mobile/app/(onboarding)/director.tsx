@@ -110,6 +110,8 @@ export default function DirectorOnboarding() {
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
         dateOfBirth: usDateInput(form.dobDigits).iso,
+        legalFirstName: form.firstName.trim(),
+        legalLastName: form.lastName.trim(),
       });
 
       if (saveError) {

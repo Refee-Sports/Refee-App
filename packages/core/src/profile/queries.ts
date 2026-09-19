@@ -80,6 +80,8 @@ export async function saveFullProfile(
     certs: CertEntry[];
     levelIds: string[];
     dateOfBirth: string;
+    legalFirstName: string;
+    legalLastName: string;
   }
 ) {
   // Refee is 18+. This goes first so someone too young is turned away
@@ -87,6 +89,10 @@ export async function saveFullProfile(
   const { error: ageError } = await supabase.from("private_profiles").upsert({
     id: userId,
     date_of_birth: args.dateOfBirth,
+    // The full legal name, kept privately. Profiles only ever show a
+    // first name and last initial; this is what Didit checks the ID against.
+    legal_first_name: args.legalFirstName,
+    legal_last_name: args.legalLastName,
   });
   if (ageError) return { error: ageError };
 

@@ -247,3 +247,29 @@ export function isKnownMinor(value: string | null, asOf: Date = new Date()): boo
   const age = ageInYears(value, asOf);
   return age !== null && age < MINIMUM_AGE;
 }
+
+// ── Expected details ─────────────────────────────────────────────────────────
+
+export type ExpectedDetails = { last_name?: string; date_of_birth?: string };
+
+/**
+ * What Refee already knows about this person, sent with the session so Didit
+ * checks the document against it (fuzzy, at the workflow's name-match
+ * threshold). A mismatch lands the session in review, not a refusal.
+ *
+ * Last name and date of birth only. First names break on nicknames — Mike signs
+ * up, Michael is on the licence — while surnames are what OCR reads reliably.
+ * Blank fields are left out rather than sent empty, and a profile from before
+ * sign-up collected these sends nothing at all.
+ */
+export function expectedDetails(
+  profile: { legal_last_name?: string | null; date_of_birth?: string | null } | null
+): ExpectedDetails | null {
+  if (!profile) return null;
+  const out: ExpectedDetails = {};
+  const last = profile.legal_last_name?.trim();
+  if (last) out.last_name = last;
+  const dob = asIsoDate(profile.date_of_birth);
+  if (dob) out.date_of_birth = dob;
+  return Object.keys(out).length > 0 ? out : null;
+}

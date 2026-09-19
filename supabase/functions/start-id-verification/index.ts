@@ -6,6 +6,7 @@
 // arrives separately, signed, at didit-webhook — this function never trusts a
 // status the browser reports back.
 import { adminClient, getCaller, handleOptions, json } from "../_shared/util.ts";
+import { expectedDetails } from "../_shared/didit.ts";
 
 const DIDIT_API = "https://verification.didit.me/v3";
 
@@ -13,6 +14,8 @@ type Profile = {
   identity_status: string | null;
   identity_session_id: string | null;
   identity_session_url: string | null;
+  legal_last_name: string | null;
+  date_of_birth: string | null;
 };
 
 Deno.serve(async (req) => {
@@ -33,7 +36,7 @@ Deno.serve(async (req) => {
     const admin = adminClient();
     const { data: existing } = await admin
       .from("private_profiles")
-      .select("identity_status, identity_session_id, identity_session_url")
+      .select("identity_status, identity_session_id, identity_session_url, legal_last_name, date_of_birth")
       .eq("id", user.id)
       .maybeSingle<Profile>();
 
@@ -61,6 +64,7 @@ Deno.serve(async (req) => {
       return json({ status: "in_review", url: null });
     }
 
+    const expected = expectedDetails(existing ?? null);
     const response = await fetch(`${DIDIT_API}/session/`, {
       method: "POST",
       headers: { "x-api-key": apiKey, "Content-Type": "application/json" },
@@ -69,6 +73,8 @@ Deno.serve(async (req) => {
         // How the webhook knows whose check this is. Didit echoes it back.
         vendor_data: user.id,
         ...(callback ? { callback } : {}),
+        // Didit checks the ID against what they told us at sign-up.
+        ...(expected ? { expected_details: expected } : {}),
       }),
     });
 

@@ -186,6 +186,8 @@ export default function Onboarding() {
         certs: form.certs,
         levelIds: form.levels,
         dateOfBirth: usDateInput(form.dobDigits).iso,
+        legalFirstName: form.firstName.trim(),
+        legalLastName: form.lastName.trim(),
       });
 
       if (saveError) {
