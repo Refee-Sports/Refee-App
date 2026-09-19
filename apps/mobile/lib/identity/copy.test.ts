@@ -3,6 +3,7 @@ import {
   lockedWork,
   skipVerificationWarning,
   verificationBlocker,
+  verificationLabel,
 } from "@refee/core/identity/queries";
 
 describe("what verification unlocks, per role", () => {
@@ -41,5 +42,14 @@ describe("the banner, in the person's role", () => {
     expect(verificationBlocker("approved", "director")).toBeNull();
     expect(verificationBlocker("in_review", "assignor")).toMatch(/We're checking your ID/);
     expect(verificationBlocker("declined", "referee")).toMatch(/couldn't verify/);
+  });
+});
+
+describe("how a profile shows verification", () => {
+  it("says pending until someone is verified, then verified", () => {
+    expect(verificationLabel(false)).toBe("PENDING VERIFICATION");
+    expect(verificationLabel(null)).toBe("PENDING VERIFICATION");
+    expect(verificationLabel(undefined)).toBe("PENDING VERIFICATION");
+    expect(verificationLabel(true)).toBe("VERIFIED");
   });
 });

@@ -126,6 +126,7 @@ export type RefereePublicView = {
   state: string;
   rating: number;
   rating_count: number;
+  is_verified: boolean;
   certifications: Array<{ org_name: string; license_number: string | null }>;
   levels: Array<{ level_id: string }>;
 };
@@ -681,7 +682,7 @@ export async function fetchRefereePublicView(
   const [profileRes, certsRes, levelsRes] = await Promise.all([
     supabase
       .from("public_profiles")
-      .select("id, first_name, last_initial, display_name, avatar_url, city, state, rating, rating_count")
+      .select("id, first_name, last_initial, display_name, avatar_url, city, state, rating, rating_count, is_verified")
       .eq("id", refId)
       .maybeSingle(),
     supabase

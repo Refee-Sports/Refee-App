@@ -1,3 +1,4 @@
+import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
@@ -54,6 +55,11 @@ export default function AssignorProfile() {
         <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
           <Text className="font-mono-bold text-ink">ASSIGNOR</Text> · PROFILE
         </Text>
+        <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
+          {profile.is_verified ? (
+            <Text className="font-mono-bold" style={{ color: "#00A85C" }}>✓ {verificationLabel(true)}</Text>
+          ) : verificationLabel(false)}
+        </Text>
       </View>
       <View className="px-5 mb-5"><ZebraRule variant="signal" thin /></View>
 
@@ -77,6 +83,8 @@ export default function AssignorProfile() {
         <InfoRow label="ALL ROLES" value={roles.map((role) => role.toUpperCase()).join(" · ") || "ASSIGNOR"} />
         <View className="h-px bg-ink-20" />
         <InfoRow label="MEMBER SINCE" value={new Date(profile.member_since).getFullYear().toString()} />
+        <View className="h-px bg-ink-20" />
+        <InfoRow label="STATUS" value={profile.is_verified ? `${verificationLabel(true)} ✓` : verificationLabel(false)} />
       </View>
 
       <View className="mx-5 mt-7">

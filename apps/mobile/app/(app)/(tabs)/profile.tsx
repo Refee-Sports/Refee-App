@@ -1,3 +1,4 @@
+import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { Text, View, Pressable, Switch, ActivityIndicator, Image, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -420,7 +421,7 @@ export default function Profile() {
             <ScoreCell
               label="STATUS"
               value={profile.is_verified ? "A+" : "—"}
-              sub={profile.is_verified ? "VERIFIED" : "UNVERIFIED"}
+              sub={verificationLabel(profile.is_verified)}
               subColor={profile.is_verified ? "#00A85C" : undefined}
             />
           </View>
@@ -711,7 +712,7 @@ function ScoreCell({
         {value}
       </Text>
       <Text
-        className="font-mono text-[9px] uppercase mt-1"
+        className="font-mono text-[9px] uppercase mt-1 text-center"
         style={{ letterSpacing: 1.5, color: subColor ?? "rgba(8,17,28,0.56)" }}
       >
         {sub}

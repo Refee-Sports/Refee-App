@@ -20,6 +20,16 @@ export type IdentityState = {
   decidedAt: string | null;
 };
 
+/**
+ * How a profile shows verification, everywhere it appears. Anyone not yet
+ * verified reads as pending — whether they haven't started, are with a
+ * reviewer, or need another try — because other people only ever see the
+ * public yes/no, never the private reason.
+ */
+export function verificationLabel(isVerified: boolean | null | undefined): string {
+  return isVerified ? "VERIFIED" : "PENDING VERIFICATION";
+}
+
 /** Only an approved identity unlocks working, staffing and posting games. */
 export function isVerified(status: IdentityStatus): boolean {
   return status === "approved";

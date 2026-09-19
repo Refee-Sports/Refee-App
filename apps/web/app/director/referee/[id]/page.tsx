@@ -1,5 +1,6 @@
 "use client";
 
+import { verificationLabel } from "@/lib/identity/queries";
 import { useRouter } from "next/navigation";
 import { use, useEffect, useState } from "react";
 import { ZebraRule } from "@/components/ui/ZebraRule";
@@ -152,6 +153,13 @@ export default function RefereePublicProfilePage({
             style={{ letterSpacing: 1.5 }}
           >
             {ref.city.toUpperCase()}, {ref.state}
+          </span>
+          <span
+            className={`mt-1 block font-mono text-[9px] uppercase ${ref.is_verified ? "font-mono-bold text-court" : "text-ink-60"}`}
+            style={{ letterSpacing: 1.5 }}
+          >
+            {ref.is_verified ? "✓ " : ""}
+            {verificationLabel(ref.is_verified)}
           </span>
         </div>
       </div>

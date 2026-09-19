@@ -1,5 +1,6 @@
 "use client";
 
+import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
@@ -108,9 +109,9 @@ export default function DirectorProfilePage() {
         </span>
         <span className="font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
           {hirer.is_verified ? (
-            <span className="font-mono-bold text-court">✓ VERIFIED</span>
+            <span className="font-mono-bold text-court">✓ {verificationLabel(true)}</span>
           ) : (
-            "UNVERIFIED"
+            verificationLabel(false)
           )}
         </span>
       </div>
@@ -185,7 +186,7 @@ export default function DirectorProfilePage() {
         <span className="block h-px bg-ink-20" />
         <InfoRow
           label="Status"
-          value={hirer.is_verified ? "VERIFIED ✓" : "PENDING VERIFICATION"}
+          value={hirer.is_verified ? `${verificationLabel(true)} ✓` : verificationLabel(false)}
         />
       </div>
 

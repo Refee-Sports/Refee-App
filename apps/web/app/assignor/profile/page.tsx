@@ -1,5 +1,6 @@
 "use client";
 
+import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
@@ -62,9 +63,16 @@ export default function AssignorProfilePage() {
           PROFILE<span className="text-signal">.</span>
         </h1>
       </div>
-      <div className="px-5 pb-1.5 sm:px-0">
+      <div className="flex items-center justify-between px-5 pb-1.5 sm:px-0">
         <span className="font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
           <span className="font-mono-bold text-ink">ASSIGNOR</span> · PROFILE
+        </span>
+        <span className="font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
+          {profile.is_verified ? (
+            <span className="font-mono-bold text-court">✓ {verificationLabel(true)}</span>
+          ) : (
+            verificationLabel(false)
+          )}
         </span>
       </div>
       <div className="mb-5 px-5 sm:px-0">
@@ -102,6 +110,11 @@ export default function AssignorProfilePage() {
             <InfoRow
               label="Member since"
               value={profile.member_since ? String(new Date(profile.member_since).getFullYear()) : "—"}
+            />
+            <span className="block h-px bg-ink-20" />
+            <InfoRow
+              label="Status"
+              value={profile.is_verified ? `${verificationLabel(true)} ✓` : verificationLabel(false)}
             />
           </div>
         </div>

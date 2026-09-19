@@ -1,3 +1,4 @@
+import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { Text, View, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
@@ -123,8 +124,8 @@ export default function DirectorProfile() {
         </Text>
         <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
           {hirer.is_verified ? (
-            <Text className="font-mono-bold" style={{ color: "#00A85C" }}>✓ VERIFIED</Text>
-          ) : "UNVERIFIED"}
+            <Text className="font-mono-bold" style={{ color: "#00A85C" }}>✓ {verificationLabel(true)}</Text>
+          ) : verificationLabel(false)}
         </Text>
       </View>
       <View className="px-5 mb-4">
@@ -180,7 +181,7 @@ export default function DirectorProfile() {
         <View className="h-px bg-ink-20" />
         <InfoRow label="SPORT" value="BASKETBALL" />
         <View className="h-px bg-ink-20" />
-        <InfoRow label="STATUS" value={hirer.is_verified ? "VERIFIED ✓" : "PENDING VERIFICATION"} />
+        <InfoRow label="STATUS" value={hirer.is_verified ? `${verificationLabel(true)} ✓` : verificationLabel(false)} />
       </View>
 
       {/* Payment method */}

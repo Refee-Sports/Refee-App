@@ -1,3 +1,4 @@
+import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { Text, View, Pressable, ActivityIndicator, ScrollView, Image } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -133,6 +134,13 @@ export default function RefereePublicProfile() {
             </Text>
             <Text className="font-mono text-[9px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 1.5 }}>
               {ref.city.toUpperCase()}, {ref.state}
+            </Text>
+            <Text
+              className={`font-mono text-[9px] uppercase mt-1 ${ref.is_verified ? "font-mono-bold" : "text-ink-60"}`}
+              style={{ letterSpacing: 1.5, ...(ref.is_verified ? { color: "#00A85C" } : {}) }}
+            >
+              {ref.is_verified ? "✓ " : ""}
+              {verificationLabel(ref.is_verified)}
             </Text>
           </View>
         </View>

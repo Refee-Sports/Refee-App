@@ -1,5 +1,6 @@
 "use client";
 
+import { verificationLabel } from "@/lib/identity/queries";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -410,7 +411,7 @@ export default function RefereeProfilePage() {
             <ScoreCell
               label="Status"
               value={profile.is_verified ? "A+" : "—"}
-              sub={profile.is_verified ? "VERIFIED" : "UNVERIFIED"}
+              sub={verificationLabel(profile.is_verified)}
               subCourt={profile.is_verified}
             />
           </div>
@@ -730,7 +731,7 @@ function ScoreCell({
         {value}
       </span>
       <span
-        className={`mt-1 font-mono text-[9px] uppercase ${subCourt ? "text-court" : "text-ink-60"}`}
+        className={`mt-1 text-center font-mono text-[9px] uppercase ${subCourt ? "text-court" : "text-ink-60"}`}
         style={{ letterSpacing: 1.5 }}
       >
         {sub}
