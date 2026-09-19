@@ -136,14 +136,22 @@ Deno.serve(async (req) => {
     // the check found, and whatever date they typed at sign-up.
     const dateOfBirth = extractDateOfBirth(body);
     const minor = isKnownMinor(dateOfBirth);
-    const decided: IdentityStatus = minor ? "declined" : status;
+    // An approval we can't read an age from doesn't pass either: the whole
+    // point of checking here is that the date someone typed isn't evidence.
+    // Review rather than refusal — a person can look at it.
+    const ageUnknown = status === "approved" && !dateOfBirth;
+    const decided: IdentityStatus = minor ? "declined" : ageUnknown ? "in_review" : status;
 
     const approved = decided === "approved";
     const patch: Record<string, unknown> = {
       identity_status: decided,
       identity_session_id: sessionId ?? profile.identity_session_id,
       identity_decision_at: now,
-      identity_last_reason: minor ? "Under 18" : reasonFor(body),
+      identity_last_reason: minor
+        ? "Under 18"
+        : ageUnknown
+          ? "Age not confirmed"
+          : reasonFor(body),
       identity_verified_at: approved ? now : null,
     };
     // The verified date replaces whatever was self-reported.

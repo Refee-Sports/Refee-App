@@ -45,6 +45,7 @@ Status values: **READY**, **IN PROGRESS**, **BLOCKED — EXTERNAL**, **BLOCKED �
 | EARN-01 | READY | Add referee earnings ledger | Per-game gross/status/date/payout reference totals reconcile to summary periods; cancelled/bust/held cases are tested. |
 | PAY-05 | BACKLOG | Optional mileage component | Mileage policy, calculation source, approval, charge, payout, and statement line are consistent and tested. |
 | PUSH-01 | READY | Complete production push triggers | Availability-matched jobs and payment-received pushes are server-triggered; a physical-device foreground/background matrix passes. |
+| TRUST-03 | BLOCKED — DECISION | Decide whether 16–17-year-old officials get a supervised tier | Refee is 18+ today (migration 0043, enforced at sign-up and again against the date of birth Didit reads off the ID). Many working youth-sports referees are 16–17, so this excludes part of the real workforce — including from adult and rec games where age matters least. Decision needed on whether a supervised under-18 tier exists and which games it may work. Acceptance: policy names the permitted games and supervision; `is_adult` becomes a tier rather than one 18+ cut; pay and contracting for minors resolved with counsel (a minor cannot hold the Stripe payout account they are paid through); Didit's Adaptive Age Verification template replaces the flat check; gate tests cover each tier. |
 
 ## P2 — technical debt and post-launch
 

@@ -85,28 +85,71 @@ describe("what the form tells someone", () => {
 });
 
 describe("the date of birth Didit read off the ID", () => {
-  it("finds it wherever the workflow puts it", () => {
-    expect(extractDateOfBirth({ decision: { kyc: { date_of_birth: "1990-06-15" } } })).toBe("1990-06-15");
-    expect(extractDateOfBirth({ decision: { id_verification: { date_of_birth: "1988-01-02" } } })).toBe("1988-01-02");
-    expect(extractDateOfBirth({ decision: { date_of_birth: "1975-12-31" } })).toBe("1975-12-31");
-    expect(extractDateOfBirth({ date_of_birth: "1999-03-04" })).toBe("1999-03-04");
+  // Every feature report is a plural array — id_verifications[0], never
+  // id_verification. Getting this wrong finds nothing, and "no date" means
+  // "not a known minor", so the age check would quietly pass everyone.
+  const webhook = (idv: unknown[]) => ({
+    session_id: "sess_1",
+    status: "Approved",
+    vendor_data: "user-42",
+    decision: { id_verifications: idv },
+  });
+
+  it("reads it from the OCR report", () => {
+    expect(extractDateOfBirth(webhook([{ node_id: "feature_ocr_1", date_of_birth: "1980-01-01" }])))
+      .toBe("1980-01-01");
+  });
+
+  it("reads the same shape from the decision endpoint, which has no envelope", () => {
+    expect(extractDateOfBirth({ id_verifications: [{ date_of_birth: "1975-12-31" }] }))
+      .toBe("1975-12-31");
+  });
+
+  it("falls back to the passport chip", () => {
+    expect(extractDateOfBirth({
+      decision: {
+        id_verifications: [{ node_id: "ocr", document_type: "Passport" }],
+        nfc_verifications: [{ chip_data: { birth_date: "1988-02-03" } }],
+      },
+    })).toBe("1988-02-03");
+  });
+
+  it("falls back to a digital wallet's attributes", () => {
+    expect(extractDateOfBirth({
+      decision: {
+        id_verifications: [
+          { verification_method: "wallet", wallet_verification: { attributes: { date_of_birth: "1993-07-08" } } },
+        ],
+      },
+    })).toBe("1993-07-08");
+  });
+
+  it("skips entries with no date and takes the first that has one", () => {
+    expect(extractDateOfBirth(webhook([
+      { node_id: "a" },
+      { node_id: "b", date_of_birth: "1991-05-06" },
+    ]))).toBe("1991-05-06");
   });
 
   it("trims a full timestamp down to the date", () => {
-    expect(extractDateOfBirth({ decision: { kyc: { date_of_birth: "1990-06-15T00:00:00Z" } } })).toBe("1990-06-15");
+    expect(extractDateOfBirth(webhook([{ date_of_birth: "1990-06-15T00:00:00Z" }]))).toBe("1990-06-15");
   });
 
   it("returns null rather than guessing", () => {
     expect(extractDateOfBirth({})).toBeNull();
-    expect(extractDateOfBirth({ decision: { kyc: {} } })).toBeNull();
-    expect(extractDateOfBirth({ decision: { kyc: { date_of_birth: "15 June 1990" } } })).toBeNull();
-    expect(extractDateOfBirth({ decision: { kyc: { date_of_birth: 19900615 } } })).toBeNull();
+    expect(extractDateOfBirth(webhook([]))).toBeNull();
+    expect(extractDateOfBirth(webhook([{ node_id: "a" }]))).toBeNull();
+    expect(extractDateOfBirth(webhook([{ date_of_birth: "15 June 1990" }]))).toBeNull();
+    expect(extractDateOfBirth(webhook([{ date_of_birth: 19900615 }]))).toBeNull();
+    // A singular key is not the schema; reading it would be a false positive.
+    expect(extractDateOfBirth({ decision: { id_verification: { date_of_birth: "1980-01-01" } } })).toBeNull();
   });
 
   it("declines only a date it can read that is too young", () => {
     expect(isKnownMinor("2010-01-01", NOW)).toBe(true);
     expect(isKnownMinor("1990-01-01", NOW)).toBe(false);
-    // Unknown is not "too young" — it's unknown, and must not decline anyone.
+    // Unknown is not "too young" — it's unknown. The webhook holds those for
+    // review instead of approving them.
     expect(isKnownMinor(null, NOW)).toBe(false);
     expect(isKnownMinor("not a date", NOW)).toBe(false);
     expect(isAdultServer(null, NOW)).toBe(false);

@@ -157,29 +157,59 @@ export async function verifySignature(args: {
 
 export const MINIMUM_AGE = 18;
 
-/**
- * Didit's date of birth, wherever this workflow puts it. The shape varies by
- * workflow and version, so look in each place it's known to appear rather than
- * trusting one path — and return null rather than guessing.
- */
-export function extractDateOfBirth(body: Record<string, unknown>): string | null {
-  const decision = (body.decision ?? {}) as Record<string, unknown>;
-  const kyc = (decision.kyc ?? {}) as Record<string, unknown>;
-  const idv = (decision.id_verification ?? {}) as Record<string, unknown>;
+function asIsoDate(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
+  return match ? match[0].slice(0, 10) : null;
+}
 
-  const candidates = [
-    kyc.date_of_birth,
-    idv.date_of_birth,
-    decision.date_of_birth,
-    body.date_of_birth,
-  ];
+function record(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
 
-  for (const value of candidates) {
-    if (typeof value !== "string") continue;
-    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
-    if (match) return match[0].slice(0, 10);
+/** First readable date a feature array yields, in array order. */
+function fromFeature(
+  decision: Record<string, unknown>,
+  key: string,
+  pick: (item: Record<string, unknown>) => unknown
+): string | null {
+  const items = decision[key];
+  if (!Array.isArray(items)) return null;
+  for (const item of items) {
+    const obj = record(item);
+    if (!obj) continue;
+    const iso = asIsoDate(pick(obj));
+    if (iso) return iso;
   }
   return null;
+}
+
+/**
+ * The date of birth Didit read off the document.
+ *
+ * Every feature report is a plural array — `id_verifications[0]`, never
+ * `id_verification` — and the date can arrive three ways depending on how the
+ * document was read: OCR, the passport's NFC chip, or a digital wallet.
+ * A webhook wraps all of it in `decision`; the decision endpoint returns it at
+ * the top level, so accept either.
+ *
+ * Returns null rather than guessing. The caller treats null as "age not
+ * established", which is not the same as "old enough".
+ */
+export function extractDateOfBirth(body: Record<string, unknown>): string | null {
+  const decision = record(body.decision) ?? body;
+
+  return (
+    fromFeature(decision, "id_verifications", (i) => i.date_of_birth) ??
+    fromFeature(decision, "nfc_verifications", (i) => record(i.chip_data)?.birth_date) ??
+    fromFeature(decision, "id_verifications", (i) =>
+      record(record(i.wallet_verification)?.attributes)?.date_of_birth
+    ) ??
+    asIsoDate(decision.date_of_birth) ??
+    asIsoDate(body.date_of_birth)
+  );
 }
 
 /** Whole years old on `asOf`, or null if the date isn't a real one. */
