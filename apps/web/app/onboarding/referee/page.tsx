@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { AffixField, Label, OptionRow, TextField } from "@/components/ui/Field";
+import { AffixField, DateField, Label, OptionRow, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
 import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, type CertEntry } from "@/lib/profile/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
 
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
@@ -43,6 +44,7 @@ type FormData = {
   travelRadius: string;
   certs: CertEntry[];
   levels: string[];
+  dateOfBirth: string;
 };
 
 /**
@@ -67,6 +69,7 @@ export default function RefereeOnboardingPage() {
     travelRadius: "25",
     certs: [],
     levels: [],
+    dateOfBirth: "",
   });
 
   const set =
@@ -98,7 +101,9 @@ export default function RefereeOnboardingPage() {
 
   // ── Validation per step (identical to the app) ────────────────────────────
   const canAdvance = [
-    form.firstName.trim().length >= 1 && form.lastName.trim().length >= 1,
+    form.firstName.trim().length >= 1 &&
+      form.lastName.trim().length >= 1 &&
+      isAdult(form.dateOfBirth),
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
     !!form.sportId,
     parseInt(form.minPay, 10) >= 1 && parseInt(form.travelRadius, 10) >= 1,
@@ -149,6 +154,7 @@ export default function RefereeOnboardingPage() {
         travelRadiusMiles: parseInt(form.travelRadius, 10),
         certs: form.certs,
         levelIds: form.levels,
+        dateOfBirth: form.dateOfBirth,
       });
 
       if (saveError) {
@@ -296,6 +302,21 @@ function NameStep({ form, set }: { form: FormData; set: SetFn }) {
         placeholder="Taylor"
         autoComplete="family-name"
       />
+      <Label className="mt-4">Date of birth</Label>
+      <DateField
+        value={form.dateOfBirth}
+        onChange={set("dateOfBirth")}
+        max={latestAdultBirthDate()}
+      />
+      {dateOfBirthError(form.dateOfBirth) ? (
+        <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
+          {dateOfBirthError(form.dateOfBirth)}
+        </p>
+      ) : (
+        <p className="mt-2 font-mono text-[10px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+          Refee is 18+. We check this against your ID.
+        </p>
+      )}
       {form.firstName.trim() && form.lastName.trim() ? (
         <div className="mt-5 flex items-center gap-2 border border-signal/30 bg-signal/5 px-3.5 py-2.5">
           <span className="font-mono text-base text-signal">▸</span>

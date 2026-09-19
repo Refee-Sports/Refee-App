@@ -23,5 +23,8 @@
   "packages/core/src/profile/queries.ts::public_profiles.upsert": "A user creates or edits their own profile.",
   "packages/core/src/profile/queries.ts::ref_levels.delete": "A ref replaces their own levels.",
   "packages/core/src/profile/queries.ts::ref_levels.insert": "A ref replaces their own levels.",
-  "packages/core/src/profile/queries.ts::ref_sports.upsert": "A ref sets their own sports."
+  "packages/core/src/profile/queries.ts::ref_sports.upsert": "A ref sets their own sports.",
+  "packages/core/src/profile/queries.ts::private_profiles.upsert": "A user saves their own date of birth at sign-up; the backend refuses under 18.",
+  "packages/core/src/director/queries.ts::private_profiles.upsert": "A user saves their own date of birth at sign-up; the backend refuses under 18.",
+  "packages/core/src/assignor/queries.ts::private_profiles.upsert": "A user saves their own date of birth at sign-up; the backend refuses under 18."
 }

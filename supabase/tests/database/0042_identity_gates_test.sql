@@ -5,11 +5,20 @@ create extension if not exists pgtap with schema extensions;
 select plan(12);
 
 -- Stable local seed identities: director/assignor 111...101 (the seed gives
--- that user both roles), referee 222...202. Everyone starts unverified.
+-- that user both roles), referee 222...202.
 --
 -- The fixtures below are written by the backend, which the gates don't apply
 -- to — that's how an unverified person can have games to look at in the first
 -- place.
+
+-- Everyone here starts unverified. Set rather than assumed: the seed approves
+-- local accounts so development isn't blocked.
+update public.private_profiles
+set identity_status = 'unstarted', identity_verified_at = null
+where id in (
+  '11111111-1111-4111-8111-111111111101',
+  '22222222-2222-4222-8222-222222222202'
+);
 
 insert into public.tournaments (
   id, hirer_id, name, sport_id, starts_on, ends_on,

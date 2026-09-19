@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Label, TextField } from "@/components/ui/Field";
+import { DateField, Label, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
 import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createAssignorProfile } from "@/lib/assignor/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
 
 
 /** Port of refee-mobile/refee/app/(onboarding)/assignor.tsx — name, then location. */
@@ -18,11 +19,13 @@ export default function AssignorOnboardingPage() {
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ firstName: "", lastName: "", city: "", state: "" });
+  const [form, setForm] = useState({ firstName: "", lastName: "", city: "", state: "", dateOfBirth: "" });
   const set = (key: keyof typeof form) => (val: string) => setForm((f) => ({ ...f, [key]: val }));
 
   const canAdvance = [
-    form.firstName.trim().length >= 1 && form.lastName.trim().length >= 1,
+    form.firstName.trim().length >= 1 &&
+      form.lastName.trim().length >= 1 &&
+      isAdult(form.dateOfBirth),
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
   ];
   const isLastStep = step === 1;
@@ -53,6 +56,7 @@ export default function AssignorOnboardingPage() {
       lastInitial: form.lastName.trim()[0]?.toUpperCase() ?? "?",
       city: form.city.trim(),
       state: form.state.trim().toUpperCase(),
+      dateOfBirth: form.dateOfBirth,
     });
     if (saveError) {
       setError(saveError.message || "Something went wrong. Please try again.");
@@ -111,6 +115,21 @@ export default function AssignorOnboardingPage() {
               placeholder="Ellis"
               autoComplete="family-name"
             />
+            <Label className="mt-4">Date of birth</Label>
+            <DateField
+              value={form.dateOfBirth}
+              onChange={set("dateOfBirth")}
+              max={latestAdultBirthDate()}
+            />
+            {dateOfBirthError(form.dateOfBirth) ? (
+              <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
+                {dateOfBirthError(form.dateOfBirth)}
+              </p>
+            ) : (
+              <p className="mt-2 font-mono text-[10px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+                Refee is 18+. We check this against your ID.
+              </p>
+            )}
           </div>
         ) : (
           <div>

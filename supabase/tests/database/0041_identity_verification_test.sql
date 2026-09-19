@@ -4,10 +4,20 @@ create extension if not exists pgtap with schema extensions;
 
 select plan(17);
 
--- The seeded referee and director. Both start unverified: 0041 defaults every
--- existing account to 'unstarted', which is the whole point of the rollout.
+-- The seeded referee and director. 0041 defaults every existing account to
+-- 'unstarted', which is the whole point of the rollout.
 -- 11111111-…-111101 is the director, and the seed gives that user the assignor
 -- role as well.
+
+-- These two start unverified. The test sets that rather than assuming it: the
+-- seed approves local accounts so development isn't blocked, and a test that
+-- reads whatever state the database happens to be in isn't a test.
+update public.private_profiles
+set identity_status = 'unstarted', identity_verified_at = null, identity_session_id = null
+where id in (
+  '11111111-1111-4111-8111-111111111100',
+  '22222222-2222-4222-8222-222222222202'
+);
 
 -- Start the guarded columns at known values, so every attempt below is a real
 -- change. The guard fires on changing a backend column, not on rewriting it

@@ -158,8 +158,17 @@ export async function createDirectorProfile(
     orgType: string;
     city: string;
     state: string;
+    dateOfBirth: string;
   }
 ): Promise<{ hirerId: string | null; error: Error | null }> {
+  // Refee is 18+. This goes first so someone too young is turned away
+  // before any profile row exists — the database refuses it (0043).
+  const { error: ageError } = await supabase.from("private_profiles").upsert({
+    id: userId,
+    date_of_birth: args.dateOfBirth,
+  });
+  if (ageError) return { hirerId: null, error: new Error(ageError.message) };
+
   const { error: profileError } = await supabase.from("public_profiles").upsert({
     id: userId,
     first_name: args.contactFirstName,

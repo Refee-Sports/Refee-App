@@ -15,6 +15,7 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, CertEntry } from "@/lib/profile/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
 
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
@@ -39,7 +40,7 @@ const LEVELS = [
 const STEP_LABELS = ["NAME", "LOCATION", "SPORT", "RATE", "CERTIFICATIONS", "LEVELS"];
 const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08"];
 
-type StringFormKey = "firstName" | "lastName" | "city" | "state" | "sportId" | "yearsExperience" | "minPay" | "travelRadius";
+type StringFormKey = "firstName" | "lastName" | "city" | "state" | "sportId" | "yearsExperience" | "minPay" | "travelRadius" | "dobDigits";
 type StringSetter = (k: StringFormKey) => (v: string) => void;
 
 type FormData = {
@@ -53,6 +54,8 @@ type FormData = {
   travelRadius: string;
   certs: CertEntry[];
   levels: string[];
+  /** Date of birth as typed on the keypad: MMDDYYYY digits. */
+  dobDigits: string;
 };
 
 export default function Onboarding() {
@@ -75,6 +78,7 @@ export default function Onboarding() {
     travelRadius: "25",
     certs: [],
     levels: [],
+    dobDigits: "",
   });
 
   const set: StringSetter = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
@@ -106,7 +110,9 @@ export default function Onboarding() {
 
   // ── Validation per step ──────────────────────────────────────────────────
   const canAdvance = [
-    form.firstName.trim().length >= 1 && form.lastName.trim().length >= 1,
+    form.firstName.trim().length >= 1 &&
+      form.lastName.trim().length >= 1 &&
+      isAdult(usDateInput(form.dobDigits).iso),
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
     !!form.sportId,
     parseInt(form.minPay, 10) >= 1 && parseInt(form.travelRadius, 10) >= 1,
@@ -179,6 +185,7 @@ export default function Onboarding() {
         travelRadiusMiles: parseInt(form.travelRadius, 10),
         certs: form.certs,
         levelIds: form.levels,
+        dateOfBirth: usDateInput(form.dobDigits).iso,
       });
 
       if (saveError) {
@@ -346,6 +353,17 @@ function NameStep({ form, set }: { form: FormData; set: StringSetter }) {
         onChangeText={set("lastName")}
         placeholder="Taylor"
         autoCapitalize="words"
+      />
+
+      <Label style={{ marginTop: 16 }}>DATE OF BIRTH</Label>
+      <StyledInput
+        value={usDateInput(form.dobDigits).display}
+        onChangeText={set("dobDigits")}
+        placeholder="MM/DD/YYYY"
+        keyboardType="number-pad"
+        maxLength={10}
+        error={dateOfBirthError(usDateInput(form.dobDigits).iso) ?? undefined}
+        hint="Refee is 18+. We check this against your ID."
       />
 
       {form.firstName.trim() && form.lastName.trim() ? (

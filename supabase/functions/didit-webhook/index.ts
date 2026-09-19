@@ -6,7 +6,13 @@
 // until we answer, so: verify the signature, reserve the event by id, do the
 // small amount of work inline, and answer well inside its five-second budget.
 import { adminClient, json } from "../_shared/util.ts";
-import { mapStatus, verifySignature } from "../_shared/didit.ts";
+import {
+  extractDateOfBirth,
+  isKnownMinor,
+  mapStatus,
+  verifySignature,
+  type IdentityStatus,
+} from "../_shared/didit.ts";
 
 type AdminClient = ReturnType<typeof adminClient>;
 
@@ -125,17 +131,26 @@ Deno.serve(async (req) => {
       return json({ received: true, ignored: true });
     }
 
-    const approved = status === "approved";
+    // Refee is 18+ (migration 0043). Didit read this date off a government
+    // ID, so it settles the question: a minor is declined here whatever else
+    // the check found, and whatever date they typed at sign-up.
+    const dateOfBirth = extractDateOfBirth(body);
+    const minor = isKnownMinor(dateOfBirth);
+    const decided: IdentityStatus = minor ? "declined" : status;
+
+    const approved = decided === "approved";
     const patch: Record<string, unknown> = {
-      identity_status: status,
+      identity_status: decided,
       identity_session_id: sessionId ?? profile.identity_session_id,
       identity_decision_at: now,
-      identity_last_reason: reasonFor(body),
+      identity_last_reason: minor ? "Under 18" : reasonFor(body),
       identity_verified_at: approved ? now : null,
     };
+    // The verified date replaces whatever was self-reported.
+    if (dateOfBirth) patch.date_of_birth = dateOfBirth;
     // A check that has finished — however it finished — has nothing left to
     // resume, so the hosted link goes. One still in progress keeps it.
-    if (status !== "in_progress") patch.identity_session_url = null;
+    if (decided !== "in_progress") patch.identity_session_url = null;
 
     const { error: updateError } = await admin
       .from("private_profiles")
@@ -164,7 +179,7 @@ Deno.serve(async (req) => {
       .eq("event_id", key);
     if (ledgerError) throw new Error(ledgerError.message);
 
-    return json({ received: true, status });
+    return json({ received: true, status: decided });
   } catch (error) {
     await admin
       .from("didit_webhook_events")

@@ -15,6 +15,7 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createDirectorProfile } from "@/lib/director/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
 
 
 const ORG_TYPES = [
@@ -33,6 +34,8 @@ type FormData = {
   orgType: string;
   city: string;
   state: string;
+  /** Date of birth as typed on the keypad: MMDDYYYY digits. */
+  dobDigits: string;
 };
 
 export default function DirectorOnboarding() {
@@ -50,13 +53,16 @@ export default function DirectorOnboarding() {
     orgType: "",
     city: "",
     state: "",
+    dobDigits: "",
   });
 
   const set = (key: keyof FormData) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
   const canAdvance = [
-    form.firstName.trim().length >= 1 && form.lastName.trim().length >= 1,
+    form.firstName.trim().length >= 1 &&
+      form.lastName.trim().length >= 1 &&
+      isAdult(usDateInput(form.dobDigits).iso),
     form.orgName.trim().length >= 1 && !!form.orgType,
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
   ];
@@ -103,6 +109,7 @@ export default function DirectorOnboarding() {
         orgType: form.orgType,
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
+        dateOfBirth: usDateInput(form.dobDigits).iso,
       });
 
       if (saveError) {
@@ -264,6 +271,19 @@ function NameStep({
 
       <DLabel style={{ marginTop: 16 }}>LAST NAME</DLabel>
       <DInput value={form.lastName} onChangeText={set("lastName")} placeholder="Taylor" autoCapitalize="words" />
+
+      <DLabel style={{ marginTop: 16 }}>DATE OF BIRTH</DLabel>
+      <DInput
+        value={usDateInput(form.dobDigits).display}
+        onChangeText={set("dobDigits")}
+        placeholder="MM/DD/YYYY"
+        keyboardType="number-pad"
+        maxLength={10}
+        error={dateOfBirthError(usDateInput(form.dobDigits).iso) ?? undefined}
+      />
+      <Text className="text-ink-60 font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        Refee is 18+. We check this against your ID.
+      </Text>
 
       {form.firstName.trim() && form.lastName.trim() ? (
         <View className="mt-5 border border-signal/30 bg-signal/5 px-3.5 py-2.5 flex-row items-center gap-2">

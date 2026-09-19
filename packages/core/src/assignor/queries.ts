@@ -103,8 +103,22 @@ export async function fetchMyRoles(userId: string): Promise<{ roles: string[]; e
 /** Dedicated assignor onboarding — creates the public profile with primary_role = 'assignor'. */
 export async function createAssignorProfile(
   userId: string,
-  args: { firstName: string; lastInitial: string; city: string; state: string }
+  args: {
+    firstName: string;
+    lastInitial: string;
+    city: string;
+    state: string;
+    dateOfBirth: string;
+  }
 ): Promise<{ error: Error | null }> {
+  // Refee is 18+. This goes first so someone too young is turned away
+  // before any profile row exists — the database refuses it (0043).
+  const { error: ageError } = await supabase.from("private_profiles").upsert({
+    id: userId,
+    date_of_birth: args.dateOfBirth,
+  });
+  if (ageError) return { error: new Error(ageError.message) };
+
   const { error } = await supabase.from("public_profiles").upsert({
     id: userId,
     first_name: args.firstName,

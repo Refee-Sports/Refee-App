@@ -148,3 +148,72 @@ export async function verifySignature(args: {
   }
   return { ok: true };
 }
+
+// ── Age ──────────────────────────────────────────────────────────────────────
+// Refee is 18+. The apps ask for a date of birth at sign-up, but a typed date
+// isn't evidence — this is the one read off a government ID, so it's the one
+// that settles it. Mirrors packages/core/src/identity/age.ts, which does the
+// same arithmetic for the forms.
+
+export const MINIMUM_AGE = 18;
+
+/**
+ * Didit's date of birth, wherever this workflow puts it. The shape varies by
+ * workflow and version, so look in each place it's known to appear rather than
+ * trusting one path — and return null rather than guessing.
+ */
+export function extractDateOfBirth(body: Record<string, unknown>): string | null {
+  const decision = (body.decision ?? {}) as Record<string, unknown>;
+  const kyc = (decision.kyc ?? {}) as Record<string, unknown>;
+  const idv = (decision.id_verification ?? {}) as Record<string, unknown>;
+
+  const candidates = [
+    kyc.date_of_birth,
+    idv.date_of_birth,
+    decision.date_of_birth,
+    body.date_of_birth,
+  ];
+
+  for (const value of candidates) {
+    if (typeof value !== "string") continue;
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value.trim());
+    if (match) return match[0].slice(0, 10);
+  }
+  return null;
+}
+
+/** Whole years old on `asOf`, or null if the date isn't a real one. */
+export function ageInYears(value: string, asOf: Date = new Date()): number | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return null;
+  const [, y, m, d] = match;
+  const year = Number(y);
+  const month = Number(m);
+  const day = Number(d);
+  const dob = new Date(Date.UTC(year, month - 1, day));
+  if (
+    dob.getUTCFullYear() !== year ||
+    dob.getUTCMonth() !== month - 1 ||
+    dob.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  let age = asOf.getUTCFullYear() - year;
+  const monthDiff = asOf.getUTCMonth() - (month - 1);
+  if (monthDiff < 0 || (monthDiff === 0 && asOf.getUTCDate() < day)) age -= 1;
+  return age;
+}
+
+/** True only for a date of birth we can read and that is old enough. */
+export function isAdult(value: string | null, asOf: Date = new Date()): boolean {
+  if (!value) return false;
+  const age = ageInYears(value, asOf);
+  return age !== null && age >= MINIMUM_AGE;
+}
+
+/** A date of birth we can read and that is too young — the only case that declines. */
+export function isKnownMinor(value: string | null, asOf: Date = new Date()): boolean {
+  if (!value) return false;
+  const age = ageInYears(value, asOf);
+  return age !== null && age < MINIMUM_AGE;
+}

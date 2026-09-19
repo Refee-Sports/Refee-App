@@ -79,8 +79,17 @@ export async function saveFullProfile(
     travelRadiusMiles: number;
     certs: CertEntry[];
     levelIds: string[];
+    dateOfBirth: string;
   }
 ) {
+  // Refee is 18+. This goes first so someone too young is turned away
+  // before any profile row exists — the database refuses it (0043).
+  const { error: ageError } = await supabase.from("private_profiles").upsert({
+    id: userId,
+    date_of_birth: args.dateOfBirth,
+  });
+  if (ageError) return { error: ageError };
+
   // Geocode home city for distance-based job filtering (best-effort)
   const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
 

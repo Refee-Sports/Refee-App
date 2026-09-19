@@ -2,13 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Label, OptionRow, TextField } from "@/components/ui/Field";
+import { DateField, Label, OptionRow, TextField } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/AppButton";
 import { Icon } from "@/components/ui/Icon";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createDirectorProfile } from "@/lib/director/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
 
 
 const ORG_TYPES = [
@@ -25,6 +26,7 @@ type FormData = {
   orgType: string;
   city: string;
   state: string;
+  dateOfBirth: string;
 };
 
 /** Port of refee-mobile/refee/app/(onboarding)/director.tsx. */
@@ -41,13 +43,16 @@ export default function DirectorOnboardingPage() {
     orgType: "",
     city: "",
     state: "",
+    dateOfBirth: "",
   });
 
   const set = (key: keyof FormData) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
   const canAdvance = [
-    form.firstName.trim().length >= 1 && form.lastName.trim().length >= 1,
+    form.firstName.trim().length >= 1 &&
+      form.lastName.trim().length >= 1 &&
+      isAdult(form.dateOfBirth),
     form.orgName.trim().length >= 1 && !!form.orgType,
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
   ];
@@ -86,6 +91,7 @@ export default function DirectorOnboardingPage() {
         orgType: form.orgType,
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
+        dateOfBirth: form.dateOfBirth,
       });
 
       if (saveError) {
@@ -155,6 +161,21 @@ export default function DirectorOnboardingPage() {
               placeholder="Taylor"
               autoComplete="family-name"
             />
+            <Label className="mt-4">Date of birth</Label>
+            <DateField
+              value={form.dateOfBirth}
+              onChange={set("dateOfBirth")}
+              max={latestAdultBirthDate()}
+            />
+            {dateOfBirthError(form.dateOfBirth) ? (
+              <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
+                {dateOfBirthError(form.dateOfBirth)}
+              </p>
+            ) : (
+              <p className="mt-2 font-mono text-[10px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+                Refee is 18+. We check this against your ID.
+              </p>
+            )}
             {form.firstName.trim() && form.lastName.trim() ? (
               <div className="mt-5 flex items-center gap-2 border border-signal/30 bg-signal/5 px-3.5 py-2.5">
                 <span className="font-mono text-base text-signal">▸</span>
