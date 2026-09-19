@@ -273,3 +273,93 @@ export function expectedDetails(
   if (dob) out.date_of_birth = dob;
   return Object.keys(out).length > 0 ? out : null;
 }
+
+// ── Why a check ended the way it did ─────────────────────────────────────────
+// Didit explains a review or decline in `warnings` on each feature report:
+// `{ risk, log_type, short_description, additional_data }`. Refee keeps one
+// plain-English sentence — never `additional_data`, which carries the very
+// details being compared (both dates of birth, say).
+
+type Explained = { rank: number; text: string };
+
+/** A warning code in the person's terms; lower rank = more consequential. */
+function explainRisk(code: string, fallback: unknown): Explained {
+  const c = code.toUpperCase();
+  if (c.includes("DUPLICAT")) {
+    return { rank: 0, text: "This ID or face is already linked to another Refee account." };
+  }
+  if (["PRINTED", "SCREEN_REPLAY", "PORTRAIT_REPLACE", "TAMPER", "FORGE"].some((p) => c.includes(p))) {
+    return { rank: 1, text: "Your ID didn't pass the authenticity checks." };
+  }
+  if (c.includes("FACE") && c.includes("MATCH")) {
+    return { rank: 2, text: "Your selfie didn't match the photo on your ID." };
+  }
+  if (c.includes("LIVENESS") || c.includes("SPOOF")) {
+    return { rank: 3, text: "We couldn't confirm your selfie was taken live." };
+  }
+  if (c.includes("NAME") && c.includes("MISMATCH")) {
+    return { rank: 4, text: "The name on your ID doesn't match the one you entered at sign-up." };
+  }
+  if ((c.includes("DOB") || c.includes("BIRTH")) && c.includes("MISMATCH")) {
+    return { rank: 5, text: "The date of birth on your ID doesn't match the one you entered at sign-up." };
+  }
+  if (c.includes("EXPIRED")) return { rank: 6, text: "Your ID has expired." };
+  if (c.includes("BLUR")) return { rank: 7, text: "The photo of your ID was too blurry to read." };
+  if (c.includes("QUALITY") || c.includes("DARK") || c.includes("BRIGHT")) {
+    return { rank: 8, text: "The photo of your ID wasn't clear enough to read." };
+  }
+  // A code we haven't seen: Didit's own one-line description is generic and
+  // safe to show; failing that, say only that a person will look.
+  const text = typeof fallback === "string" && fallback.trim() ? fallback.trim() : "Your ID needs a manual check.";
+  return { rank: 9, text: text.slice(0, 200) };
+}
+
+const WARNING_SOURCES = [
+  "id_verifications",
+  "nfc_verifications",
+  "liveness_checks",
+  "face_matches",
+  "ip_analyses",
+];
+
+/**
+ * The most consequential actionable warning, in plain words — or null.
+ * `log_type: "information"` entries (an address that wouldn't geocode, a
+ * barcode that wasn't read) are notices, not reasons, and are skipped.
+ */
+export function reviewReason(body: Record<string, unknown>): string | null {
+  const decision = record(body.decision) ?? body;
+  let best: Explained | null = null;
+  for (const key of WARNING_SOURCES) {
+    const items = decision[key];
+    if (!Array.isArray(items)) continue;
+    for (const item of items) {
+      const warnings = record(item)?.warnings;
+      if (!Array.isArray(warnings)) continue;
+      for (const w of warnings) {
+        const warning = record(w);
+        if (!warning || typeof warning.risk !== "string") continue;
+        if (warning.log_type === "information") continue;
+        const explained = explainRisk(warning.risk, warning.short_description);
+        if (!best || explained.rank < best.rank) best = explained;
+      }
+    }
+  }
+  return best?.text ?? null;
+}
+
+/** What Refee records as the reason for a decision. Approved has none. */
+export function lastReason(args: {
+  decided: IdentityStatus;
+  minor: boolean;
+  ageUnknown: boolean;
+  body: Record<string, unknown>;
+}): string | null {
+  if (args.minor) return "You must be 18 or older to use Refee.";
+  if (args.ageUnknown) return "We couldn't read the date of birth on your ID.";
+  if (args.decided === "approved") return null;
+  const decision = record(args.body.decision) ?? {};
+  const given = [args.body.reason, decision.reason, decision.status_reason, args.body.status_reason]
+    .find((v): v is string => typeof v === "string" && v.trim().length > 0);
+  return reviewReason(args.body) ?? (given ? given.trim().slice(0, 200) : null);
+}

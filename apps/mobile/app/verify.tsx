@@ -39,6 +39,8 @@ export default function Verify() {
   const [loading, setLoading] = useState(false);
   const [waiting, setWaiting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Why the last check went to review or didn't pass, in plain words.
+  const [reason, setReason] = useState<string | null>(null);
   const cancelled = useRef(false);
 
   const home = HOME[primaryRole ?? "referee"] ?? HOME.referee;
@@ -49,7 +51,10 @@ export default function Verify() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || cancelled.current) return;
       const current = await fetchMyIdentityStatus(user.id);
-      if (!cancelled.current) setStatus(current.status);
+      if (!cancelled.current) {
+        setStatus(current.status);
+        setReason(current.reason);
+      }
     })();
     return () => {
       cancelled.current = true;
@@ -67,6 +72,7 @@ export default function Verify() {
       const next = await fetchMyIdentityStatus(user.id);
       if (cancelled.current) return;
       setStatus(next.status);
+      setReason(next.reason);
       if (next.status === "approved") {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setWaiting(false);
@@ -139,6 +145,7 @@ export default function Verify() {
             ? "Hang on while we get the result."
             : "Someone is looking at your ID now. This usually takes a few minutes."}
         </Body>
+        {!waiting && reason ? <ReasonLine text={reason} /> : null}
         {waiting ? <ActivityIndicator className="mt-6" color="#08111C" /> : null}
         <Primary label="KEEP LOOKING AROUND" onPress={skip} />
       </Shell>
@@ -159,6 +166,7 @@ export default function Verify() {
           ? "That check didn't go through. You can start a new one — have your ID ready, and good light helps."
           : "Refee is open to anyone, so we check that every person on it is real and who they say they are. Directors are handing you their games; referees are handing you their pay."}
       </Body>
+      {retrying && reason ? <ReasonLine text={reason} /> : null}
 
       <View className="mt-6 border border-ink-20 px-4 py-4 gap-3">
         {[
@@ -275,5 +283,14 @@ function Primary({
         →
       </Text>
     </Pressable>
+  );
+}
+
+/** Why the last check ended the way it did — plain words, never the data behind it. */
+function ReasonLine({ text }: { text: string }) {
+  return (
+    <View className="mt-3 border-l-2 border-foul pl-3">
+      <Text className="text-ink text-[13px] leading-[20px]">{text}</Text>
+    </View>
   );
 }

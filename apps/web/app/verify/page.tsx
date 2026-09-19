@@ -1,14 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import {
   ASSIGNOR_HOME,
   DIRECTOR_HOME,
   REFEREE_HOME,
 } from "@/components/providers/RouteGate";
-import { skipVerificationWarning, startIdentityVerification } from "@/lib/identity/queries";
+import {
+  fetchMyIdentityStatus,
+  skipVerificationWarning,
+  startIdentityVerification,
+} from "@/lib/identity/queries";
 
 /**
  * Where someone proves who they are. The check itself happens on Didit's own
@@ -16,12 +20,25 @@ import { skipVerificationWarning, startIdentityVerification } from "@/lib/identi
  * comes back to the backend, signed. This screen only starts it.
  */
 export default function VerifyPage() {
-  const { primaryRole, identityStatus } = useAuth();
+  const { userId, primaryRole, identityStatus } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // "I'll do this later" asks once, so nobody skips without knowing what it costs.
   const [confirmingSkip, setConfirmingSkip] = useState(false);
+  // Why the last check went to review or didn't pass, in plain words.
+  const [reason, setReason] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    void fetchMyIdentityStatus(userId).then((s) => {
+      if (!cancelled) setReason(s.reason);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, identityStatus]);
 
   const home =
     primaryRole === "director"
@@ -66,6 +83,7 @@ export default function VerifyPage() {
           You can keep browsing while you wait — we&apos;ll open everything up as
           soon as it clears.
         </p>
+        <Reason text={reason} />
         <Primary label="Keep looking around" onClick={() => router.replace(home)} />
       </Shell>
     );
@@ -81,6 +99,7 @@ export default function VerifyPage() {
           ? "That check didn't go through. You can start a new one — have your ID ready and good light helps."
           : "Refee is open to anyone, so we check that every person on it is real and who they say they are. Directors are handing you their games; referees are handing you their pay."}
       </p>
+      {retrying ? <Reason text={reason} /> : null}
 
       <ol className="mt-6 flex flex-col gap-3 border border-ink-20 px-4 py-4">
         {[
@@ -212,4 +231,10 @@ function Primary({
       <span className="font-mono-bold text-base">→</span>
     </button>
   );
+}
+
+/** Why the last check ended the way it did — plain words, never the data behind it. */
+function Reason({ text }: { text: string | null }) {
+  if (!text) return null;
+  return <p className="mt-3 border-l-2 border-foul pl-3 text-[13px] leading-5 text-ink">{text}</p>;
 }

@@ -9,6 +9,7 @@ import { adminClient, json } from "../_shared/util.ts";
 import {
   extractDateOfBirth,
   isKnownMinor,
+  lastReason,
   mapStatus,
   verifySignature,
   type IdentityStatus,
@@ -68,16 +69,6 @@ async function reserveEvent(
     .eq("event_id", key);
   if (retryError) throw new Error(retryError.message);
   return true;
-}
-
-/** Short, human-readable, and free of anything personal. */
-function reasonFor(body: Record<string, unknown>): string | null {
-  const decision = (body.decision ?? {}) as Record<string, unknown>;
-  const candidates = [body.reason, decision.reason, decision.status_reason, body.status_reason];
-  for (const value of candidates) {
-    if (typeof value === "string" && value.trim().length > 0) return value.trim().slice(0, 200);
-  }
-  return null;
 }
 
 Deno.serve(async (req) => {
@@ -147,11 +138,7 @@ Deno.serve(async (req) => {
       identity_status: decided,
       identity_session_id: sessionId ?? profile.identity_session_id,
       identity_decision_at: now,
-      identity_last_reason: minor
-        ? "Under 18"
-        : ageUnknown
-          ? "Age not confirmed"
-          : reasonFor(body),
+      identity_last_reason: lastReason({ decided, minor, ageUnknown, body }),
       identity_verified_at: approved ? now : null,
     };
     // The verified date replaces whatever was self-reported.

@@ -28,6 +28,7 @@ export default function VerifyDonePage() {
   const router = useRouter();
   const [status, setStatus] = useState<IdentityStatus | null>(null);
   const [stillWaiting, setStillWaiting] = useState(false);
+  const [reason, setReason] = useState<string | null>(null);
   const startedAt = useRef(Date.now());
 
   const home =
@@ -45,6 +46,7 @@ export default function VerifyDonePage() {
       const next = await fetchMyIdentityStatus(userId);
       if (cancelled) return;
       setStatus(next.status);
+      setReason(next.reason);
 
       if (next.status === "approved") {
         await refreshProfile();
@@ -88,6 +90,9 @@ export default function VerifyDonePage() {
               ? "This one is taking longer than usual. Nothing is wrong — you can carry on and we'll open everything up the moment it clears."
               : (status ? verificationBlocker(status, primaryRole) : "Hang on while we get the result.")}
         </p>
+        {reason && (declined || status === "in_review") ? (
+          <p className="mt-3 border-l-2 border-foul pl-3 text-[13px] leading-5 text-ink">{reason}</p>
+        ) : null}
 
         {!declined && !stillWaiting && (
           <p
