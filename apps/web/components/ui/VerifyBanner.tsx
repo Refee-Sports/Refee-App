@@ -12,12 +12,12 @@ import { verificationBlocker } from "@/lib/identity/queries";
  * by being rejected.
  */
 export function VerifyBanner() {
-  const { identityStatus } = useAuth();
+  const { identityStatus, primaryRole } = useAuth();
 
   // null = still resolving; approved = nothing to say.
   if (!identityStatus || identityStatus === "approved") return null;
 
-  const message = verificationBlocker(identityStatus);
+  const message = verificationBlocker(identityStatus, primaryRole);
   if (!message) return null;
 
   const waiting = identityStatus === "in_review";
@@ -48,7 +48,7 @@ export function VerifyBanner() {
  * Use for `disabled` and `title` on Apply, Accept, Post game, Offer.
  */
 export function useVerificationGate(): string | null {
-  const { identityStatus } = useAuth();
+  const { identityStatus, primaryRole } = useAuth();
   if (!identityStatus) return null;
-  return identityStatus === "approved" ? null : verificationBlocker(identityStatus);
+  return identityStatus === "approved" ? null : verificationBlocker(identityStatus, primaryRole);
 }

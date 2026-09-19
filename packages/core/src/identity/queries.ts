@@ -25,22 +25,47 @@ export function isVerified(status: IdentityStatus): boolean {
   return status === "approved";
 }
 
+/**
+ * The work a verified ID unlocks, in each role's own terms. Referees take games,
+ * directors post them, assignors staff them — so "working games" is only true
+ * for one of the three. Anything unrecognised reads as a referee, the most
+ * common role.
+ */
+export function lockedWork(role: string | null | undefined): string {
+  switch (role) {
+    case "director":
+      return "create games";
+    case "assignor":
+      return "assign games";
+    default:
+      return "accept games";
+  }
+}
+
+/** Said before someone skips verification, so the cost is clear up front. */
+export function skipVerificationWarning(role: string | null | undefined): string {
+  return `Until your ID is verified, you won't be able to ${lockedWork(role)}. You can still look around, and verify any time from your home screen.`;
+}
+
 /** What to tell someone who can't act yet, or null once they can. */
-export function verificationBlocker(status: IdentityStatus): string | null {
+export function verificationBlocker(
+  status: IdentityStatus,
+  role?: string | null
+): string | null {
   switch (status) {
     case "approved":
       return null;
     case "in_review":
       return "We're checking your ID. This usually takes a few minutes.";
     case "in_progress":
-      return "Finish verifying your ID to start working games.";
+      return `Finish verifying your ID to ${lockedWork(role)}.`;
     case "declined":
       return "We couldn't verify your ID. You can try again.";
     case "expired":
     case "abandoned":
       return "Your ID check didn't finish. Start it again to continue.";
     default:
-      return "Verify your ID to start working games.";
+      return `Verify your ID to ${lockedWork(role)}.`;
   }
 }
 

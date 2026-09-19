@@ -8,7 +8,7 @@ import {
   DIRECTOR_HOME,
   REFEREE_HOME,
 } from "@/components/providers/RouteGate";
-import { startIdentityVerification } from "@/lib/identity/queries";
+import { skipVerificationWarning, startIdentityVerification } from "@/lib/identity/queries";
 
 /**
  * Where someone proves who they are. The check itself happens on Didit's own
@@ -20,6 +20,8 @@ export default function VerifyPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // "I'll do this later" asks once, so nobody skips without knowing what it costs.
+  const [confirmingSkip, setConfirmingSkip] = useState(false);
 
   const home =
     primaryRole === "director"
@@ -121,14 +123,39 @@ export default function VerifyPage() {
         onClick={() => void start()}
         disabled={loading}
       />
-      <button
-        type="button"
-        onClick={() => router.replace(home)}
-        className="mt-3 w-full py-3 font-mono text-[10px] uppercase text-ink-60 hover:text-ink"
-        style={{ letterSpacing: 2 }}
-      >
-        I&apos;ll do this later
-      </button>
+      {confirmingSkip ? (
+        <div role="alert" className="mt-4 border border-foul bg-foul/10 px-4 py-4">
+          <p className="text-[13px] leading-5 text-ink">{skipVerificationWarning(primaryRole)}</p>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => void start()}
+              disabled={loading}
+              className="flex-1 bg-ink py-3 font-mono-bold text-[10px] uppercase text-paper hover:opacity-80"
+              style={{ letterSpacing: 2 }}
+            >
+              Verify now
+            </button>
+            <button
+              type="button"
+              onClick={() => router.replace(home)}
+              className="flex-1 border border-ink py-3 font-mono-bold text-[10px] uppercase text-ink hover:bg-ink hover:text-paper"
+              style={{ letterSpacing: 2 }}
+            >
+              Skip for now
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirmingSkip(true)}
+          className="mt-3 w-full py-3 font-mono text-[10px] uppercase text-ink-60 hover:text-ink"
+          style={{ letterSpacing: 2 }}
+        >
+          I&apos;ll do this later
+        </button>
+      )}
     </Shell>
   );
 }

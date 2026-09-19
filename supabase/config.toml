@@ -277,6 +277,10 @@ max_frequency = "5s"
 15555550105 = "123456"
 "+15555550199" = "123456"
 15555550199 = "123456"
+# Fresh sign-up tests (identity verification) — never seeded, so it always
+# goes through onboarding from the start.
+"+15555550106" = "123456"
+15555550106 = "123456"
 
 # Zebra Ref (real-number test referee) — bypasses real SMS locally.
 "+17038982404" = "123456"

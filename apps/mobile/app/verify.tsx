@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -10,6 +10,7 @@ import { supabase } from "@/lib/supabase";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import {
   fetchMyIdentityStatus,
+  skipVerificationWarning,
   startIdentityVerification,
   type IdentityStatus,
 } from "@/lib/identity/queries";
@@ -112,6 +113,15 @@ export default function Verify() {
     router.replace(home as any);
   };
 
+  // "I'll do this later" asks once, so nobody skips without knowing what it costs.
+  const confirmSkip = () => {
+    Haptics.selectionAsync();
+    Alert.alert("Skip verification for now?", skipVerificationWarning(primaryRole), [
+      { text: "Verify now", onPress: () => void start() },
+      { text: "Skip for now", style: "destructive", onPress: () => router.replace(home as any) },
+    ]);
+  };
+
   if (status === "approved") {
     return (
       <Shell insets={insets} line1="YOU'RE" line2="VERIFIED">
@@ -191,7 +201,7 @@ export default function Verify() {
         onPress={() => void start()}
         disabled={loading}
       />
-      <Pressable onPress={skip} className="mt-3 py-3 active:opacity-70">
+      <Pressable onPress={confirmSkip} className="mt-3 py-3 active:opacity-70">
         <Text
           className="text-ink-60 font-mono text-[10px] uppercase text-center"
           style={{ letterSpacing: 2 }}

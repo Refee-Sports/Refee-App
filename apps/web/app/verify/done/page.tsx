@@ -86,7 +86,7 @@ export default function VerifyDonePage() {
             ? "That check didn't pass. You can start a new one — it's often just a blurry photo or an expired ID."
             : stillWaiting
               ? "This one is taking longer than usual. Nothing is wrong — you can carry on and we'll open everything up the moment it clears."
-              : (status ? verificationBlocker(status) : "Hang on while we get the result.")}
+              : (status ? verificationBlocker(status, primaryRole) : "Hang on while we get the result.")}
         </p>
 
         {!declined && !stillWaiting && (
