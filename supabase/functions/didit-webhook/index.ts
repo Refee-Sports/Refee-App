@@ -11,6 +11,7 @@ import {
   isKnownMinor,
   lastReason,
   mapStatus,
+  vendorUserId,
   verifySignature,
   type IdentityStatus,
 } from "../_shared/didit.ts";
@@ -104,7 +105,7 @@ Deno.serve(async (req) => {
     if (!shouldProcess) return json({ received: true, duplicate: true });
 
     const status = mapStatus(typeof body.status === "string" ? body.status : null);
-    const userId = typeof body.vendor_data === "string" ? body.vendor_data : null;
+    const userId = vendorUserId(body);
     const now = new Date().toISOString();
 
     // Whose check this is: the id we handed Didit at creation, confirmed

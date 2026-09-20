@@ -363,3 +363,22 @@ export function lastReason(args: {
     .find((v): v is string => typeof v === "string" && v.trim().length > 0);
   return reviewReason(args.body) ?? (given ? given.trim().slice(0, 200) : null);
 }
+
+// ── Whose check is this ──────────────────────────────────────────────────────
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * The Refee user id Didit echoes back in `vendor_data`, or null.
+ *
+ * Sessions made outside Refee carry something else entirely — Didit's own
+ * getting-started flow sends "getting-started" — and handing that to a uuid
+ * column throws, turning a webhook we simply don't care about into a 500 and
+ * two pointless retries. Anything that isn't a uuid is "not ours".
+ */
+export function vendorUserId(body: Record<string, unknown>): string | null {
+  const raw = body.vendor_data;
+  if (typeof raw !== "string") return null;
+  const trimmed = raw.trim();
+  return UUID.test(trimmed) ? trimmed : null;
+}
