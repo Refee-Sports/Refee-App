@@ -10,6 +10,12 @@ import { expectedDetails } from "../_shared/didit.ts";
 
 const DIDIT_API = "https://verification.didit.me/v3";
 
+// Each session Didit opens is a real, billable verification. Someone who keeps
+// failing and retrying — or a tampered client in a loop — would otherwise spend
+// the monthly allowance and then money. A person needs a couple of attempts,
+// never dozens. Counted in ai_events, the same ledger the AI import uses.
+const DAILY_LIMIT = Number(Deno.env.get("IDENTITY_DAILY_LIMIT") ?? "5");
+
 type Profile = {
   identity_status: string | null;
   identity_session_id: string | null;
@@ -64,6 +70,22 @@ Deno.serve(async (req) => {
       return json({ status: "in_review", url: null });
     }
 
+    // Resumed sessions above don't reach here, so this counts new ones only.
+    const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+    const { count, error: countError } = await admin
+      .from("ai_events")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("kind", "identity_session")
+      .gte("created_at", since);
+    if (countError) throw new Error(countError.message);
+    if ((count ?? 0) >= DAILY_LIMIT) {
+      return json(
+        { error: "You've started too many ID checks today. Try again tomorrow, or contact Refee support." },
+        429
+      );
+    }
+
     const expected = expectedDetails(existing ?? null);
     const response = await fetch(`${DIDIT_API}/session/`, {
       method: "POST",
@@ -99,6 +121,9 @@ Deno.serve(async (req) => {
         { onConflict: "id" }
       );
     if (error) throw new Error(error.message);
+
+    // Recorded after the session exists, so a failed call costs nobody an attempt.
+    await admin.from("ai_events").insert({ user_id: user.id, kind: "identity_session" });
 
     return json({ status: "in_progress", url: payload.url, sessionId: payload.session_id });
   } catch (e) {

@@ -131,7 +131,10 @@ select set_config('request.jwt.claim.role', 'anon', true);
 select set_config('request.jwt.claim.sub', '', true);
 select is((select count(*)::int from public.jobs), 0, 'signed-out visitors see no games');
 select is((select count(*)::int from public.public_profiles), 0, 'or profiles');
-select is((select count(*)::int from public.private_profiles), 0, 'or private profiles');
+-- Stronger than 'no rows' since 0045: anon has no grant on this table at all,
+-- so the request is refused before any policy is consulted.
+select throws_ok($$ select count(*) from public.private_profiles $$, '42501', null,
+  'and are refused identity data outright');
 reset role;
 
 -- ── Nothing ref B tried to change changed ───────────────────────────────────
