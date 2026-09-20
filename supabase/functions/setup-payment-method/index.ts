@@ -1,6 +1,19 @@
 // Saves a card on file for the calling director (hirer) so completed games
 // can be auto-charged. Returns everything PaymentSheet needs in setup mode.
-import { stripe, adminClient, getCaller, json, handleOptions } from "../_shared/util.ts";
+import {
+  adminClient,
+  getCaller,
+  handleOptions,
+  json,
+  recordUse,
+  stripe,
+  tooManyRequests,
+  withinDailyLimit,
+} from "../_shared/util.ts";
+
+// Backstop against a loop or an abusive account burning Stripe calls.
+// Far above real use; see withinDailyLimit in _shared/util.ts.
+const DAILY_LIMIT = Number(Deno.env.get("SETUP_CARD_DAILY_LIMIT") ?? "50");
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -11,14 +24,25 @@ Deno.serve(async (req) => {
     if (!user) return json({ error: "Unauthorized" }, 401);
 
     const admin = adminClient();
+
+    if (!(await withinDailyLimit(admin, user.id, "setup_card", DAILY_LIMIT))) {
+      return tooManyRequests("Too many card setup attempts today.");
+    }
+    // Counted on attempt, so failures count against the cap too.
+    await recordUse(admin, user.id, "setup_card");
     const { data: hirer } = await admin
       .from("hirers")
-      .select("id, org_name, stripe_customer_id")
+      .select("id, org_name, hirer_billing(stripe_customer_id)")
       .eq("user_id", user.id)
       .maybeSingle();
     if (!hirer) return json({ error: "Director profile not found" }, 404);
 
-    let customerId = hirer.stripe_customer_id as string | null;
+    // The billing handle lives on hirer_billing (0048) — backend only, so no
+    // client can point a director's row at someone else's Stripe customer.
+    const billing = Array.isArray(hirer.hirer_billing)
+      ? hirer.hirer_billing[0]
+      : hirer.hirer_billing;
+    let customerId = (billing?.stripe_customer_id ?? null) as string | null;
     if (!customerId) {
       const customer = await stripe.customers.create({
         name: hirer.org_name,
@@ -26,9 +50,8 @@ Deno.serve(async (req) => {
       });
       customerId = customer.id;
       await admin
-        .from("hirers")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", hirer.id);
+        .from("hirer_billing")
+        .upsert({ hirer_id: hirer.id, stripe_customer_id: customerId });
     }
 
     const [setupIntent, ephemeralKey] = await Promise.all([

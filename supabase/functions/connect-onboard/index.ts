@@ -1,6 +1,19 @@
 // Creates (or reuses) a Stripe Express account for the calling referee and
 // returns a hosted onboarding link.
-import { stripe, adminClient, getCaller, json, handleOptions } from "../_shared/util.ts";
+import {
+  adminClient,
+  getCaller,
+  handleOptions,
+  json,
+  recordUse,
+  stripe,
+  tooManyRequests,
+  withinDailyLimit,
+} from "../_shared/util.ts";
+
+// Backstop against a loop or an abusive account burning Stripe calls.
+// Far above real use; see withinDailyLimit in _shared/util.ts.
+const DAILY_LIMIT = Number(Deno.env.get("CONNECT_ONBOARD_DAILY_LIMIT") ?? "50");
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -12,6 +25,12 @@ Deno.serve(async (req) => {
 
     const { returnUrl, refreshUrl } = await req.json();
     const admin = adminClient();
+
+    if (!(await withinDailyLimit(admin, user.id, "connect_onboard", DAILY_LIMIT))) {
+      return tooManyRequests("Too many payout setup attempts today.");
+    }
+    // Counted on attempt, so failures count against the cap too.
+    await recordUse(admin, user.id, "connect_onboard");
 
     const { data: priv } = await admin
       .from("private_profiles")

@@ -43,6 +43,8 @@ const config: Config = {
         whistle: {
           DEFAULT: "#F5B90B",
           dark: "#FFD24A",
+          // Readable as small text on paper; plain whistle is for fills.
+          ink: "#7A5700",
         },
         foul: {
           DEFAULT: "#E63946",

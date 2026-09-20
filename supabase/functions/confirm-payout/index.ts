@@ -1,8 +1,21 @@
 // After the director's payment succeeds, verify the PaymentIntent and
 // transfer each ref's share to their Stripe Express account.
 // Refs without a payout account are marked "processing" (owed, held).
-import { stripe, adminClient, getCaller, json, handleOptions } from "../_shared/util.ts";
+import {
+  adminClient,
+  getCaller,
+  handleOptions,
+  json,
+  recordUse,
+  stripe,
+  tooManyRequests,
+  withinDailyLimit,
+} from "../_shared/util.ts";
 import { transferIdempotencyKey } from "../_shared/stripe-events.ts";
+
+// Backstop against a loop or an abusive account burning Stripe calls.
+// Far above real use; see withinDailyLimit in _shared/util.ts.
+const DAILY_LIMIT = Number(Deno.env.get("CONFIRM_PAYOUT_DAILY_LIMIT") ?? "200");
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -16,6 +29,12 @@ Deno.serve(async (req) => {
     if (!jobId) return json({ error: "jobId required" }, 400);
 
     const admin = adminClient();
+
+    if (!(await withinDailyLimit(admin, user.id, "confirm_payout", DAILY_LIMIT))) {
+      return tooManyRequests("Too many payout attempts today.");
+    }
+    // Counted on attempt, so failures count against the cap too.
+    await recordUse(admin, user.id, "confirm_payout");
 
     const { data: job } = await admin
       .from("jobs")

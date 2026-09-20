@@ -1,6 +1,20 @@
 // Director pays their crew for a completed (or fee-cancelled) game.
 // Creates a PaymentIntent for: sum of unpaid amount_due + platform fee.
-import { stripe, adminClient, getCaller, json, handleOptions, PLATFORM_FEE_PCT } from "../_shared/util.ts";
+import {
+  PLATFORM_FEE_PCT,
+  adminClient,
+  getCaller,
+  handleOptions,
+  json,
+  recordUse,
+  stripe,
+  tooManyRequests,
+  withinDailyLimit,
+} from "../_shared/util.ts";
+
+// Backstop against a loop or an abusive account burning Stripe calls.
+// Far above real use; see withinDailyLimit in _shared/util.ts.
+const DAILY_LIMIT = Number(Deno.env.get("PAY_CREW_DAILY_LIMIT") ?? "200");
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -14,6 +28,12 @@ Deno.serve(async (req) => {
     if (!jobId) return json({ error: "jobId required" }, 400);
 
     const admin = adminClient();
+
+    if (!(await withinDailyLimit(admin, user.id, "pay_crew", DAILY_LIMIT))) {
+      return tooManyRequests("Too many payout attempts today.");
+    }
+    // Counted on attempt, so failures count against the cap too.
+    await recordUse(admin, user.id, "pay_crew");
 
     // Caller must be the hirer of this job
     const { data: job } = await admin

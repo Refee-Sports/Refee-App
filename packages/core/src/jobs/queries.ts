@@ -270,25 +270,33 @@ export async function fetchOpenJobs(
   const distanceByJob = new Map<string, number>();
 
   if (userId) {
-    const [{ data: mine }, { data: profile }, { data: prefs }] = await Promise.all([
-      // Hide jobs the ref has interacted with: accepted/pending live under
-      // upcoming games; declined jobs stay hidden for good.
-      supabase
-        .from("job_assignments")
-        .select("job_id, status")
-        .eq("ref_id", userId)
-        .in("status", ["offered", "accepted", "pending", "declined", "needs_reconfirm"]),
-      supabase
-        .from("public_profiles")
-        .select("state, home_lat, home_lng")
-        .eq("id", userId)
-        .maybeSingle(),
-      supabase
-        .from("availability_prefs")
-        .select("min_pay_per_game, travel_radius_miles, available_days")
-        .eq("ref_id", userId)
-        .maybeSingle(),
-    ]);
+    const [{ data: mine }, { data: profile }, { data: home_ }, { data: prefs }] =
+      await Promise.all([
+        // Hide jobs the ref has interacted with: accepted/pending live under
+        // upcoming games; declined jobs stay hidden for good.
+        supabase
+          .from("job_assignments")
+          .select("job_id, status")
+          .eq("ref_id", userId)
+          .in("status", ["offered", "accepted", "pending", "declined", "needs_reconfirm"]),
+        supabase
+          .from("public_profiles")
+          .select("state")
+          .eq("id", userId)
+          .maybeSingle(),
+        // Home coordinates are private (0047): own row only, never on the
+        // profile other people can read.
+        supabase
+          .from("private_profiles")
+          .select("home_lat, home_lng")
+          .eq("id", userId)
+          .maybeSingle(),
+        supabase
+          .from("availability_prefs")
+          .select("min_pay_per_game, travel_radius_miles, available_days")
+          .eq("ref_id", userId)
+          .maybeSingle(),
+      ]);
 
     const taken = new Set((mine ?? []).map((a) => a.job_id));
     rows = rows.filter((r) => !taken.has(r.id));
@@ -298,8 +306,8 @@ export async function fetchOpenJobs(
     const refState = profile?.state?.toUpperCase();
     const home =
       originOverride ??
-      (profile?.home_lat != null && profile?.home_lng != null
-        ? { lat: profile.home_lat as number, lng: profile.home_lng as number }
+      (home_?.home_lat != null && home_?.home_lng != null
+        ? { lat: home_.home_lat as number, lng: home_.home_lng as number }
         : null);
     const radius = prefs?.travel_radius_miles ?? 25;
 

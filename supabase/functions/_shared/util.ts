@@ -46,3 +46,49 @@ export function handleOptions(req: Request): Response | null {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   return null;
 }
+
+/**
+ * A per-user, per-day ceiling on calls to an endpoint.
+ *
+ * Every function here checks who the caller is and what they own, so these
+ * caps are not the access control — they are the backstop for the case where
+ * a valid account hammers something that costs money on each call (Stripe
+ * requests, push deliveries, a vendor's per-session fee). The limits are set
+ * far above what the apps do in a day, so hitting one means a loop or an
+ * attempt, not a busy director.
+ *
+ * Counted in ai_events, the same ledger the AI import and ID checks use.
+ */
+export async function withinDailyLimit(
+  admin: ReturnType<typeof adminClient>,
+  userId: string,
+  kind: string,
+  limit: number
+): Promise<boolean> {
+  const since = new Date(Date.now() - 24 * 60 * 60_000).toISOString();
+  const { count, error } = await admin
+    .from("ai_events")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .eq("kind", kind)
+    .gte("created_at", since);
+  if (error) throw new Error(error.message);
+  return (count ?? 0) < limit;
+}
+
+/** Records one use against a daily limit. Best effort: never fails the call. */
+export async function recordUse(
+  admin: ReturnType<typeof adminClient>,
+  userId: string,
+  kind: string
+): Promise<void> {
+  await admin.from("ai_events").insert({ user_id: userId, kind }).then(
+    () => undefined,
+    () => undefined
+  );
+}
+
+/** The 429 every rate-limited endpoint returns, in the same shape. */
+export function tooManyRequests(message: string) {
+  return json({ error: message }, 429);
+}

@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(29);
+select plan(30);
 
 -- Who's who (seeded): refs A, B, C; director D (has a hirer profile); a
 -- second director E.
@@ -129,12 +129,19 @@ reset role;
 set local role anon;
 select set_config('request.jwt.claim.role', 'anon', true);
 select set_config('request.jwt.claim.sub', '', true);
-select is((select count(*)::int from public.jobs), 0, 'signed-out visitors see no games');
-select is((select count(*)::int from public.public_profiles), 0, 'or profiles');
--- Stronger than 'no rows' since 0045: anon has no grant on this table at all,
--- so the request is refused before any policy is consulted.
+-- Since 0049 this is stronger than 'no rows': the signed-out key has no grant
+-- on these tables at all, so a request is refused before any policy is
+-- consulted. Two locks, not one — a policy accidentally written without
+-- `to authenticated` can no longer open a table to the public key.
+select throws_ok($$ select count(*) from public.jobs $$, '42501', null,
+  'signed-out visitors are refused games outright');
+select throws_ok($$ select count(*) from public.public_profiles $$, '42501', null,
+  'and profiles');
 select throws_ok($$ select count(*) from public.private_profiles $$, '42501', null,
-  'and are refused identity data outright');
+  'and identity data');
+-- The reference lists a signed-out visitor legitimately reads stay open.
+select lives_ok($$ select count(*) from public.sports $$,
+  'but the sport list is still readable signed out');
 reset role;
 
 -- ── Nothing ref B tried to change changed ───────────────────────────────────

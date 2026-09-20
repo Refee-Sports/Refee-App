@@ -4,6 +4,7 @@ import { Wordmark } from "./Wordmark";
 const NAV_LINKS = [
   { href: "#how", label: "How it works" },
   { href: "#officials", label: "For officials" },
+  { href: "#assignors", label: "For assignors" },
   { href: "#leagues", label: "For leagues" },
   { href: "#trust", label: "Trust & safety" },
 ];
@@ -34,15 +35,11 @@ export function SiteNav() {
         </ul>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/auth/welcome"
-            className="kicker hidden transition-colors hover:text-ink sm:inline-flex"
-          >
-            Log in
-          </Link>
-          {/* Refee is mobile-first, but the full app runs on the web too */}
+          {/* One door. Signing in and signing up are the same phone-number
+              step, so two buttons pointing at the same screen only asked
+              people to choose before there was anything to choose. */}
           <Link href="/auth/welcome" className="btn btn-hi">
-            Open Refee
+            Log in / Sign up
           </Link>
         </div>
       </nav>

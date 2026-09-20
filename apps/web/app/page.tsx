@@ -12,6 +12,7 @@ export default function HomePage() {
         <StatsStrip />
         <HowItWorks />
         <OfficialsSection />
+        <AssignorsSection />
         <LeaguesSection />
         <TrustSection />
         <DownloadCTA />
@@ -42,12 +43,12 @@ function Hero() {
 
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-80">
             Refee is the on-demand marketplace for sports officials. Refs and
-            umpires get booked and paid. Leagues staff every game. Pick your
-            side to get started.
+            umpires get booked and paid. Assignors staff their events. Leagues
+            fill every game. Pick your side to get started.
           </p>
 
-          {/* Two-sided path cards */}
-          <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          {/* One card per role on the platform */}
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
             <PathCard
               kicker="I'm an official"
               title="Get booked & paid"
@@ -57,8 +58,16 @@ function Hero() {
               accent="hi"
             />
             <PathCard
+              kicker="I assign officials"
+              title="Staff your events"
+              desc="Bring your roster, take on tournaments, and fill every game from one board."
+              cta="Start assigning"
+              href="#assignors"
+              accent="whistle"
+            />
+            <PathCard
               kicker="I run a league"
-              title="Staff every game"
+              title="Fill every game"
               desc="Post games and fill them with vetted, background-checked officials — in minutes."
               cta="Find officials"
               href="#leagues"
@@ -90,6 +99,19 @@ function Hero() {
   );
 }
 
+// Spelled out so Tailwind can see each class; see TRACK_ACCENT below.
+const PATH_ACCENT = {
+  hi: { kicker: "!text-court", hover: "group-hover:bg-hi-vis" },
+  whistle: {
+    kicker: "!text-whistle-ink",
+    hover: "group-hover:bg-whistle",
+  },
+  signal: {
+    kicker: "!text-signal",
+    hover: "group-hover:bg-signal group-hover:text-paper",
+  },
+} as const;
+
 function PathCard({
   kicker,
   title,
@@ -103,30 +125,23 @@ function PathCard({
   desc: string;
   cta: string;
   href: string;
-  accent: "hi" | "signal";
+  accent: keyof typeof PATH_ACCENT;
 }) {
+  const tone = PATH_ACCENT[accent];
   return (
     <a
       href={href}
       className="group flex flex-col justify-between border border-ink bg-chalk p-5 transition-all hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--ink)]"
     >
       <div>
-        <span
-          className={`kicker ${accent === "hi" ? "!text-court" : "!text-signal"}`}
-        >
-          {kicker}
-        </span>
+        <span className={`kicker ${tone.kicker}`}>{kicker}</span>
         <h3 className="mt-2 font-display text-2xl font-black tracking-tight text-ink">
           {title}
         </h3>
         <p className="mt-2 text-sm leading-relaxed text-ink-60">{desc}</p>
       </div>
       <span
-        className={`mt-5 inline-flex w-fit items-center gap-2 border border-ink px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-ink transition-colors ${
-          accent === "hi"
-            ? "group-hover:bg-hi-vis"
-            : "group-hover:bg-signal group-hover:text-paper"
-        }`}
+        className={`mt-5 inline-flex w-fit items-center gap-2 border border-ink px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-ink transition-colors ${tone.hover}`}
       >
         {cta} →
       </span>
@@ -189,6 +204,29 @@ const OFFICIAL_STEPS = [
   },
 ];
 
+const ASSIGNOR_STEPS = [
+  {
+    n: "01",
+    title: "Get verified",
+    desc: "The same ID check every official passes, so directors know who they're handing a schedule to.",
+  },
+  {
+    n: "02",
+    title: "Take on an event",
+    desc: "Directors invite you, or you propose your fee on tournaments that need staffing.",
+  },
+  {
+    n: "03",
+    title: "Build your roster",
+    desc: "Bring the officials you already trust, or pull from verified refs near the venue.",
+  },
+  {
+    n: "04",
+    title: "Staff every game",
+    desc: "Offer games, watch confirmations land, and fill the gaps before game day.",
+  },
+];
+
 const LEAGUE_STEPS = [
   {
     n: "01",
@@ -217,14 +255,19 @@ function HowItWorks() {
     <section id="how" className="mx-auto max-w-wrap px-6 py-16 md:px-8 lg:py-24">
       <SectionHeader
         kicker="How it works"
-        title="Two sides. One whistle."
-        desc="Whether you blow the whistle or fill the schedule, Refee is four simple steps."
+        title="Three roles. One whistle."
+        desc="Whether you blow the whistle, staff the schedule, or run the event, Refee is four simple steps."
       />
-      <div className="mt-12 grid gap-10 lg:grid-cols-2">
+      <div className="mt-12 grid gap-10 lg:grid-cols-3">
         <StepTrack
           heading="For officials"
           accent="court"
           steps={OFFICIAL_STEPS}
+        />
+        <StepTrack
+          heading="For assignors"
+          accent="whistle"
+          steps={ASSIGNOR_STEPS}
         />
         <StepTrack
           heading="For leagues"
@@ -236,21 +279,28 @@ function HowItWorks() {
   );
 }
 
+// Written out rather than interpolated: Tailwind only ships classes it can
+// see as whole strings in the source.
+const TRACK_ACCENT = {
+  court: { dot: "bg-court", text: "text-court" },
+  whistle: { dot: "bg-whistle", text: "text-whistle-ink" },
+  signal: { dot: "bg-signal", text: "text-signal" },
+} as const;
+
 function StepTrack({
   heading,
   accent,
   steps,
 }: {
   heading: string;
-  accent: "court" | "signal";
+  accent: keyof typeof TRACK_ACCENT;
   steps: { n: string; title: string; desc: string }[];
 }) {
+  const tone = TRACK_ACCENT[accent];
   return (
     <div>
       <div className="flex items-center gap-3">
-        <span
-          className={`inline-block h-3 w-3 ${accent === "court" ? "bg-court" : "bg-signal"}`}
-        />
+        <span className={`inline-block h-3 w-3 ${tone.dot}`} />
         <h3 className="font-display text-xl font-black uppercase tracking-tight text-ink">
           {heading}
         </h3>
@@ -261,9 +311,7 @@ function StepTrack({
             key={step.n}
             className="flex gap-4 bg-chalk p-5 transition-colors hover:bg-paper"
           >
-            <span
-              className={`font-mono text-sm font-bold ${accent === "court" ? "text-court" : "text-signal"}`}
-            >
+            <span className={`font-mono text-sm font-bold ${tone.text}`}>
               {step.n}
             </span>
             <div>
@@ -333,6 +381,75 @@ function OfficialsSection() {
           {OFFICIAL_BENEFITS.map((b) => (
             <div key={b.title} className="bg-chalk p-6">
               <div className="mb-3 h-2 w-8 bg-court" />
+              <h3 className="font-display text-lg font-black tracking-tight text-ink">
+                {b.title}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-ink-60">
+                {b.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* ASSIGNORS SECTION                                                   */
+/* ------------------------------------------------------------------ */
+const ASSIGNOR_BENEFITS = [
+  {
+    title: "Your roster travels with you",
+    desc: "The officials you trust stay yours across every event you staff.",
+  },
+  {
+    title: "Name your fee",
+    desc: "Flat rate or a percentage of the officiating budget. You propose, the director agrees.",
+  },
+  {
+    title: "One board, every game",
+    desc: "See what's open, what's confirmed, and what still needs a whistle.",
+  },
+  {
+    title: "Paid with the crew",
+    desc: "Your fee settles out of the same escrow that pays the officials.",
+  },
+];
+
+function AssignorsSection() {
+  return (
+    <section
+      id="assignors"
+      className="mx-auto max-w-wrap px-6 py-16 md:px-8 lg:py-24"
+    >
+      <div className="grid items-center gap-12 lg:grid-cols-2">
+        <div>
+          <span className="badge badge-whistle">
+            <span className="dot" />
+            For assignors
+          </span>
+          <h2 className="mt-5 font-display text-4xl font-black leading-[0.98] tracking-tighter text-ink sm:text-5xl">
+            You know who can
+            <br />
+            <span className="text-whistle-ink">work the game.</span>
+          </h2>
+          <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-80">
+            Bring the roster you have spent years building. Refee handles the
+            verification, the confirmations, and the money — you decide who
+            takes the floor.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href="/auth/welcome" className="btn btn-primary">
+              Start assigning
+            </a>
+          </div>
+        </div>
+
+        <div className="grid gap-px overflow-hidden border border-ink bg-ink sm:grid-cols-2">
+          {ASSIGNOR_BENEFITS.map((b) => (
+            <div key={b.title} className="bg-chalk p-6">
+              <div className="mb-3 h-2 w-8 bg-whistle" />
               <h3 className="font-display text-lg font-black tracking-tight text-ink">
                 {b.title}
               </h3>

@@ -7,6 +7,31 @@ export type Json =
   | Json[]
 
 export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       ai_events: {
@@ -885,6 +910,8 @@ export type Database = {
           created_at: string | null
           date_of_birth: string | null
           email: string | null
+          home_lat: number | null
+          home_lng: number | null
           id: string
           identity_decision_at: string | null
           identity_last_reason: string | null
@@ -914,6 +941,8 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           id: string
           identity_decision_at?: string | null
           identity_last_reason?: string | null
@@ -943,6 +972,8 @@ export type Database = {
           created_at?: string | null
           date_of_birth?: string | null
           email?: string | null
+          home_lat?: number | null
+          home_lng?: number | null
           id?: string
           identity_decision_at?: string | null
           identity_last_reason?: string | null
@@ -975,8 +1006,6 @@ export type Database = {
           fill_rate_pct: number | null
           first_name: string
           games_called_total: number | null
-          home_lat: number | null
-          home_lng: number | null
           id: string
           is_active: boolean | null
           is_available: boolean | null
@@ -1002,8 +1031,6 @@ export type Database = {
           fill_rate_pct?: number | null
           first_name: string
           games_called_total?: number | null
-          home_lat?: number | null
-          home_lng?: number | null
           id: string
           is_active?: boolean | null
           is_available?: boolean | null
@@ -1029,8 +1056,6 @@ export type Database = {
           fill_rate_pct?: number | null
           first_name?: string
           games_called_total?: number | null
-          home_lat?: number | null
-          home_lng?: number | null
           id?: string
           is_active?: boolean | null
           is_available?: boolean | null
@@ -1566,6 +1591,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_notify: {
+        Args: { p_caller: string; p_target: string }
+        Returns: boolean
+      }
       can_send_to_conversation: {
         Args: { p_conversation_id: string; p_sender_id: string }
         Returns: boolean
@@ -1605,11 +1634,16 @@ export type Database = {
         Args: { p_job_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_adult: { Args: { p_dob: string }; Returns: boolean }
       is_conversation_participant: {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
       is_identity_verified: { Args: { p_user: string }; Returns: boolean }
+      notifiable_user_ids: {
+        Args: { p_caller: string; p_targets: string[] }
+        Returns: string[]
+      }
       offer_ref_to_game: {
         Args: { p_job_id: string; p_ref_id: string; p_role?: string }
         Returns: string
@@ -1783,6 +1817,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {},
   },

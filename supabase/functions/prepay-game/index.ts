@@ -2,8 +2,20 @@
 // saved card for the whole crew now, so the refs' pay is already collected
 // when the game finishes. Always answers 200 with a status the app can act on
 // — "no_card" means ask the director to save a card, then call again.
-import { adminClient, getCaller, handleOptions, json } from "../_shared/util.ts";
+import {
+  adminClient,
+  getCaller,
+  handleOptions,
+  json,
+  recordUse,
+  tooManyRequests,
+  withinDailyLimit,
+} from "../_shared/util.ts";
 import { chargeGameUpFront } from "../_shared/prepay-stripe.ts";
+
+// Backstop against a loop or an abusive account burning Stripe calls.
+// Far above real use; see withinDailyLimit in _shared/util.ts.
+const DAILY_LIMIT = Number(Deno.env.get("PREPAY_GAME_DAILY_LIMIT") ?? "200");
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -16,6 +28,12 @@ Deno.serve(async (req) => {
     if (!jobId) return json({ error: "jobId required" }, 400);
 
     const admin = adminClient();
+
+    if (!(await withinDailyLimit(admin, user.id, "prepay_game", DAILY_LIMIT))) {
+      return tooManyRequests("Too many payment attempts today.");
+    }
+    // Counted on attempt, so failures count against the cap too.
+    await recordUse(admin, user.id, "prepay_game");
     const { data: job } = await admin
       .from("jobs")
       .select("id, hirers(user_id)")

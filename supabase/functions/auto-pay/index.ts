@@ -2,8 +2,23 @@
 // completed / fee-cancelled games, then transfers each ref's share.
 // Body: { jobId? } — one game, or all eligible games when omitted.
 // Games whose charge fails fall back to the manual PAY CREW flow.
-import { stripe, adminClient, getCaller, json, handleOptions, chargeTotal, decidePayment } from "../_shared/util.ts";
+import {
+  adminClient,
+  chargeTotal,
+  decidePayment,
+  getCaller,
+  handleOptions,
+  json,
+  recordUse,
+  stripe,
+  tooManyRequests,
+  withinDailyLimit,
+} from "../_shared/util.ts";
 import { transferIdempotencyKey } from "../_shared/stripe-events.ts";
+
+// Backstop against a loop or an abusive account burning Stripe calls.
+// Far above real use; see withinDailyLimit in _shared/util.ts.
+const DAILY_LIMIT = Number(Deno.env.get("AUTO_PAY_DAILY_LIMIT") ?? "100");
 
 Deno.serve(async (req) => {
   const options = handleOptions(req);
@@ -16,18 +31,31 @@ Deno.serve(async (req) => {
     const { jobId } = await req.json().catch(() => ({}));
     const admin = adminClient();
 
+    if (!(await withinDailyLimit(admin, user.id, "auto_pay", DAILY_LIMIT))) {
+      return tooManyRequests("Too many payment attempts today.");
+    }
+    // Counted on attempt, so failures count against the cap too.
+    await recordUse(admin, user.id, "auto_pay");
+
     const { data: hirer } = await admin
       .from("hirers")
-      .select("id, stripe_customer_id")
+      .select("id, hirer_billing(stripe_customer_id)")
       .eq("user_id", user.id)
       .maybeSingle();
     if (!hirer) return json({ error: "Director profile not found" }, 404);
-    if (!hirer.stripe_customer_id) {
+
+    // Backend-only billing handle (0048), so the card charged here is always
+    // the one this director actually put on file.
+    const billing = Array.isArray(hirer.hirer_billing)
+      ? hirer.hirer_billing[0]
+      : hirer.hirer_billing;
+    const customerId = (billing?.stripe_customer_id ?? null) as string | null;
+    if (!customerId) {
       return json({ paid: [], skipped: [], reason: "no_card" });
     }
 
     // Card on file?
-    const pms = await stripe.customers.listPaymentMethods(hirer.stripe_customer_id, { limit: 1 });
+    const pms = await stripe.customers.listPaymentMethods(customerId, { limit: 1 });
     const paymentMethod = pms.data[0];
     if (!paymentMethod) {
       return json({ paid: [], skipped: [], reason: "no_card" });
@@ -96,7 +124,7 @@ Deno.serve(async (req) => {
           const intent = await stripe.paymentIntents.create({
             amount: total * 100,
             currency: "usd",
-            customer: hirer.stripe_customer_id,
+            customer: customerId,
             payment_method: paymentMethod.id,
             off_session: true,
             confirm: true,

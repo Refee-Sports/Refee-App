@@ -44,8 +44,10 @@ select throws_ok($$ select public.sweep_game_lifecycle() $$, '42501', null,
   'a signed-out visitor calling the sweep is refused');
 select throws_ok($$ select public.withdraw_from_job('00000000-0000-4000-8000-000000000000') $$, '42501', null,
   'or withdrawing from a game');
-select lives_ok($$ select count(*) from public.conversations $$,
-  'a signed-out visitor listing conversations gets nothing, not an error');
+-- Since 0049 the signed-out key holds no grant on this table, so the attempt
+-- is refused outright rather than merely filtered to nothing by policy.
+select throws_ok($$ select count(*) from public.conversations $$, '42501', null,
+  'a signed-out visitor is refused the conversation list outright');
 reset role;
 
 set local role authenticated;

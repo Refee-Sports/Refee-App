@@ -39,12 +39,15 @@ Deno.serve(async (req) => {
 
   const { data: toCharge, error: chargeQueryError } = await admin
     .from("jobs")
-    .select("id, hirers!inner(stripe_customer_id)")
+    // Only games whose director has a card on file. The billing handle lives
+    // on hirer_billing (0048), so !inner on that embed is what narrows the
+    // batch; chargeGameUpFront still returns no_card if it disappears between
+    // this query and the charge.
+    .select("id, hirers!inner(hirer_billing!inner(stripe_customer_id))")
     .eq("prepay_required", true)
     .not("status", "in", "(completed,cancelled)")
     .gt("starts_at", new Date().toISOString())
     .or("payment_status.is.null,payment_status.eq.unpaid")
-    .not("hirers.stripe_customer_id", "is", null)
     .limit(BATCH);
   if (chargeQueryError) return json({ error: chargeQueryError.message }, 500);
 

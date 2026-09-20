@@ -96,7 +96,10 @@ export async function saveFullProfile(
   });
   if (ageError) return { error: ageError };
 
-  // Geocode home city for distance-based job filtering (best-effort)
+  // Geocode home city for distance-based job filtering (best-effort).
+  // The coordinates live on private_profiles (0047): they are only ever read
+  // back for this person's own distance sorting, and a home address has no
+  // business sitting on the profile every signed-in user can read.
   const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
 
   const { error: profileError } = await supabase.from("public_profiles").upsert({
@@ -105,10 +108,14 @@ export async function saveFullProfile(
     last_initial: args.lastInitial,
     city: args.city,
     state: args.state,
-    home_lat: home?.lat ?? null,
-    home_lng: home?.lng ?? null,
   });
   if (profileError) return { error: profileError };
+
+  const { error: homeError } = await supabase
+    .from("private_profiles")
+    .update({ home_lat: home?.lat ?? null, home_lng: home?.lng ?? null })
+    .eq("id", userId);
+  if (homeError) return { error: homeError };
 
   const { error: sportError } = await supabase.from("ref_sports").upsert({
     ref_id: userId,
@@ -203,7 +210,10 @@ export async function updateFullProfile(
     levelIds: string[];
   }
 ) {
-  // Geocode home city for distance-based job filtering (best-effort)
+  // Geocode home city for distance-based job filtering (best-effort).
+  // The coordinates live on private_profiles (0047): they are only ever read
+  // back for this person's own distance sorting, and a home address has no
+  // business sitting on the profile every signed-in user can read.
   const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
 
   const { error: profileError } = await supabase.from("public_profiles").upsert({
@@ -212,10 +222,14 @@ export async function updateFullProfile(
     last_initial: args.lastInitial,
     city: args.city,
     state: args.state,
-    home_lat: home?.lat ?? null,
-    home_lng: home?.lng ?? null,
   });
   if (profileError) return { error: profileError };
+
+  const { error: homeError } = await supabase
+    .from("private_profiles")
+    .update({ home_lat: home?.lat ?? null, home_lng: home?.lng ?? null })
+    .eq("id", userId);
+  if (homeError) return { error: homeError };
 
   const { error: sportError } = await supabase.from("ref_sports").upsert({
     ref_id: userId,

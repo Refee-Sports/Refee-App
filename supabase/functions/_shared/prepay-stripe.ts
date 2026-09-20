@@ -34,7 +34,7 @@ export async function chargeGameUpFront(admin: Admin, jobId: string): Promise<Pr
   const { data: job, error } = await admin
     .from("jobs")
     .select(
-      "id, title, status, crew_size, pay_per_game, num_games, payment_status, prepaid_crew_cents, prepaid_fee_cents, hirers(stripe_customer_id)"
+      "id, title, status, crew_size, pay_per_game, num_games, payment_status, prepaid_crew_cents, prepaid_fee_cents, hirers(hirer_billing(stripe_customer_id))"
     )
     .eq("id", jobId)
     .maybeSingle();
@@ -56,7 +56,10 @@ export async function chargeGameUpFront(admin: Admin, jobId: string): Promise<Pr
     return { status: "skipped", reason: `Payment is ${job.payment_status}` };
   }
 
-  const customerId = one<{ stripe_customer_id: string | null }>(job.hirers)?.stripe_customer_id;
+  // Billing handle is backend-only (0048), nested under the hirer.
+  const customerId = one<{ stripe_customer_id: string | null }>(
+    one<{ hirer_billing: unknown }>(job.hirers)?.hirer_billing
+  )?.stripe_customer_id;
   if (!customerId) return { status: "no_card" };
   const methods = await stripe.customers.listPaymentMethods(customerId, { limit: 1 });
   const paymentMethod = methods.data[0];

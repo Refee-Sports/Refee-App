@@ -21,6 +21,10 @@
 
   --hi-vis: #c9f031;
   --whistle: #f5b90b;
+  /* Amber reads well as a block of colour but fails contrast as small text on
+     paper, so anything written in the assignor accent uses this darker tone
+     (5.0:1 on paper, 5.9:1 on chalk — AA at any size). */
+  --whistle-ink: #7a5700;
   --court: #00a85c;
   --foul: #e63946;
 
@@ -180,6 +184,9 @@
   }
   .badge-signal {
     color: var(--signal);
+  }
+  .badge-whistle {
+    color: var(--whistle-ink);
   }
 
   .dot {
