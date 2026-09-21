@@ -47,10 +47,21 @@ export function RouteGate({ children }: { children: React.ReactNode }) {
     // /verify belongs to every role, so it isn't bounced to a role's home —
     // but it's still a signed-in page.
     const inVerifyGroup = pathname.startsWith("/verify");
+    // /admin belongs to no role: staff reach it whatever they signed up as, so
+    // it is deliberately absent from the role redirects below. The page itself
+    // is guarded by the database, not by this.
+    const inAdminGroup = pathname.startsWith("/admin");
 
     if (!session) {
       // Marketing pages stay reachable signed-out; the app itself does not.
-      if (inOnboardingGroup || inAppGroup || inDirectorGroup || inAssignorGroup || inVerifyGroup) {
+      if (
+        inOnboardingGroup ||
+        inAppGroup ||
+        inDirectorGroup ||
+        inAssignorGroup ||
+        inVerifyGroup ||
+        inAdminGroup
+      ) {
         router.replace("/auth/welcome");
       }
       return;
@@ -87,7 +98,8 @@ export function RouteGate({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/director") ||
     pathname.startsWith("/assignor") ||
     pathname.startsWith("/onboarding") ||
-    pathname.startsWith("/verify");
+    pathname.startsWith("/verify") ||
+    pathname.startsWith("/admin");
 
   if (guarded && !ready && isSupabaseConfigured) {
     return <BootSplash />;
