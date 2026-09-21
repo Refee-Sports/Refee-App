@@ -20,14 +20,25 @@ comment on column public.private_profiles.home_lat is
 comment on column public.private_profiles.home_lng is
   'Geocoded home longitude, used only to sort games by distance for this user. Never public.';
 
--- Carry across what is already there. Everyone with a public profile has a
--- private one (0002), so nothing is stranded.
-update public.private_profiles pp
-   set home_lat = p.home_lat,
-       home_lng = p.home_lng
+-- Carry across what is already there.
+--
+-- Not a plain UPDATE joined to private_profiles: a private row is created
+-- during onboarding, and accounts that predate that step (or never finished
+-- it) have a public profile and no private one. Production is exactly that
+-- case — several geocoded users, no private rows at all — so an UPDATE would
+-- match nothing and the DROP below would take their coordinates with it.
+--
+-- Insert-or-update keyed on the id, so a missing row is created rather than
+-- skipped. Running as the migration role, the backend-column guard bypasses
+-- and identity_* keeps its defaults.
+insert into public.private_profiles (id, home_lat, home_lng)
+select p.id, p.home_lat, p.home_lng
   from public.public_profiles p
- where p.id = pp.id
-   and (p.home_lat is not null or p.home_lng is not null);
+ where p.home_lat is not null
+    or p.home_lng is not null
+on conflict (id) do update
+   set home_lat = excluded.home_lat,
+       home_lng = excluded.home_lng;
 
 alter table public.public_profiles
   drop column if exists home_lat,

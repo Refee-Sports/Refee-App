@@ -655,14 +655,17 @@ $extra$;
 -- =============================================================================
 -- Geocode backfill (migration 0015) — approx city-center coords so radius
 -- filtering works for seed users without calling the geocoder.
+--
+-- These live on private_profiles since 0047: a home address is not something
+-- every signed-in account should be able to read off a public profile.
 -- =============================================================================
-update public.public_profiles set home_lat = 30.2672, home_lng = -97.7431
+update public.private_profiles set home_lat = 30.2672, home_lng = -97.7431
   where id = '11111111-1111-4111-8111-111111111100'; -- Alex R, Austin TX
-update public.public_profiles set home_lat = 39.7392, home_lng = -104.9903
+update public.private_profiles set home_lat = 39.7392, home_lng = -104.9903
   where id = '22222222-2222-4222-8222-222222222200'; -- Sam T, Denver CO
-update public.public_profiles set home_lat = 29.7604, home_lng = -95.3698
+update public.private_profiles set home_lat = 29.7604, home_lng = -95.3698
   where id = '22222222-2222-4222-8222-222222222201'; -- Marcus J, Houston TX
-update public.public_profiles set home_lat = 29.4241, home_lng = -98.4936
+update public.private_profiles set home_lat = 29.4241, home_lng = -98.4936
   where id = '22222222-2222-4222-8222-222222222202'; -- Devon K, San Antonio TX
 
 -- Venue coords for seed jobs (city-center approximations)
