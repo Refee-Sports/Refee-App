@@ -155,7 +155,16 @@ site_url = "http://127.0.0.1:3000"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+# These are matched exactly, so every origin and path the apps actually land on
+# has to be listed: the web callback on both dev ports, and the mobile deep
+# link that gets the app back out of the browser sheet.
+additional_redirect_urls = [
+  "https://127.0.0.1:3000",
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3001/auth/callback",
+  "http://127.0.0.1:3000/auth/callback",
+  "refee://auth/callback",
+]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -351,6 +360,30 @@ url = ""
 # If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
 skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
+email_optional = false
+
+# Google sign-in against the local stack.
+#
+# Off by default so a fresh checkout doesn't need credentials to run. To try it
+# locally, export these two in your shell (never in a committed file) from the
+# same Google OAuth client the hosted project uses, and flip enabled to true:
+#
+#   export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=...
+#   export SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET=...
+#
+# The local API runs on a different port, so Google also needs
+# http://127.0.0.1:54321/auth/v1/callback in that client's authorized redirect
+# URIs alongside the hosted one.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+# DO NOT commit your OAuth provider secret to git.
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+# Google's local flow doesn't round-trip the nonce; the hosted project is
+# unaffected by this setting.
+skip_nonce_check = true
 email_optional = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
