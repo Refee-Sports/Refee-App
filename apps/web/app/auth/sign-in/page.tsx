@@ -6,7 +6,7 @@ import { ScreenHeader } from "@/components/layout/ScreenHeader";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { Spinner } from "@/components/ui/AppButton";
 import {
-  fetchOAuthProviderAvailability,
+  fetchProviderAvailability,
   signInWithAppleOAuth,
   signInWithGoogleOAuth,
   type ProviderAvailability,
@@ -38,7 +38,7 @@ export default function SignInPage() {
   // Which social providers this project can actually complete a sign-in with.
   useEffect(() => {
     let cancelled = false;
-    void fetchOAuthProviderAvailability().then((a) => {
+    void fetchProviderAvailability().then((a) => {
       if (!cancelled) setAvailability(a);
     });
     return () => {

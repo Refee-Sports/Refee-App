@@ -6,7 +6,7 @@ import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { ValueStrip } from "@/components/auth/ValueStrip";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import {
-  fetchOAuthProviderAvailability,
+  fetchProviderAvailability,
   signInWithAppleOAuth,
   signInWithGoogleOAuth,
   type ProviderAvailability,
@@ -36,7 +36,7 @@ export default function WelcomePage() {
   // Which social providers this project can actually complete a sign-in with.
   useEffect(() => {
     let cancelled = false;
-    void fetchOAuthProviderAvailability().then((a) => {
+    void fetchProviderAvailability().then((a) => {
       if (!cancelled) setAvailability(a);
     });
     return () => {

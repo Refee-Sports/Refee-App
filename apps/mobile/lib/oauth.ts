@@ -5,9 +5,16 @@ import { makeRedirectUri } from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
 import { Platform } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { getSupabaseConfig } from "@/lib/supabase-config";
 import { extractAuthParams } from "@/lib/auth/redirect";
+import {
+  fetchOAuthProviderAvailability,
+  humanizeOAuthError,
+  providerUnavailableMessage,
+} from "@refee/core/auth/providers";
 
 export { extractAuthParams } from "@/lib/auth/redirect";
+export { providerUnavailableMessage } from "@refee/core/auth/providers";
 
 /** Deep link back into the app after OAuth (add same URLs in Supabase → Authentication → URL Configuration). */
 export function getOAuthRedirectUri(): string {
@@ -56,6 +63,17 @@ export async function sendEmailMagicLink(email: string): Promise<{ error: Error 
 }
 
 async function startOAuthBrowser(provider: "google" | "apple"): Promise<{ error: Error | null }> {
+  // Ask before opening the sheet. signInWithOAuth does not report a disabled
+  // provider as an error — it hands the browser to /auth/v1/authorize, which
+  // answers with a raw JSON validation error, and inside a browser sheet that
+  // leaves someone staring at a blob of text with no way back and no idea
+  // what went wrong.
+  const { url: projectUrl, anonKey } = getSupabaseConfig();
+  const availability = await fetchOAuthProviderAvailability(projectUrl, anonKey);
+  if (availability[provider] === false) {
+    return { error: new Error(providerUnavailableMessage(provider)) };
+  }
+
   const redirectTo = getOAuthRedirectUri();
   const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
     provider,
@@ -64,7 +82,7 @@ async function startOAuthBrowser(provider: "google" | "apple"): Promise<{ error:
       skipBrowserRedirect: true,
     },
   });
-  if (oauthError) return { error: new Error(oauthError.message) };
+  if (oauthError) return { error: new Error(humanizeOAuthError(provider, oauthError.message)) };
   if (!data.url) return { error: new Error("No OAuth URL returned from Supabase.") };
 
   const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
