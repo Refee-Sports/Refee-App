@@ -18,8 +18,8 @@
       "distribution": "internal",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
-        "EXPO_PUBLIC_SUPABASE_URL": "https://rwqodozmniqjvkyjtcaw.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_rUqpPSMzXVck8YOS4hTRCA_GcGHsH-6"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://bccbzmvbtjhbcnkgcndm.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJjY2J6bXZidGpoYmNua2djbmRtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAwMDk0NzEsImV4cCI6MjEwNTU4NTQ3MX0.KpDJ8rtyM08XG_z-9-X5AowTFqhFmmqhwALZZhyOURI"
       }
     },
     "production": {

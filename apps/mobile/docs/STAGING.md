@@ -28,31 +28,32 @@ Anything that moves money or touches a real person stays in test mode:
 | Data | real accounts | synthetic seed |
 | Phone sign-in | real Twilio SMS | test OTP numbers |
 
-## Creating it
+## It exists
 
-One decision first: the org already has two projects (`Refee`, and a paused
-`referee assist`). A third may require a paid plan — check
-[the org's billing page](https://supabase.com/dashboard/org/_/billing) before
-running this, or pause/delete `referee assist` if it is no longer needed.
+| | |
+|---|---|
+| Project | `refee-staging` |
+| Ref | `bccbzmvbtjhbcnkgcndm` |
+| Region | us-west-2 |
+| Plan | free — the org is on the free plan, so this costs nothing |
+| Dashboard | https://supabase.com/dashboard/project/bccbzmvbtjhbcnkgcndm |
+
+All 49 migrations are applied, all 15 edge functions deployed, and the
+synthetic seed loaded (6 accounts, 17 games). Verified afterwards that the
+signed-out key is refused every table except the three reference lists, the
+same as production.
+
+**The database password** was generated during setup and written to a local
+file outside the repo. Move it into 1Password and delete the file — it is not
+recoverable from Supabase, though it can be reset from the dashboard.
+
+`--size` is not accepted on the free plan; leave it off.
+
+To rebuild it from scratch later, or to set up another environment:
 
 ```bash
-npx supabase projects create refee-staging \
-  --org-id wrvnvdujiomwvvwrgupy \
-  --region us-west-2 \
-  --size micro
+./scripts/setup-staging.sh <project-ref>
 ```
-
-It prompts for a database password. Generate one and put it straight in a
-password manager — it is not recoverable and is not needed day to day.
-
-Note the project ref it prints, then:
-
-```bash
-./scripts/setup-staging.sh <new-project-ref>
-```
-
-That script links to the new project, pushes every migration, seeds it, and
-prints the keys to paste into `eas.json` and Vercel.
 
 ## Wiring the apps
 
