@@ -107,3 +107,77 @@ Install the finished build on your phone via the QR/link EAS gives you.
 - **Push only fires on a physical device** via a dev build — never Expo Go or Simulator.
 - **Re-deploy after code changes:** re-run the relevant `supabase functions deploy <name>` and, for schema changes, add a new migration + `supabase db push` (never edit an applied migration).
 - **Keep test mode** until the payments launch-hardening items (webhooks, refunds, 1099 filing) are done — see LAUNCH_CHECKLIST.md.
+
+---
+
+## Registering the Stripe webhook in production
+
+**Status: not done.** A POST to the production function today answers
+`400 {"error":"Webhook is not configured"}`, which means `STRIPE_WEBHOOK_SECRET`
+is unset. The function is deployed and reachable — it just refuses every
+delivery, so **no Stripe event is being processed in production**: a successful
+charge never settles the game, a failed one never marks it failed, and disputes
+and refunds never land.
+
+The secret only exists once an endpoint is registered, so this is two steps,
+not one.
+
+### 1. Create the endpoint in Stripe
+
+Stripe Dashboard → **Developers → Webhooks → Add endpoint**, in **live** mode.
+
+Endpoint URL:
+
+```
+https://rwqodozmniqjvkyjtcaw.supabase.co/functions/v1/stripe-webhook
+```
+
+Select exactly these events — the eight `reconciliationAction` handles
+(`supabase/functions/_shared/stripe-events.ts`). Anything else is ignored, so
+adding more only creates noise:
+
+```
+payment_intent.succeeded
+payment_intent.payment_failed
+transfer.created
+transfer.updated
+transfer.reversed
+charge.refunded
+charge.dispute.created
+charge.dispute.closed
+```
+
+### 2. Set the signing secret
+
+After creating the endpoint, Stripe shows a **Signing secret** (`whsec_…`).
+Reveal it and set it on the project — this value is a credential, so it goes
+straight from Stripe into Supabase and nowhere else:
+
+```bash
+npx supabase secrets set --project-ref rwqodozmniqjvkyjtcaw \
+  STRIPE_WEBHOOK_SECRET=whsec_...
+```
+
+### 3. Check it took
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' -X POST \
+  https://rwqodozmniqjvkyjtcaw.supabase.co/functions/v1/stripe-webhook \
+  -H 'Content-Type: application/json' -d '{}'
+```
+
+- `400 "Webhook is not configured"` → the secret still isn't set
+- `400 "Invalid Stripe signature: …"` → **correct**: the secret is set and the
+  endpoint is now rejecting an unsigned request on its merits
+
+Then use **Send test webhook** in the Stripe dashboard for
+`payment_intent.succeeded` and confirm a row appears:
+
+```sql
+select event_id, event_type, status, error, received_at
+  from public.stripe_webhook_events
+ order by received_at desc limit 5;
+```
+
+`status = 'processed'` means the whole path works. Repeat for staging against
+that project's own endpoint and test-mode keys.
