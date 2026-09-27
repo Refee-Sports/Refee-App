@@ -231,7 +231,9 @@ export default function SignInPage() {
               className="mt-4 font-mono text-[9px] uppercase text-ink-60"
               style={{ letterSpacing: 1.4 }}
             >
-              By continuing you agree to Refee&apos;s terms &amp; privacy policy.
+              By continuing you agree to Refee&apos;s{" "}
+              <a href="/terms" className="underline">terms</a>{" "}&amp;{" "}
+              <a href="/privacy" className="underline">privacy policy</a>.
             </p>
           </div>
         </div>
