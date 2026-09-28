@@ -45,12 +45,15 @@ export function RoleSwitcher() {
       if (!session || cancelled) return;
       setUserId(session.user.id);
       const { roles: held } = await fetchRoles(session.user.id);
-      if (!cancelled) setRoles(held);
+      if (!cancelled) {
+        const current = primaryRole as Role | null;
+        setRoles(current ? Array.from(new Set<Role>([current, ...held])) : held);
+      }
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [primaryRole]);
 
   if (!userId || !primaryRole) return null;
 
@@ -79,6 +82,14 @@ export function RoleSwitcher() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setBusy(role);
     setError(null);
+    // Some profiles predate consistent user_roles writes. Preserve the role
+    // they are using before making the newly added role their default.
+    const { error: currentRoleError } = await addRole(userId, primaryRole as Role);
+    if (currentRoleError) {
+      setError(currentRoleError.message);
+      setBusy(null);
+      return;
+    }
     const { error: e } = await addRole(userId, role);
     if (e) {
       setError(e.message);
@@ -92,7 +103,7 @@ export function RoleSwitcher() {
       setError(primaryError.message);
       return;
     }
-    setRoles((prev) => (prev.includes(role) ? prev : [...prev, role]));
+    setRoles((prev) => Array.from(new Set<Role>([primaryRole as Role, ...prev, role])));
     go(role);
   };
 

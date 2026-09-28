@@ -111,6 +111,14 @@ export async function saveFullProfile(
   });
   if (profileError) return { error: profileError };
 
+  // primary_role is the default landing area; user_roles is the authoritative
+  // list of every job this account can perform. Keep both in sync from the
+  // first profile write so adding a second role never hides referee access.
+  const { error: roleError } = await supabase
+    .from("user_roles")
+    .upsert({ user_id: userId, role: "referee" }, { onConflict: "user_id,role" });
+  if (roleError) return { error: roleError };
+
   const { error: homeError } = await supabase
     .from("private_profiles")
     .update({ home_lat: home?.lat ?? null, home_lng: home?.lng ?? null })

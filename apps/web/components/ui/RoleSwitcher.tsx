@@ -50,6 +50,14 @@ export function RoleSwitcher() {
   const take = async (role: Role) => {
     setBusy(role);
     setError(null);
+    // Older profiles predate consistent user_roles writes. Preserve the role
+    // they are using now before changing primary_role to the new one.
+    const { error: currentRoleError } = await addRole(userId, primaryRole as Role);
+    if (currentRoleError) {
+      setError(currentRoleError.message);
+      setBusy(null);
+      return;
+    }
     const { error: e } = await addRole(userId, role);
     if (e) {
       setError(e.message);

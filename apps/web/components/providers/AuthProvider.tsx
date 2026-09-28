@@ -11,9 +11,11 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { ensureValidSession } from "@/lib/auth/session";
-import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
+import { fetchMyProfile } from "@/lib/profile/queries";
 import { fetchMyIdentityStatus, type IdentityStatus } from "@/lib/identity/queries";
-import { fetchRoles, type Role } from "@/lib/roles/queries";
+import { fetchRoles, isRole, type Role } from "@/lib/roles/queries";
+import { rolesWithPrimary } from "@/lib/auth/routing";
+import { friendlyLoadError, withDeadline } from "@/lib/network";
 import type { PrimaryRole } from "@/lib/stores/onboarding-store";
 
 export type AuthState = {
@@ -27,6 +29,8 @@ export type AuthState = {
    * person, verified once. primaryRole is only which home they land on.
    */
   roles: Role[];
+  /** A recoverable account bootstrap failure; null once loading succeeds. */
+  authError: string | null;
   /**
    * Whether Didit has confirmed who this person is. Only "approved" can take,
    * staff or post games — the database enforces that; this is what the screens
@@ -54,6 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [primaryRole, setPrimaryRole] = useState<PrimaryRole | null>(null);
   const [roles, setRoles] = useState<Role[]>([]);
   const [identityStatus, setIdentityStatus] = useState<IdentityStatus | null>(null);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
   useEffect(() => {
@@ -64,14 +69,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     let cancelled = false;
 
-    (async () => {
-      const {
-        data: { session: initialSession },
-      } = await supabase.auth.getSession();
+    void (async () => {
+      try {
+        const {
+          data: { session: initialSession },
+        } = await withDeadline(supabase.auth.getSession());
 
-      if (initialSession) {
-        const valid = await ensureValidSession();
-        if (!valid) {
+        if (initialSession && !(await withDeadline(ensureValidSession()))) {
           if (cancelled) return;
           setSession(null);
           setProfileComplete(null);
@@ -80,15 +84,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setAuthReady(true);
           return;
         }
-      }
 
-      if (cancelled) return;
-      setSession(initialSession);
-      if (!initialSession) {
-        setProfileComplete(null);
-        setPrimaryRole(null);
-        setRoles([]);
-        setIdentityStatus(null);
+        if (cancelled) return;
+        setAuthError(null);
+        setSession(initialSession);
+        if (!initialSession) {
+          setProfileComplete(null);
+          setPrimaryRole(null);
+          setRoles([]);
+          setIdentityStatus(null);
+          setAuthReady(true);
+        }
+      } catch (error) {
+        if (cancelled) return;
+        setAuthError(friendlyLoadError(error instanceof Error ? error.message : null));
         setAuthReady(true);
       }
     })();
@@ -102,6 +111,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setPrimaryRole(null);
         setRoles([]);
         setIdentityStatus(null);
+        setAuthError(null);
         setAuthReady(true);
       }
     });
@@ -115,18 +125,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const userId = session?.user.id ?? null;
 
   const loadProfile = useCallback(async (uid: string) => {
-    const exists = await profileExists(uid);
-    setProfileComplete(exists);
-    if (exists) {
-      setPrimaryRole((await fetchPrimaryRole(uid)) as PrimaryRole);
-      setRoles((await fetchRoles(uid)).roles);
-      setIdentityStatus((await fetchMyIdentityStatus(uid)).status);
-    } else {
-      setPrimaryRole(null);
-      setRoles([]);
-      setIdentityStatus(null);
+    setAuthReady(false);
+    setAuthError(null);
+    try {
+      const { data: profile, error: profileError } = await withDeadline(fetchMyProfile(uid));
+      if (profileError) throw new Error(profileError.message);
+
+      const exists = !!profile;
+      setProfileComplete(exists);
+      if (!profile) {
+        setPrimaryRole(null);
+        setRoles([]);
+        setIdentityStatus(null);
+        return;
+      }
+
+      const primary = isRole(profile.primary_role) ? profile.primary_role : "referee";
+      const [rolesResult, identity] = await withDeadline(
+        Promise.all([fetchRoles(uid), fetchMyIdentityStatus(uid)])
+      );
+      if (rolesResult.error) throw rolesResult.error;
+
+      setPrimaryRole(primary as PrimaryRole);
+      setRoles(rolesWithPrimary(primary, rolesResult.roles));
+      setIdentityStatus(identity.status);
+    } catch (error) {
+      setAuthError(friendlyLoadError(error instanceof Error ? error.message : null));
+    } finally {
+      setAuthReady(true);
     }
-    setAuthReady(true);
   }, []);
 
   useEffect(() => {
@@ -146,6 +173,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPrimaryRole(null);
     setRoles([]);
     setIdentityStatus(null);
+    setAuthError(null);
   }, []);
 
   // Mirrors the app's splash gate: hold until the session AND (when signed in)
@@ -161,12 +189,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profileComplete,
       primaryRole,
       roles,
+      authError,
       identityStatus,
       ready,
       refreshProfile,
       signOut,
     }),
-    [session, userId, profileComplete, primaryRole, roles, identityStatus, ready, refreshProfile, signOut]
+    [session, userId, profileComplete, primaryRole, roles, authError, identityStatus, ready, refreshProfile, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

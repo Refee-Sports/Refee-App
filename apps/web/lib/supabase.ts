@@ -31,8 +31,10 @@ export const isSupabaseConfigured = getSupabaseSetupError() === null;
  * Browser Supabase client. Mirrors refee-mobile/refee/lib/supabase.ts, with two
  * web-specific differences:
  *  - session storage is localStorage (the app uses AsyncStorage)
- *  - detectSessionInUrl is on, so the OAuth redirect back from Google/Apple
- *    completes the sign-in
+ *  - the dedicated /auth/callback page completes OAuth redirects explicitly.
+ *    Automatic URL detection must stay off or both the client constructor and
+ *    that page try to consume the same PKCE code/session, which can leave auth
+ *    initialization pending and the signed-in app stuck on its boot screen.
  */
 // Fall back to a syntactically valid placeholder so `next build` and SSR don't
 // crash when env is missing — every screen checks isSupabaseConfigured and
@@ -61,7 +63,7 @@ export const supabase = createClient(clientUrl, clientKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false,
     flowType: "pkce",
     storageKey: "refee-auth",
   },

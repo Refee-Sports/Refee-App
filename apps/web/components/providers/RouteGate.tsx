@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "./AuthProvider";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { ROLE_AREA, ROLE_HOME, type Role } from "@/lib/roles/queries";
+import { routeRedirect } from "@/lib/auth/routing";
 
 /** Each role has its own app; these are where they land. */
 export const REFEREE_HOME = "/app/jobs";
@@ -39,7 +39,7 @@ function isPublic(pathname: string): boolean {
  * schema had always allowed it.
  */
 export function RouteGate({ children }: { children: React.ReactNode }) {
-  const { session, profileComplete, primaryRole, roles, ready } = useAuth();
+  const { session, profileComplete, primaryRole, roles, ready, authError, refreshProfile } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -47,62 +47,15 @@ export function RouteGate({ children }: { children: React.ReactNode }) {
     if (!isSupabaseConfigured) return;
     if (!ready) return;
 
-    const inAuthGroup = pathname.startsWith("/auth");
-    const inOnboardingGroup = pathname.startsWith("/onboarding");
-    const inAppGroup = pathname.startsWith("/app");
-    const inDirectorGroup = pathname.startsWith("/director");
-    const inAssignorGroup = pathname.startsWith("/assignor");
-    // /verify belongs to every role, so it isn't bounced to a role's home —
-    // but it's still a signed-in page.
-    const inVerifyGroup = pathname.startsWith("/verify");
-    // /admin belongs to no role: staff reach it whatever they signed up as, so
-    // it is deliberately absent from the role redirects below. The page itself
-    // is guarded by the database, not by this.
-    const inAdminGroup = pathname.startsWith("/admin");
-
-    if (!session) {
-      // Marketing pages stay reachable signed-out; the app itself does not.
-      if (
-        inOnboardingGroup ||
-        inAppGroup ||
-        inDirectorGroup ||
-        inAssignorGroup ||
-        inVerifyGroup ||
-        inAdminGroup
-      ) {
-        router.replace("/auth/welcome");
-      }
-      return;
-    }
-
-    if (profileComplete === null) return;
-
-    if (!profileComplete) {
-      if (!inOnboardingGroup) router.replace("/onboarding/role-select");
-      return;
-    }
-
-    if (primaryRole === null) return;
-
-    // Where this person lands when they are not already somewhere valid.
-    const home = ROLE_HOME[primaryRole as Role] ?? REFEREE_HOME;
-
-    // Areas they hold a role for. A role they do not hold stays closed.
-    const held: Role[] = roles.length > 0 ? roles : [primaryRole as Role];
-    const allowed = held.map((r) => ROLE_AREA[r]).filter(Boolean);
-    const inAllowedArea = allowed.some((area) => pathname.startsWith(area));
-
-    // /verify and /admin belong to no single role and are handled above.
-    if (inAuthGroup || inOnboardingGroup) {
-      router.replace(home);
-      return;
-    }
-
-    const inSomeRoleArea = inAppGroup || inDirectorGroup || inAssignorGroup;
-    if (inSomeRoleArea && !inAllowedArea) {
-      router.replace(home);
-    }
-  }, [session, profileComplete, primaryRole, ready, pathname, router]);
+    const redirect = routeRedirect({
+      pathname,
+      signedIn: !!session,
+      profileComplete,
+      primaryRole,
+      roles,
+    });
+    if (redirect) router.replace(redirect);
+  }, [session, profileComplete, primaryRole, roles, ready, pathname, router]);
 
   // Hold the signed-in areas until routing has settled, so we never flash the
   // referee app at a director (the app does this with the splash screen).
@@ -112,13 +65,42 @@ export function RouteGate({ children }: { children: React.ReactNode }) {
     pathname.startsWith("/assignor") ||
     pathname.startsWith("/onboarding") ||
     pathname.startsWith("/verify") ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/account");
+
+  if (guarded && authError && isSupabaseConfigured) {
+    return (
+      <AuthLoadError
+        message={authError}
+        retry={() => {
+          if (session) void refreshProfile();
+          else window.location.reload();
+        }}
+      />
+    );
+  }
 
   if (guarded && !ready && isSupabaseConfigured) {
     return <BootSplash />;
   }
 
   return <>{children}</>;
+}
+
+function AuthLoadError({ message, retry }: { message: string; retry: () => void }) {
+  return (
+    <div className="form-shell flex flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="font-mono-bold text-xs uppercase text-foul">We couldn&apos;t load your account.</p>
+      <p className="max-w-sm text-sm text-ink-80">{message}</p>
+      <button
+        type="button"
+        onClick={retry}
+        className="border border-ink bg-ink px-5 py-3 font-mono-bold text-xs uppercase text-paper"
+      >
+        Try again
+      </button>
+    </div>
+  );
 }
 
 export function BootSplash() {
