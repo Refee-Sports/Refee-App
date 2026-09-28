@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchMyHirerProfile, type HirerRow } from "@/lib/director/queries";
 import { getCardSetupParams } from "@/lib/payments/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
+import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 
 const ORG_TYPE_LABELS: Record<string, string> = {
   tournament: "TOURNAMENT ORGANIZER",
@@ -227,6 +228,10 @@ export default function DirectorProfilePage() {
           {savingCard ? <Spinner /> : <Icon name={cardSaved ? "check-circle" : "credit-card"} size={16} />}
         </span>
       </button>
+
+      <div className="mx-5 sm:mx-0 mt-6">
+        <RoleSwitcher />
+      </div>
 
       {/* Sign out */}
       <div className="mx-5 sm:mx-0 mt-6">

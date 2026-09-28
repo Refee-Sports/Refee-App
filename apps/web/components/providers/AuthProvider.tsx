@@ -13,6 +13,7 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { ensureValidSession } from "@/lib/auth/session";
 import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
 import { fetchMyIdentityStatus, type IdentityStatus } from "@/lib/identity/queries";
+import { fetchRoles, type Role } from "@/lib/roles/queries";
 import type { PrimaryRole } from "@/lib/stores/onboarding-store";
 
 export type AuthState = {
@@ -21,6 +22,11 @@ export type AuthState = {
   /** null = still resolving */
   profileComplete: boolean | null;
   primaryRole: PrimaryRole | null;
+  /**
+   * Every role this account holds. Someone can referee and assign — the same
+   * person, verified once. primaryRole is only which home they land on.
+   */
+  roles: Role[];
   /**
    * Whether Didit has confirmed who this person is. Only "approved" can take,
    * staff or post games — the database enforces that; this is what the screens
@@ -46,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
   const [primaryRole, setPrimaryRole] = useState<PrimaryRole | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [identityStatus, setIdentityStatus] = useState<IdentityStatus | null>(null);
   const [authReady, setAuthReady] = useState(false);
 
@@ -69,6 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSession(null);
           setProfileComplete(null);
           setPrimaryRole(null);
+          setRoles([]);
           setAuthReady(true);
           return;
         }
@@ -79,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!initialSession) {
         setProfileComplete(null);
         setPrimaryRole(null);
+        setRoles([]);
         setIdentityStatus(null);
         setAuthReady(true);
       }
@@ -91,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!next) {
         setProfileComplete(null);
         setPrimaryRole(null);
+        setRoles([]);
         setIdentityStatus(null);
         setAuthReady(true);
       }
@@ -109,9 +119,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setProfileComplete(exists);
     if (exists) {
       setPrimaryRole((await fetchPrimaryRole(uid)) as PrimaryRole);
+      setRoles((await fetchRoles(uid)).roles);
       setIdentityStatus((await fetchMyIdentityStatus(uid)).status);
     } else {
       setPrimaryRole(null);
+      setRoles([]);
       setIdentityStatus(null);
     }
     setAuthReady(true);
@@ -132,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null);
     setProfileComplete(null);
     setPrimaryRole(null);
+    setRoles([]);
     setIdentityStatus(null);
   }, []);
 
@@ -147,12 +160,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       userId,
       profileComplete,
       primaryRole,
+      roles,
       identityStatus,
       ready,
       refreshProfile,
       signOut,
     }),
-    [session, userId, profileComplete, primaryRole, identityStatus, ready, refreshProfile, signOut]
+    [session, userId, profileComplete, primaryRole, roles, identityStatus, ready, refreshProfile, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

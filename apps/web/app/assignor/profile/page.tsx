@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/AppButton";
 import { supabase } from "@/lib/supabase";
 import { fetchMyProfile, type ProfileRow } from "@/lib/profile/queries";
 import { fetchMyRoles } from "@/lib/assignor/queries";
+import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 
 /** Port of refee-mobile/refee/app/(assignor)/(tabs)/profile.tsx. */
 export default function AssignorProfilePage() {
@@ -117,6 +118,9 @@ export default function AssignorProfilePage() {
               value={profile.is_verified ? `${verificationLabel(true)} ✓` : verificationLabel(false)}
             />
           </div>
+        </div>
+        <div className="min-w-0">
+          <RoleSwitcher />
         </div>
         <div className="min-w-0">
           <button

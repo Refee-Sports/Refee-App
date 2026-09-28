@@ -34,6 +34,7 @@ import { uploadAvatarFile } from "@/lib/profile/avatar";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { fetchPayoutStatus, getPayoutOnboardingLink, type PayoutStatus } from "@/lib/payments/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const CERT_LABELS: Record<string, string> = {
@@ -686,6 +687,10 @@ export default function RefereeProfilePage() {
           </div>
         </>
       )}
+
+      <div className="mx-5 sm:mx-0 mt-6">
+        <RoleSwitcher />
+      </div>
 
       {/* Sign out */}
       <div className="mx-5 sm:mx-0 mt-10">

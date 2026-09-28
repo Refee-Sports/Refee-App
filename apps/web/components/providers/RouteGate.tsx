@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useAuth } from "./AuthProvider";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { ROLE_AREA, ROLE_HOME, type Role } from "@/lib/roles/queries";
 
 /** Each role has its own app; these are where they land. */
 export const REFEREE_HOME = "/app/jobs";
@@ -29,9 +30,16 @@ function isPublic(pathname: string): boolean {
  *   director            → the director app
  *   assignor            → the assignor app
  *   referee             → the referee app
+ *
+ * The last three are about where you LAND, not where you may go. Someone who
+ * referees and also assigns holds both roles, and is at home in either app —
+ * so a role's area is only closed to people who do not hold that role. Before
+ * this, routing keyed off primary_role alone and bounced a referee straight
+ * out of /assignor, which made the second role unreachable even though the
+ * schema had always allowed it.
  */
 export function RouteGate({ children }: { children: React.ReactNode }) {
-  const { session, profileComplete, primaryRole, ready } = useAuth();
+  const { session, profileComplete, primaryRole, roles, ready } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -76,18 +84,23 @@ export function RouteGate({ children }: { children: React.ReactNode }) {
 
     if (primaryRole === null) return;
 
-    if (primaryRole === "director") {
-      if (inAuthGroup || inOnboardingGroup || inAppGroup || inAssignorGroup) {
-        router.replace(DIRECTOR_HOME);
-      }
-    } else if (primaryRole === "assignor") {
-      if (inAuthGroup || inOnboardingGroup || inAppGroup || inDirectorGroup) {
-        router.replace(ASSIGNOR_HOME);
-      }
-    } else {
-      if (inAuthGroup || inOnboardingGroup || inDirectorGroup || inAssignorGroup) {
-        router.replace(REFEREE_HOME);
-      }
+    // Where this person lands when they are not already somewhere valid.
+    const home = ROLE_HOME[primaryRole as Role] ?? REFEREE_HOME;
+
+    // Areas they hold a role for. A role they do not hold stays closed.
+    const held: Role[] = roles.length > 0 ? roles : [primaryRole as Role];
+    const allowed = held.map((r) => ROLE_AREA[r]).filter(Boolean);
+    const inAllowedArea = allowed.some((area) => pathname.startsWith(area));
+
+    // /verify and /admin belong to no single role and are handled above.
+    if (inAuthGroup || inOnboardingGroup) {
+      router.replace(home);
+      return;
+    }
+
+    const inSomeRoleArea = inAppGroup || inDirectorGroup || inAssignorGroup;
+    if (inSomeRoleArea && !inAllowedArea) {
+      router.replace(home);
     }
   }, [session, profileComplete, primaryRole, ready, pathname, router]);
 
