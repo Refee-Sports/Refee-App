@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(21);
+select plan(23);
 
 -- Staff, and an ordinary referee who is not staff.
 --   admin  22222222-2222-4222-8222-222222222203
@@ -50,6 +50,8 @@ select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222203
 
 select lives_ok($$ select public.admin_metrics() $$, 'staff read the metrics');
 select lives_ok($$ select * from public.admin_identity_queue() $$, 'and the verification queue');
+select lives_ok($$ select * from public.admin_user_search('a') $$, 'and account search');
+select lives_ok($$ select * from public.admin_payment_issues() $$, 'and payment review');
 
 -- ── Suspension ──────────────────────────────────────────────────────────────
 select ok(
