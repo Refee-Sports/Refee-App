@@ -150,6 +150,7 @@ export default function RootLayout() {
             <Stack.Screen name="(director)" />
             <Stack.Screen name="(assignor)" />
             <Stack.Screen name="auth/callback" />
+            <Stack.Screen name="account" />
             {/* Belongs to every role, so AuthGate leaves it alone. */}
             <Stack.Screen name="verify" />
           </Stack>

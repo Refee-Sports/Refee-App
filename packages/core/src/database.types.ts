@@ -34,6 +34,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_receipts: {
+        Row: {
+          completed_at: string | null
+          id: string
+          requested_at: string
+          status: string
+          user_fingerprint: string
+        }
+        Insert: {
+          completed_at?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          user_fingerprint: string
+        }
+        Update: {
+          completed_at?: string | null
+          id?: string
+          requested_at?: string
+          status?: string
+          user_fingerprint?: string
+        }
+        Relationships: []
+      }
+      admin_actions: {
+        Row: {
+          action: string
+          admin_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          subject_job_id: string | null
+          subject_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          subject_job_id?: string | null
+          subject_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          subject_job_id?: string | null
+          subject_user_id?: string | null
+        }
+        Relationships: []
+      }
+      admins: {
+        Row: {
+          granted_at: string
+          note: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          note?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          note?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ai_events: {
         Row: {
           created_at: string
@@ -379,7 +451,7 @@ export type Database = {
       conversations: {
         Row: {
           created_at: string | null
-          created_by: string
+          created_by: string | null
           id: string
           job_id: string | null
           kind: string
@@ -387,7 +459,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
-          created_by: string
+          created_by?: string | null
           id?: string
           job_id?: string | null
           kind?: string
@@ -395,7 +467,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
-          created_by?: string
+          created_by?: string | null
           id?: string
           job_id?: string | null
           kind?: string
@@ -458,6 +530,35 @@ export type Database = {
         }
         Relationships: []
       }
+      hirer_billing: {
+        Row: {
+          created_at: string
+          hirer_id: string
+          stripe_customer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hirer_id: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hirer_id?: string
+          stripe_customer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hirer_billing_hirer_id_fkey"
+            columns: ["hirer_id"]
+            isOneToOne: true
+            referencedRelation: "hirers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hirers: {
         Row: {
           city: string | null
@@ -469,7 +570,6 @@ export type Database = {
           org_name: string
           org_type: string
           state: string | null
-          stripe_customer_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -482,7 +582,6 @@ export type Database = {
           org_name: string
           org_type: string
           state?: string | null
-          stripe_customer_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -495,7 +594,6 @@ export type Database = {
           org_name?: string
           org_type?: string
           state?: string | null
-          stripe_customer_id?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -817,7 +915,7 @@ export type Database = {
       listing_deletions: {
         Row: {
           deleted_at: string
-          deleted_by: string
+          deleted_by: string | null
           hirer_id: string | null
           id: string
           job_id: string | null
@@ -829,7 +927,7 @@ export type Database = {
         }
         Insert: {
           deleted_at?: string
-          deleted_by: string
+          deleted_by?: string | null
           hirer_id?: string | null
           id?: string
           job_id?: string | null
@@ -841,7 +939,7 @@ export type Database = {
         }
         Update: {
           deleted_at?: string
-          deleted_by?: string
+          deleted_by?: string | null
           hirer_id?: string | null
           id?: string
           job_id?: string | null
@@ -859,21 +957,21 @@ export type Database = {
           conversation_id: string
           created_at: string | null
           id: string
-          sender_id: string
+          sender_id: string | null
         }
         Insert: {
           body: string
           conversation_id: string
           created_at?: string | null
           id?: string
-          sender_id: string
+          sender_id?: string | null
         }
         Update: {
           body?: string
           conversation_id?: string
           created_at?: string | null
           id?: string
-          sender_id?: string
+          sender_id?: string | null
         }
         Relationships: [
           {
@@ -929,6 +1027,9 @@ export type Database = {
           street_address: string | null
           stripe_account_id: string | null
           stripe_account_status: string | null
+          suspended_at: string | null
+          suspended_by: string | null
+          suspended_reason: string | null
           updated_at: string | null
         }
         Insert: {
@@ -960,6 +1061,9 @@ export type Database = {
           street_address?: string | null
           stripe_account_id?: string | null
           stripe_account_status?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -991,6 +1095,9 @@ export type Database = {
           street_address?: string | null
           stripe_account_id?: string | null
           stripe_account_status?: string | null
+          suspended_at?: string | null
+          suspended_by?: string | null
+          suspended_reason?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1591,6 +1698,69 @@ export type Database = {
       }
     }
     Functions: {
+      account_deletion_blocker: { Args: { p_user: string }; Returns: string }
+      admin_clear_payment_review: {
+        Args: { p_job: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_identity_queue: {
+        Args: { p_status?: string }
+        Returns: {
+          created_at: string
+          date_of_birth: string
+          display_name: string
+          identity_decision_at: string
+          identity_last_reason: string
+          identity_status: string
+          legal_name: string
+          primary_role: string
+          suspended_at: string
+          user_id: string
+        }[]
+      }
+      admin_metrics: { Args: never; Returns: Json }
+      admin_payment_issues: {
+        Args: never
+        Returns: {
+          crew_owed: number
+          dispute_status: string
+          job_id: string
+          job_status: string
+          last_event_at: string
+          org_name: string
+          payment_status: string
+          refund_status: string
+          requires_review: boolean
+          review_reason: string
+          starts_at: string
+          title: string
+        }[]
+      }
+      admin_set_identity_status: {
+        Args: { p_reason?: string; p_status: string; p_user: string }
+        Returns: undefined
+      }
+      admin_set_suspended: {
+        Args: { p_reason?: string; p_suspended: boolean; p_user: string }
+        Returns: undefined
+      }
+      admin_user_detail: { Args: { p_user: string }; Returns: Json }
+      admin_user_search: {
+        Args: { p_query: string }
+        Returns: {
+          city: string
+          created_at: string
+          display_name: string
+          email: string
+          identity_status: string
+          legal_name: string
+          phone: string
+          primary_role: string
+          state: string
+          suspended_at: string
+          user_id: string
+        }[]
+      }
       can_notify: {
         Args: { p_caller: string; p_target: string }
         Returns: boolean
@@ -1634,12 +1804,14 @@ export type Database = {
         Args: { p_job_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_admin: { Args: { p_user: string }; Returns: boolean }
       is_adult: { Args: { p_dob: string }; Returns: boolean }
       is_conversation_participant: {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
       is_identity_verified: { Args: { p_user: string }; Returns: boolean }
+      is_suspended: { Args: { p_user: string }; Returns: boolean }
       notifiable_user_ids: {
         Args: { p_caller: string; p_targets: string[] }
         Returns: string[]
@@ -1652,6 +1824,10 @@ export type Database = {
         Args: { p_body: string; p_job_id: string }
         Returns: string
       }
+      prepare_account_deletion: {
+        Args: { p_fingerprint: string; p_user: string }
+        Returns: Json
+      }
       remove_ref_from_assignor_game: {
         Args: { p_assignment_id: string }
         Returns: undefined
@@ -1660,6 +1836,7 @@ export type Database = {
         Args: { p_roster_id: string }
         Returns: undefined
       }
+      require_admin: { Args: never; Returns: undefined }
       respond_to_job: {
         Args: { p_accept: boolean; p_job_id: string }
         Returns: string

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { LegalShell, NeedsCounsel, Section } from "@/app/legal/LegalShell";
 
 export const metadata: Metadata = {
@@ -119,13 +120,21 @@ export default function PrivacyPage() {
           You can edit your profile, turn availability off, and stop
           notifications from your device settings at any time.
         </p>
+        <p>
+          You can permanently delete your account from <strong>Account &amp; sign-in</strong>
+          in the web or mobile app. See the{" "}
+          <Link className="underline" href="/delete-account">account deletion page</Link>
+          {" "}for step-by-step instructions. Deletion removes your sign-in methods,
+          profile, verification data held by Refee, avatar, roles and device
+          tokens. Message content is redacted. Records that another participant
+          or a payment dispute depends on may be retained without your profile
+          attached; active games and unresolved payments must be handled first.
+        </p>
         <NeedsCounsel>
-          Needs the account deletion and data export process, retention periods
-          per data type, and the rights language required where users are —
-          which for a US consumer product means at least CCPA/CPRA, and GDPR if
-          anyone in the EU or UK signs up. Note that games, payments and ratings
-          reference an account, so deletion policy has to say what happens to
-          the other party&apos;s records.
+          Needs the data export process, counsel-approved retention periods per
+          data type, and the rights language required where users are — which
+          for a US consumer product means at least CCPA/CPRA, and GDPR if anyone
+          in the EU or UK signs up.
         </NeedsCounsel>
       </Section>
 

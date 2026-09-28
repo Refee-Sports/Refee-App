@@ -2,6 +2,7 @@
 
 import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
@@ -231,6 +232,12 @@ export default function DirectorProfilePage() {
 
       <div className="mx-5 sm:mx-0 mt-6">
         <RoleSwitcher />
+      </div>
+
+      <div className="mx-5 sm:mx-0 mt-4">
+        <Link href="/account" className="flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+          Account &amp; sign-in
+        </Link>
       </div>
 
       {/* Sign out */}

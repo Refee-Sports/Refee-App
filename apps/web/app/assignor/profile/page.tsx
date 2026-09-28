@@ -2,6 +2,7 @@
 
 import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
@@ -101,7 +102,7 @@ export default function AssignorProfilePage() {
             </span>
           </div>
           <div className="border border-ink bg-chalk">
-            <InfoRow label="Primary role" value="ASSIGNOR" />
+            <InfoRow label="Primary role" value={profile.primary_role.toUpperCase()} />
             <span className="block h-px bg-ink-20" />
             <InfoRow
               label="All roles"
@@ -123,6 +124,9 @@ export default function AssignorProfilePage() {
           <RoleSwitcher />
         </div>
         <div className="min-w-0">
+          <Link href="/account" className="mb-4 flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+            Account &amp; sign-in
+          </Link>
           <button
             type="button"
             onClick={() => void supabase.auth.signOut()}

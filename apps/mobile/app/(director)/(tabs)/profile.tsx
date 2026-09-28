@@ -2,6 +2,7 @@ import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
 import { Text, View, Pressable, ActivityIndicator, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useStripe } from "@/lib/payments/stripe";
@@ -22,6 +23,7 @@ const ORG_TYPE_LABELS: Record<string, string> = {
 };
 
 export default function DirectorProfile() {
+  const router = useRouter();
   const tabBarHeight = useBottomTabBarHeight();
   const [hirer, setHirer] = useState<HirerRow | null>(null);
   const [loading, setLoading] = useState(true);
@@ -218,6 +220,14 @@ export default function DirectorProfile() {
 
       <View className="px-5 mt-6">
         <RoleSwitcher />
+      </View>
+
+      <View className="mx-5 mt-4">
+        <Pressable onPress={() => router.push("/account" as any)} className="border border-ink py-4 active:bg-chalk">
+          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
+            ACCOUNT &amp; SIGN-IN
+          </Text>
+        </Pressable>
       </View>
 
       {/* Sign out */}

@@ -143,6 +143,29 @@ export async function signInWithGoogleOAuth(): Promise<{ error: Error | null }> 
   }
 }
 
+/** Adds Google or Apple to the currently signed-in account. */
+export async function linkOAuthIdentity(provider: "google" | "apple"): Promise<{ error: Error | null }> {
+  const { url: projectUrl, anonKey } = getSupabaseConfig();
+  const availability = await fetchOAuthProviderAvailability(projectUrl, anonKey);
+  if (availability[provider] === false) {
+    return { error: new Error(providerUnavailableMessage(provider)) };
+  }
+  const redirectTo = getOAuthRedirectUri();
+  const { data, error } = await supabase.auth.linkIdentity({
+    provider,
+    options: { redirectTo, skipBrowserRedirect: true },
+  });
+  if (error) return { error: new Error(humanizeOAuthError(provider, error.message)) };
+  if (!data.url) return { error: new Error("No account-linking URL returned from Supabase.") };
+
+  const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+  if (result.type === "cancel" || result.type === "dismiss") return { error: null };
+  if (result.type !== "success" || !("url" in result) || !result.url) {
+    return { error: new Error("Account linking was not completed.") };
+  }
+  return finalizeOAuthRedirect(result.url);
+}
+
 /**
  * Apple — native Sign in with Apple on iOS when available; otherwise OAuth web flow (e.g. Android).
  */

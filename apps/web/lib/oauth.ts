@@ -25,8 +25,8 @@ export function fetchProviderAvailability(): Promise<ProviderAvailability> {
 /**
  * Web OAuth. Unlike the app (which opens an auth session in a native browser
  * and deep-links back via the `refee://` scheme), the browser just redirects to
- * Supabase and back to /auth/callback, where detectSessionInUrl + the PKCE code
- * exchange finish the job.
+ * Supabase and back to /auth/callback, where that page performs the PKCE code
+ * exchange exactly once.
  *
  * Add this origin's callback to Supabase → Authentication → URL Configuration
  * alongside the app's deep link.
@@ -71,6 +71,24 @@ export async function signInWithAppleOAuth(): Promise<{ error: Error | null }> {
     return await startOAuth("apple");
   } catch (e) {
     return { error: e instanceof Error ? e : new Error(String(e)) };
+  }
+}
+
+/** Adds Google or Apple to the currently signed-in account. */
+export async function linkOAuthIdentity(provider: OAuthProvider): Promise<{ error: Error | null }> {
+  try {
+    const { url, anonKey } = getSupabaseConfig();
+    const availability = await fetchOAuthProviderAvailability(url, anonKey);
+    if (availability[provider] === false) {
+      return { error: new Error(providerUnavailableMessage(provider)) };
+    }
+    const { error } = await supabase.auth.linkIdentity({
+      provider,
+      options: { redirectTo: `${getOAuthRedirectUri()}?next=%2Faccount` },
+    });
+    return { error: error ? new Error(humanizeOAuthError(provider, error.message)) : null };
+  } catch (error) {
+    return { error: error instanceof Error ? error : new Error(String(error)) };
   }
 }
 

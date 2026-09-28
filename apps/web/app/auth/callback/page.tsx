@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { finalizeOAuthRedirect } from "@/lib/oauth";
 import { Spinner } from "@/components/ui/AppButton";
 
@@ -13,15 +13,21 @@ import { Spinner } from "@/components/ui/AppButton";
 export default function AuthCallbackPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const exchangeStarted = useRef(false);
 
   useEffect(() => {
+    // OAuth codes are single-use. React's development Strict Mode runs effects
+    // twice, so never let the same callback page exchange one twice.
+    if (exchangeStarted.current) return;
+    exchangeStarted.current = true;
     (async () => {
       const { error: err } = await finalizeOAuthRedirect(window.location.href);
       if (err) {
         setError(err.message);
         return;
       }
-      router.replace("/app/jobs");
+      const next = new URL(window.location.href).searchParams.get("next");
+      router.replace(next === "/account" ? next : "/app/jobs");
     })();
   }, [router]);
 

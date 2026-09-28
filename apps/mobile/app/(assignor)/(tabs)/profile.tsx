@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { Wordmark } from "@/components/ui/Wordmark";
@@ -14,6 +15,7 @@ import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 
 export default function AssignorProfile() {
+  const router = useRouter();
   const tabBarHeight = useBottomTabBarHeight();
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [roles, setRoles] = useState<string[]>([]);
@@ -79,7 +81,7 @@ export default function AssignorProfile() {
       </View>
 
       <View className="mx-5 border border-ink bg-chalk">
-        <InfoRow label="PRIMARY ROLE" value="ASSIGNOR" />
+        <InfoRow label="PRIMARY ROLE" value={profile.primary_role.toUpperCase()} />
         <View className="h-px bg-ink-20" />
         <InfoRow label="ALL ROLES" value={roles.map((role) => role.toUpperCase()).join(" · ") || "ASSIGNOR"} />
         <View className="h-px bg-ink-20" />
@@ -92,6 +94,12 @@ export default function AssignorProfile() {
         <View className="mb-6">
           <RoleSwitcher />
         </View>
+
+        <Pressable onPress={() => router.push("/account" as any)} className="mb-4 border border-ink py-4 active:bg-chalk">
+          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
+            ACCOUNT &amp; SIGN-IN
+          </Text>
+        </Pressable>
 
         <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
           <Feather name="log-out" size={14} color="#F1EDE1" />

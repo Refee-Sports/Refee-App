@@ -677,6 +677,14 @@ export default function Profile() {
         <RoleSwitcher />
       </View>
 
+      <View className="mx-5 mt-4">
+        <Pressable onPress={() => router.push("/account" as any)} className="border border-ink py-4 active:bg-chalk">
+          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
+            ACCOUNT &amp; SIGN-IN
+          </Text>
+        </Pressable>
+      </View>
+
       {/* ── Sign out ─────────────────────────────────────────────── */}
       <View className="mx-5 mt-10">
         <Pressable onPress={signOut} className="border border-foul py-4 active:opacity-70">
