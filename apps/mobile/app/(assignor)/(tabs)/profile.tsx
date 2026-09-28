@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase";
 import { fetchMyProfile, type ProfileRow } from "@/lib/profile/queries";
 import { fetchMyRoles } from "@/lib/assignor/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
+import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 
 export default function AssignorProfile() {
   const tabBarHeight = useBottomTabBarHeight();
@@ -88,6 +89,10 @@ export default function AssignorProfile() {
       </View>
 
       <View className="mx-5 mt-7">
+        <View className="mb-6">
+          <RoleSwitcher />
+        </View>
+
         <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
           <Feather name="log-out" size={14} color="#F1EDE1" />
           <Text className="text-paper font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>SIGN OUT</Text>

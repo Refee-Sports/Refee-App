@@ -27,6 +27,7 @@ import { useOnboardingStore, type PrimaryRole } from "@/lib/stores/onboarding-st
 import { registerForPushNotifications } from "@/lib/push/notifications";
 import { applyGlobalFontScaleCap } from "@/lib/ui/text-scaling";
 import { LogBox } from "react-native";
+import { fetchRoles, type Role } from "@/lib/roles/queries";
 
 // Bound OS Dynamic Type scaling app-wide so text stays scalable (accessibility)
 // without breaking the dense layouts. Runs once at module load.
@@ -52,6 +53,8 @@ export default function RootLayout() {
 
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  // Every role this account holds — someone can referee and also assign.
+  const [roles, setRoles] = useState<Role[]>([]);
   const { profileComplete, setProfileComplete, setPrimaryRole } = useOnboardingStore();
 
   useEffect(() => {
@@ -100,6 +103,7 @@ export default function RootLayout() {
       if (exists) {
         const role = await fetchPrimaryRole(session.user.id);
         setPrimaryRole(role as PrimaryRole);
+        setRoles((await fetchRoles(session.user.id)).roles);
         // Register for push once the profile exists (no-op on Expo Go/simulator)
         void registerForPushNotifications(session.user.id);
       }
@@ -133,7 +137,12 @@ export default function RootLayout() {
         merchantIdentifier="merchant.app.refee"
       >
         <StatusBar style="dark" />
-        <AuthGate session={session} profileComplete={profileComplete} primaryRole={primaryRole}>
+        <AuthGate
+          session={session}
+          profileComplete={profileComplete}
+          primaryRole={primaryRole}
+          roles={roles}
+        >
           <Stack screenOptions={{ headerShown: false, animation: "fade" }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(onboarding)" />
@@ -155,11 +164,13 @@ function AuthGate({
   session,
   profileComplete,
   primaryRole,
+  roles,
 }: {
   children: React.ReactNode;
   session: Session | null;
   profileComplete: boolean | null;
   primaryRole: PrimaryRole | null;
+  roles: Role[];
 }) {
   const segments = useSegments();
   const router = useRouter();
@@ -190,20 +201,34 @@ function AuthGate({
     // Profile exists — wait until role is also fetched
     if (primaryRole === null) return;
 
-    if (primaryRole === "director") {
-      if (inAuthGroup || inOnboardingGroup || inAppGroup || inAssignorGroup) {
-        router.replace("/(director)/(tabs)/tournaments" as any);
-      }
-    } else if (primaryRole === "assignor") {
-      if (inAuthGroup || inOnboardingGroup || inAppGroup || inDirectorGroup) {
-        router.replace("/(assignor)/(tabs)/tournaments" as any);
-      }
-    } else {
-      if (inAuthGroup || inOnboardingGroup || inDirectorGroup || inAssignorGroup) {
-        router.replace("/(app)/(tabs)/jobs");
-      }
+    // primary_role decides where you LAND, not where you may go: an official
+    // who also assigns holds both roles and is at home in either app. A role
+    // the account does not hold stays closed.
+    const HOME: Record<Role, string> = {
+      referee: "/(app)/(tabs)/jobs",
+      director: "/(director)/(tabs)/tournaments",
+      assignor: "/(assignor)/(tabs)/tournaments",
+    };
+    const GROUP: Record<Role, string> = {
+      referee: "(app)",
+      director: "(director)",
+      assignor: "(assignor)",
+    };
+
+    const home = HOME[primaryRole as Role] ?? HOME.referee;
+    const held: Role[] = roles.length > 0 ? roles : [primaryRole as Role];
+    const allowedGroups = held.map((r) => GROUP[r]).filter(Boolean);
+
+    if (inAuthGroup || inOnboardingGroup) {
+      router.replace(home as any);
+      return;
     }
-  }, [session, profileComplete, primaryRole, segments, router]);
+
+    const inSomeRoleGroup = inAppGroup || inDirectorGroup || inAssignorGroup;
+    if (inSomeRoleGroup && !allowedGroups.includes(segments[0] as string)) {
+      router.replace(home as any);
+    }
+  }, [session, profileComplete, primaryRole, roles, segments, router]);
 
   return <>{children}</>;
 }

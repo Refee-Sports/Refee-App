@@ -34,6 +34,7 @@ import {
 } from "@/lib/payments/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -671,6 +672,10 @@ export default function Profile() {
           </View>
         </>
       )}
+
+      <View className="px-5 mt-6">
+        <RoleSwitcher />
+      </View>
 
       {/* ── Sign out ─────────────────────────────────────────────── */}
       <View className="mx-5 mt-10">
