@@ -21,6 +21,9 @@ select is(
     select p.proname::text from pg_proc p join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.prosecdef and p.prorettype <> 'trigger'::regtype
       and has_function_privilege('anon', p.oid, 'execute')
+      -- The one deliberate exception: a version number the app must read at
+      -- launch, before anyone has signed in (0058). It exposes nothing else.
+      and p.proname <> 'get_min_app_version'
     order by 1),
   '{}'::text[],
   'signed-out visitors cannot call any backend function');
