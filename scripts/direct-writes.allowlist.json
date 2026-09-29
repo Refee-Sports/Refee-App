@@ -1,6 +1,8 @@
 {
   "apps/mobile/lib/profile/avatar.ts::public_profiles.update": "A user saves their own avatar URL.",
   "apps/web/lib/profile/avatar.ts::public_profiles.update": "A user saves their own avatar URL.",
+  "packages/core/src/referee/backgroundCheck.ts::background_check_documents.insert": "A referee records their own upload; RLS pins it to their own folder and a trigger sets the one-year expiry.",
+  "packages/core/src/referee/backgroundCheck.ts::background_check_documents.delete": "A referee removes their own upload; RLS limits it to their rows.",
   "apps/mobile/lib/push/notifications.ts::push_tokens.upsert": "This device registers its own push token.",
   "apps/mobile/lib/push/notifications.ts::push_tokens.delete": "This device removes its own push token on sign-out.",
   "packages/core/src/assignor/queries.ts::public_profiles.upsert": "Assignor onboarding writes the user's own profile.",
