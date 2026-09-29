@@ -72,7 +72,7 @@ export async function fetchOAuthProviderAvailability(
  * work.
  */
 export function providerUnavailableMessage(provider: OAuthProvider): string {
-  return `${PROVIDER_LABELS[provider]} sign-in isn't switched on for this Refee environment yet. Use your phone number instead — it signs you in to the same account.`;
+  return `${PROVIDER_LABELS[provider]} sign-in isn't switched on for this Refee environment yet. Use your email instead — it signs you in to the same account.`;
 }
 
 /** Turns Supabase's own wording for a disabled provider into that message. */

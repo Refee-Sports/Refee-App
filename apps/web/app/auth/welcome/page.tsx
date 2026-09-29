@@ -152,7 +152,7 @@ export default function WelcomePage() {
               className="font-mono-bold text-[10px] uppercase text-paper/45"
               style={{ letterSpacing: 3 }}
             >
-              or phone
+              or email
             </span>
             <span className="h-px flex-1 bg-paper/25" />
           </div>
@@ -163,7 +163,7 @@ export default function WelcomePage() {
             className="mb-2.5 flex w-full items-center justify-center gap-2 bg-hi-vis py-5 text-ink hover:opacity-80"
           >
             <span className="font-mono-bold" style={{ fontSize: 13, letterSpacing: 2 }}>
-              CONTINUE WITH PHONE
+              CONTINUE WITH EMAIL
             </span>
             <span className="font-mono-bold text-base">→</span>
           </button>

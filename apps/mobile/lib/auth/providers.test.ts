@@ -76,7 +76,8 @@ describe("what the person is told", () => {
   it("names the provider and points at the way in that works", () => {
     const msg = providerUnavailableMessage("google");
     expect(msg).toContain("Google");
-    expect(msg).toContain("phone number");
+    expect(msg).toContain("email");
+    expect(msg).not.toMatch(/phone/i);
   });
 
   it("turns Supabase's wording for a disabled provider into that message", () => {

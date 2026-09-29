@@ -1,5 +1,10 @@
 # Getting Refee Running Locally
 
+> **Sign-in changed (Sep 29, 2026):** phone/SMS sign-in and Twilio were removed. Refee
+> signs in with Apple, Google or an emailed code, and locally the codes arrive in Mailpit
+> at http://127.0.0.1:54324 (seeded logins like `ref1@refee.local` — see
+> [docs/AUTH.md](docs/AUTH.md)). Ignore the Twilio and test-OTP steps below.
+
 This guide walks through the first-time setup. About 20 minutes start to finish.
 
 ## Prerequisites

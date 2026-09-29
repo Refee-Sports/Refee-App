@@ -4,9 +4,15 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
 import { Spinner } from "@/components/ui/AppButton";
-import { supabase } from "@/lib/supabase";
+import {
+  EMAIL_CODE_LENGTH,
+  cleanCode,
+  maskEmail,
+  sendEmailCode,
+  verifyEmailCode,
+} from "@/lib/auth/emailCode";
 
-const CODE_LENGTH = 6;
+const RESEND_SECONDS = 60;
 
 export default function VerifyPage() {
   return (
@@ -16,81 +22,61 @@ export default function VerifyPage() {
   );
 }
 
-/** Port of refee-mobile/refee/app/(auth)/verify.tsx. */
 function VerifyInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const phone = params.get("phone") ?? "";
-  const formattedPhone = params.get("formattedPhone") ?? "";
+  const email = params.get("email") ?? "";
 
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [secondsLeft, setSecondsLeft] = useState(60);
-  const [resendDisabled, setResendDisabled] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const startCountdown = useCallback(() => {
-    setSecondsLeft(60);
-    setResendDisabled(true);
-  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
-    if (!resendDisabled) return;
-    const timer = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          setResendDisabled(false);
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [resendDisabled]);
+    if (secondsLeft <= 0) return;
+    const timer = setTimeout(() => setSecondsLeft((s) => s - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [secondsLeft]);
 
   const handleVerify = useCallback(
-    async (otpCode: string) => {
+    async (entered: string) => {
       setLoading(true);
       setError(null);
-
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        phone,
-        token: otpCode,
-        type: "sms",
-      });
-
+      setNotice(null);
+      const { error: verifyError } = await verifyEmailCode(email, entered);
       setLoading(false);
-
       if (verifyError) {
-        setError("That code didn't work. Try again.");
+        setError(verifyError.message);
         setCode("");
         inputRef.current?.focus();
-        return;
       }
       // RouteGate routes to onboarding or the right app automatically.
     },
-    [phone]
+    [email]
   );
 
-  // Auto-submit when 6 digits are entered
+  // Auto-submit when all digits are entered.
   useEffect(() => {
-    if (code.length === CODE_LENGTH) void handleVerify(code);
+    if (code.length === EMAIL_CODE_LENGTH) void handleVerify(code);
   }, [code, handleVerify]);
 
   const handleResend = async () => {
-    startCountdown();
-    await supabase.auth.signInWithOtp({ phone });
+    if (secondsLeft > 0) return;
+    setError(null);
+    const { error: sendError } = await sendEmailCode(email);
+    if (sendError) {
+      setError(sendError.message);
+      return;
+    }
+    setNotice("New code sent.");
+    setSecondsLeft(RESEND_SECONDS);
   };
-
-  // Mask phone for display: (512) ••• 8429
-  const maskedPhone = formattedPhone
-    ? `(${formattedPhone.slice(1, 4)}) ••• ${formattedPhone.slice(-4)}`
-    : phone;
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -116,27 +102,27 @@ function VerifyInner() {
         >
           CHECK YOUR
           <br />
-          <span className="text-signal">PHONE.</span>
+          <span className="text-signal">EMAIL.</span>
         </h1>
         <p className="mb-7 mt-3 text-ink-80" style={{ fontSize: 14, lineHeight: "20px" }}>
-          We sent a 6-digit code to{" "}
-          <span className="font-body-bold text-ink">+1 {maskedPhone}</span>.
+          We sent a 6-digit code to <span className="font-body-bold text-ink">{maskEmail(email)}</span>.
+          It can take a minute — check spam if it isn&apos;t there.
         </p>
 
-        {/* OTP cells — a hidden input captures typing/paste, cells are visual */}
+        {/* Code cells — a hidden input captures typing/paste, cells are visual */}
         <div className="relative">
           <input
             ref={inputRef}
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))}
+            onChange={(e) => setCode(cleanCode(e.target.value))}
             inputMode="numeric"
             autoComplete="one-time-code"
-            maxLength={CODE_LENGTH}
+            maxLength={EMAIL_CODE_LENGTH + 4}
             aria-label="Verification code"
             className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
           />
           <div className="flex justify-between gap-1.5">
-            {Array.from({ length: CODE_LENGTH }).map((_, i) => {
+            {Array.from({ length: EMAIL_CODE_LENGTH }).map((_, i) => {
               const filled = !!code[i];
               const active = i === code.length;
               return (
@@ -159,12 +145,16 @@ function VerifyInner() {
         </div>
 
         {error && (
-          <p className="mt-3 text-center font-mono text-xs uppercase text-foul">{error}</p>
+          <p className="mt-3 text-center font-mono text-xs uppercase text-foul" role="alert">
+            {error}
+          </p>
+        )}
+        {notice && !error && (
+          <p className="mt-3 text-center font-mono text-xs uppercase text-court">{notice}</p>
         )}
 
-        {/* Resend row */}
         <div className="mt-6 flex items-center justify-between border-b border-t border-ink-20 py-3">
-          {resendDisabled ? (
+          {secondsLeft > 0 ? (
             <span
               className="font-mono-bold text-[11px] uppercase text-ink-60"
               style={{ letterSpacing: 1.5 }}
@@ -188,25 +178,8 @@ function VerifyInner() {
             className="font-mono-bold text-[11px] uppercase text-signal underline"
             style={{ letterSpacing: 1.5 }}
           >
-            Wrong number?
+            Wrong email?
           </button>
-        </div>
-
-        {/* Why-phone-first explainer */}
-        <div className="mt-6 flex gap-2.5 border border-dashed border-ink-40 p-3.5">
-          <span className="font-mono text-base text-signal">▸</span>
-          <div className="flex-1">
-            <p
-              className="mb-1 font-mono-bold text-[9px] uppercase text-ink"
-              style={{ letterSpacing: 2 }}
-            >
-              Why phone first?
-            </p>
-            <p className="text-[11px] text-ink-80" style={{ lineHeight: "16px" }}>
-              No passwords. We text you a code each time you sign in on a new
-              device. Refs verify each other are real humans.
-            </p>
-          </div>
         </div>
 
         {loading && (

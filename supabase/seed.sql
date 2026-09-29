@@ -696,3 +696,38 @@ on conflict (id) do update
 
 update public.public_profiles set is_verified = true;
 update public.hirers set is_verified = true;
+
+-- ── Local sign-in by emailed code ──────────────────────────────────────────
+-- Phone sign-in is off; every environment signs in with Apple, Google or a
+-- code sent to an email address. Locally the code lands in Inbucket
+-- (http://127.0.0.1:54324) — open the mailbox for the address below.
+--   ref1@refee.local  (Alex, referee)      dir1@refee.local (Jordan, director)
+--   ref2..ref4@refee.local (referees)      dir2@refee.local (director)
+do $$
+declare
+  m record;
+begin
+  for m in
+    select * from (values
+      ('15555550100', 'ref1@refee.local'),
+      ('15555550101', 'dir1@refee.local'),
+      ('15555550102', 'ref2@refee.local'),
+      ('15555550103', 'ref3@refee.local'),
+      ('15555550104', 'ref4@refee.local'),
+      ('15555550105', 'dir2@refee.local')
+    ) as t(phone, email)
+  loop
+    update auth.users
+       set email = m.email,
+           email_confirmed_at = coalesce(email_confirmed_at, now())
+     where phone = m.phone;
+
+    insert into auth.identities (provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+    select u.id::text, u.id,
+           jsonb_build_object('sub', u.id::text, 'email', m.email, 'email_verified', true, 'phone_verified', false),
+           'email', now(), now(), now()
+      from auth.users u
+     where u.phone = m.phone
+    on conflict (provider_id, provider) do nothing;
+  end loop;
+end $$;

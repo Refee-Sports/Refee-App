@@ -30,8 +30,14 @@ export default function PrivacyPage() {
 
       <Section heading="What we collect">
         <p>
-          <strong>To create your account:</strong> your phone number, and your
-          name, city and state.
+          <strong>To create your account:</strong> your email address (or the
+          Apple or Google account you sign in with), your name, city and state,
+          and a headshot.
+        </p>
+        <p>
+          <strong>If you choose to:</strong> a background check you upload. Only
+          you can open the file; other people on Refee see only whether you have
+          a current one and when it expires.
         </p>
         <p>
           <strong>To verify who you are:</strong> your legal name and date of
@@ -91,7 +97,7 @@ export default function PrivacyPage() {
           <strong>Other people on Refee</strong> see your first name and last
           initial, your city and state, your sports and levels, your rating, and
           whether you are verified. They do not see your legal name, date of
-          birth, phone number, address or home coordinates.
+          birth, email address, address or home coordinates.
         </p>
         <p>
           <strong>Didit</strong> — identity verification, as described above.
@@ -104,7 +110,12 @@ export default function PrivacyPage() {
           <strong>Supabase</strong> — our database and backend hosting.
         </p>
         <p>
-          <strong>Twilio</strong> — the SMS that carries your sign-in code.
+          <strong>Resend</strong> — our email provider, which delivers your
+          sign-in code and roster invitations.
+        </p>
+        <p>
+          <strong>Apple and Google</strong> — if you choose to sign in with
+          them, they tell us your name and email address.
         </p>
         <p>
           <strong>Anthropic</strong> — when a director imports a schedule, the

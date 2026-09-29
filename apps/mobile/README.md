@@ -2,6 +2,11 @@
 
 The on-demand marketplace for sports officials.
 
+> **Sign-in changed (Sep 29, 2026):** phone/SMS sign-in and Twilio were removed. Refee
+> signs in with Apple, Google or an emailed code; locally the codes arrive in Mailpit at
+> http://127.0.0.1:54324. See [docs/AUTH.md](docs/AUTH.md). The Twilio and test-OTP notes
+> further down are out of date.
+
 ## Stack
 
 - **Expo + React Native** — iOS + Android from one codebase

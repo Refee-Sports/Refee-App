@@ -42,7 +42,7 @@ Owners: **G** = Gerda (accounts, dashboards, content) · **C** = Claude (code).
 - [ ] **G** — Push, iOS: let EAS create the APNs key during the first build (`eas credentials`).
 - [ ] **G** — Push, Android: create a Firebase project, add the Android app (`com.refee.app`), upload the FCM V1 service-account key to EAS; **C** adds `google-services.json` config.
 - [ ] **G** — Supabase → Auth → URL configuration: add the `refee://` redirect (OAuth return to the app).
-- [ ] **G** — Supabase → Auth → Phone: a **reviewer test number with a fixed code** on the hosted project. The `(555) 555-01xx` / `123456` numbers exist only on the local stack.
+- [ ] **G** — Sign-in is Apple, Google and an emailed code (no phone). Follow [AUTH.md](AUTH.md): custom SMTP, the code email template, attach emails to existing phone-only accounts, switch the phone provider off. For App Review, create a dedicated review mailbox and put its login in the review notes — there is no fixed-code test number any more.
 - [ ] **G** — Supabase on the **Pro** plan (free projects pause and cap realtime connections).
 - [ ] **G** — Stripe live mode: account activated, live keys in Supabase function secrets and EAS, webhook pointed at production. Refs re-onboard payouts in live mode (test-mode Connect accounts don't carry over).
 

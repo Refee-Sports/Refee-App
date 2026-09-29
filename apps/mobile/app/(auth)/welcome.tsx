@@ -176,7 +176,7 @@ export default function Welcome() {
             className="text-paper/45 font-mono-bold text-[10px] uppercase"
             style={{ letterSpacing: 3 }}
           >
-            or phone
+            or email
           </Text>
           <View className="flex-1 h-px bg-paper/25" />
         </View>

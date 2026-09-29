@@ -247,10 +247,17 @@ otp_expiry = 3600
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
-# Uncomment to customize email template
-# [auth.email.template.invite]
-# subject = "You have been invited"
-# content_path = "./supabase/templates/invite.html"
+# Sign-in emails carry a 6-digit code (not a link) — the apps ask for it.
+# New emails get the "confirmation" template, returning ones "magic_link";
+# both show the same code. Hosted projects: paste the same HTML into
+# Dashboard → Authentication → Emails (see docs/AUTH.md).
+[auth.email.template.confirmation]
+subject = "Your Refee sign-in code"
+content_path = "./supabase/templates/sign_in_code.html"
+
+[auth.email.template.magic_link]
+subject = "Your Refee sign-in code"
+content_path = "./supabase/templates/sign_in_code.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
@@ -259,8 +266,8 @@ otp_expiry = 3600
 # content_path = "./templates/password_changed_notification.html"
 
 [auth.sms]
-# Allow/disallow new user signups via SMS to your project.
-enable_signup = true
+# Refee signs in with Apple, Google or an emailed code — phone sign-in is off.
+enable_signup = false
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = true
 # Template for sending OTP to users
@@ -316,7 +323,7 @@ max_frequency = "5s"
 # Local dev: enable Twilio with placeholder values so phone login is not disabled.
 # Real SMS is skipped for numbers in [auth.sms.test_otp]; hosted projects use Dashboard + real Twilio.
 [auth.sms.twilio]
-enabled = true
+enabled = false
 account_sid = "AC00000000000000000000000000000000"
 message_service_sid = "MG00000000000000000000000000000000"
 auth_token = "local_dev_twilio_auth_token_placeholder"
