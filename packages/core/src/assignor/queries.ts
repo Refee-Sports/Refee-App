@@ -1,4 +1,5 @@
 import { supabase } from "../client";
+import { sendPush } from "../push/send";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,8 @@ export async function createAssignorProfile(
     dateOfBirth: string;
     legalFirstName: string;
     legalLastName: string;
+    /** Headshot uploaded during sign-up; required for a new profile (0057). */
+    avatarUrl?: string;
   }
 ): Promise<{ error: Error | null }> {
   // Refee is 18+. This goes first so someone too young is turned away
@@ -132,6 +135,7 @@ export async function createAssignorProfile(
     city: args.city,
     state: args.state,
     primary_role: "assignor",
+    ...(args.avatarUrl ? { avatar_url: args.avatarUrl } : {}),
   });
   if (error) return { error: new Error(error.message) };
 
@@ -194,6 +198,8 @@ export async function fetchMyRoster(
 export async function fetchMyRosterInvites(
   refId: string
 ): Promise<{ invites: RosterInviteRow[]; error: Error | null }> {
+  // Email invites sent before this person signed up become real invites now.
+  await supabase.rpc("claim_roster_invites");
   const { data, error } = await supabase
     .from("assignor_rosters")
     .select("id, status, invited_at, assignor_id, assignor:public_profiles!assignor_rosters_assignor_id_fkey(display_name, city, state)")
@@ -217,6 +223,171 @@ export async function fetchMyRosterInvites(
   });
 
   return { invites, error: null };
+}
+
+// ── Growing a roster: email, CSV, QR / code ─────────────────────────────────
+
+export type EmailInviteResult = {
+  email: string;
+  result: "invited" | "pending" | "invalid" | "self" | "already_on_roster";
+  user_id?: string;
+};
+
+/** Splits pasted text or a CSV into unique lowercase email addresses. */
+export function parseEmails(raw: string): string[] {
+  const found = raw.match(/[^\s,;<>"']+@[^\s,;<>"']+\.[^\s,;<>"']+/g) ?? [];
+  return [...new Set(found.map((e) => e.trim().toLowerCase()))];
+}
+
+/**
+ * Invites people by email. Anyone already on Refee gets a roster invite now;
+ * everyone else is remembered and invited the first time they sign in with
+ * that address. Returns one result per address.
+ */
+export async function inviteToRosterByEmail(
+  emails: string[]
+): Promise<{ results: EmailInviteResult[]; error: Error | null }> {
+  const { data, error } = await supabase.rpc("invite_to_roster_by_email", { p_emails: emails });
+  if (error) return { results: [], error: new Error(error.message) };
+  return { results: (data ?? []) as unknown as EmailInviteResult[], error: null };
+}
+
+/** The assignor's join code (the QR code encodes a link that carries it). */
+export async function fetchMyRosterInviteCode(): Promise<{ code: string | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc("my_roster_invite_code");
+  return { code: (data as string | null) ?? null, error: error ? new Error(error.message) : null };
+}
+
+export async function rotateRosterInviteCode(): Promise<{ code: string | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc("rotate_roster_invite_code");
+  return { code: (data as string | null) ?? null, error: error ? new Error(error.message) : null };
+}
+
+export type RosterCodePreview = {
+  assignor_id: string;
+  display_name: string;
+  city: string | null;
+  state: string | null;
+  avatar_url: string | null;
+};
+
+export async function previewRosterInviteCode(
+  code: string
+): Promise<{ preview: RosterCodePreview | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc("preview_roster_invite_code", { p_code: code });
+  if (error) return { preview: null, error: new Error(error.message) };
+  const row = (data as RosterCodePreview[] | null)?.[0] ?? null;
+  return { preview: row, error: null };
+}
+
+export async function joinRosterByCode(code: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase.rpc("join_roster_by_code", { p_code: code });
+  return { error: error ? new Error(error.message) : null };
+}
+
+/** The link the QR code carries. Opens the web join page, which hands off to the app. */
+export function rosterInviteLink(code: string, origin = "https://refee.app"): string {
+  return `${origin}/join/${encodeURIComponent(code)}`;
+}
+
+/** Pulls the code out of a scanned link, a refee:// link, or a typed code. */
+export function extractRosterCode(input: string): string | null {
+  const trimmed = input.trim();
+  const fromLink = trimmed.match(/\/join\/([A-Za-z0-9]+)/);
+  const candidate = (fromLink?.[1] ?? trimmed).toUpperCase();
+  return /^[A-Z0-9]{6,12}$/.test(candidate) ? candidate : null;
+}
+
+/**
+ * Emails the people who don't have a Refee account yet (needs RESEND_API_KEY on
+ * the backend). Returns `configured: false` when email isn't set up, so the
+ * screen can say the message wasn't sent instead of implying it was.
+ */
+export async function sendRosterEmailInvites(
+  emails: string[]
+): Promise<{ sent: number; configured: boolean; error: Error | null }> {
+  if (emails.length === 0) return { sent: 0, configured: true, error: null };
+  const { data, error } = await supabase.functions.invoke("send-roster-invites", {
+    body: { emails },
+  });
+  if (error) return { sent: 0, configured: true, error: new Error(error.message) };
+  const result = (data ?? {}) as { sent?: number; configured?: boolean };
+  return { sent: result.sent ?? 0, configured: result.configured !== false, error: null };
+}
+
+// ── Roster announcements (one-way) ──────────────────────────────────────────
+
+const PUSH_BATCH = 200;
+
+/**
+ * Sends a one-way announcement to everyone on the roster and returns who was
+ * reached so the caller can push them. Referees cannot reply.
+ */
+export async function sendRosterBlast(
+  body: string
+): Promise<{ recipientIds: string[]; error: Error | null }> {
+  const { data, error } = await supabase.rpc("post_roster_blast", { p_body: body });
+  if (error) return { recipientIds: [], error: new Error(error.message) };
+  const result = data as { recipient_ids?: string[]; conversation_id?: string } | null;
+  const ids = (result?.recipient_ids ?? []) as string[];
+
+  // Push is best-effort. send-push only reaches people on the caller's roster
+  // and takes at most 200 recipients per call.
+  const preview = body.trim().length > 100 ? `${body.trim().slice(0, 97)}...` : body.trim();
+  for (let i = 0; i < ids.length; i += PUSH_BATCH) {
+    void sendPush(ids.slice(i, i + PUSH_BATCH), "Roster announcement", preview, {
+      type: "message",
+      conversationId: result?.conversation_id,
+    });
+  }
+  return { recipientIds: ids, error: null };
+}
+
+// ── The referee's side: which rosters am I on? ──────────────────────────────
+
+export type MyRosterRow = {
+  roster_id: string;
+  assignor_id: string;
+  assignor_name: string;
+  assignor_city: string | null;
+  assignor_state: string | null;
+  assignor_avatar: string | null;
+  joined_at: string | null;
+};
+
+/** Every roster (organization) a referee is currently on. */
+export async function fetchMyRosters(
+  refId: string
+): Promise<{ rosters: MyRosterRow[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("assignor_rosters")
+    .select(
+      "id, assignor_id, responded_at, assignor:public_profiles!assignor_rosters_assignor_id_fkey(display_name, city, state, avatar_url)"
+    )
+    .eq("ref_id", refId)
+    .eq("status", "accepted")
+    .order("responded_at", { ascending: false });
+  if (error) return { rosters: [], error: new Error(error.message) };
+
+  const rosters: MyRosterRow[] = (data ?? []).map((row: any) => {
+    const assignor = Array.isArray(row.assignor) ? row.assignor[0] : row.assignor;
+    return {
+      roster_id: row.id,
+      assignor_id: row.assignor_id,
+      assignor_name: assignor?.display_name ?? "An assignor",
+      assignor_city: assignor?.city ?? null,
+      assignor_state: assignor?.state ?? null,
+      assignor_avatar: assignor?.avatar_url ?? null,
+      joined_at: row.responded_at ?? null,
+    };
+  });
+  return { rosters, error: null };
+}
+
+/** A referee leaves a roster, or withdraws from a pending invite. */
+export async function leaveRoster(rosterId: string): Promise<{ error: Error | null }> {
+  const { error } = await supabase.rpc("leave_roster", { p_roster_id: rosterId });
+  return { error: error ? new Error(error.message) : null };
 }
 
 /** All rosters a referee currently belongs to (accepted only) — used to scope self-assign visibility. */

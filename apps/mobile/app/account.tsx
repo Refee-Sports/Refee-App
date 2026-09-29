@@ -49,7 +49,7 @@ export default function AccountScreen() {
     if (confirmation !== "DELETE") return;
     Alert.alert(
       "Permanently delete account?",
-      "Your sign-in, profile, verification data and avatar will be removed. This cannot be undone.",
+      "Your sign-in, profile, verification data, background check and avatar will be removed. This cannot be undone.",
       [
         { text: "Keep account", style: "cancel" },
         {

@@ -10,6 +10,8 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createAssignorProfile } from "@/lib/assignor/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
+import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
+import { headshotFileError, uploadSignupHeadshot } from "@/lib/profile/avatar";
 
 
 /** Port of refee-mobile/refee/app/(onboarding)/assignor.tsx — name, then location. */
@@ -17,6 +19,7 @@ export default function AssignorOnboardingPage() {
   const { refreshProfile } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ firstName: "", lastName: "", city: "", state: "", dateOfBirth: "" });
@@ -27,8 +30,9 @@ export default function AssignorOnboardingPage() {
       form.lastName.trim().length >= 1 &&
       isAdult(form.dateOfBirth),
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
+    headshotFileError(photo) === null, // headshot is required — finishing is blocked without it
   ];
-  const isLastStep = step === 1;
+  const isLastStep = step === 2;
 
   const leaveSetup = async () => {
     if (!window.confirm("Leave setup? You can finish your profile next time you sign in.")) return;
@@ -51,7 +55,19 @@ export default function AssignorOnboardingPage() {
       await supabase.auth.signOut();
       return;
     }
+    if (!photo) {
+      setError("Add a headshot to finish signing up.");
+      setLoading(false);
+      return;
+    }
+    const { avatarUrl, error: photoError } = await uploadSignupHeadshot(user.id, photo);
+    if (photoError || !avatarUrl) {
+      setError(photoError?.message ?? "Couldn't upload your photo. Please try again.");
+      setLoading(false);
+      return;
+    }
     const { error: saveError } = await createAssignorProfile(user.id, {
+      avatarUrl,
       firstName: form.firstName.trim(),
       lastInitial: form.lastName.trim()[0]?.toUpperCase() ?? "?",
       city: form.city.trim(),
@@ -83,7 +99,7 @@ export default function AssignorOnboardingPage() {
           <Icon name="chevron-left" size={18} />
         </button>
         <span className="font-mono-bold text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
-          <span className="text-ink">{`0${step + 1}`}</span> / 02 · Assignor setup
+          <span className="text-ink">{`0${step + 1}`}</span> / 03 · Assignor setup
         </span>
         <button
           type="button"
@@ -95,7 +111,7 @@ export default function AssignorOnboardingPage() {
         </button>
       </div>
       <div className="mx-5 h-0.5 bg-ink-20">
-        <div className="h-full bg-signal" style={{ width: `${((step + 1) / 2) * 100}%` }} />
+        <div className="h-full bg-signal" style={{ width: `${((step + 1) / 3) * 100}%` }} />
       </div>
 
       <div className="flex-1 px-5 py-6">
@@ -133,6 +149,8 @@ export default function AssignorOnboardingPage() {
               </p>
             )}
           </div>
+        ) : step === 2 ? (
+          <HeadshotStep file={photo} onChange={setPhoto} who="Directors and the referees on your roster" />
         ) : (
           <div>
             <Heading line1="WHERE ARE" line2="YOU BASED?" blurb="Directors near you can find and invite you." />

@@ -162,6 +162,8 @@ export async function createDirectorProfile(
     dateOfBirth: string;
     legalFirstName: string;
     legalLastName: string;
+    /** Headshot uploaded during sign-up; required for a new profile (0057). */
+    avatarUrl?: string;
   }
 ): Promise<{ hirerId: string | null; error: Error | null }> {
   // Refee is 18+. This goes first so someone too young is turned away
@@ -183,6 +185,7 @@ export async function createDirectorProfile(
     city: args.city,
     state: args.state,
     primary_role: "director",
+    ...(args.avatarUrl ? { avatar_url: args.avatarUrl } : {}),
   });
   if (profileError) return { hirerId: null, error: new Error(profileError.message) };
 

@@ -16,6 +16,10 @@
     "@supabase/supabase-js": "^2.45.0"
   },
   "devDependencies": {
+    "@types/qrcode": "^1.5.6",
     "typescript": "~5.9.2"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4"
   }
 }

@@ -16,7 +16,8 @@ import { createDirectorProfile } from "@/lib/director/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
-
+import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
+import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
 const ORG_TYPES = [
   { id: "tournament", label: "TOURNAMENT" },
@@ -25,7 +26,7 @@ const ORG_TYPES = [
   { id: "parks_rec",  label: "PARKS & REC" },
 ];
 
-const STEPS = ["NAME", "ORGANIZATION", "LOCATION"];
+const STEPS = ["NAME", "ORGANIZATION", "LOCATION", "HEADSHOT"];
 
 type FormData = {
   firstName: string;
@@ -56,6 +57,8 @@ export default function DirectorOnboarding() {
     dobDigits: "",
   });
 
+  const [photo, setPhoto] = useState<PickedHeadshot | null>(null);
+
   const set = (key: keyof FormData) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
@@ -65,6 +68,7 @@ export default function DirectorOnboarding() {
       isAdult(usDateInput(form.dobDigits).iso),
     form.orgName.trim().length >= 1 && !!form.orgType,
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
+    photo !== null, // headshot is required — creating the account is blocked without it
   ];
 
   const handleNext = () => {
@@ -102,7 +106,21 @@ export default function DirectorOnboarding() {
         return;
       }
 
+      if (!photo) {
+        setError("Add a headshot to finish signing up.");
+        setLoading(false);
+        return;
+      }
+      const { avatarUrl, error: photoError } = await uploadSignupHeadshot(user.id, photo);
+      if (photoError || !avatarUrl) {
+        setError(photoError?.message ?? "Couldn't upload your photo. Please try again.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setLoading(false);
+        return;
+      }
+
       const { error: saveError } = await createDirectorProfile(user.id, {
+        avatarUrl,
         contactFirstName: form.firstName.trim(),
         contactLastInitial: form.lastName.trim()[0]?.toUpperCase() ?? "?",
         orgName: form.orgName.trim(),
@@ -149,8 +167,8 @@ export default function DirectorOnboarding() {
     );
   };
 
-  const isLastStep = step === 2;
-  const progress = (step + 1) / 3;
+  const isLastStep = step === STEPS.length - 1;
+  const progress = (step + 1) / STEPS.length;
 
   return (
     <ScrollScreen
@@ -169,7 +187,7 @@ export default function DirectorOnboarding() {
               style={{ letterSpacing: 2 }}
             >
               <Text className="text-ink">{String(step + 1).padStart(2, "0")}</Text>
-              {" / 03 · DIRECTOR"}
+              {` / ${String(STEPS.length).padStart(2, "0")} · DIRECTOR`}
             </Text>
             <Pressable
               onPress={handleExit}
@@ -232,7 +250,7 @@ export default function DirectorOnboarding() {
         className="text-signal font-mono-bold text-[10px] uppercase mb-3"
         style={{ letterSpacing: 2 }}
       >
-        {STEPS[step]} · STEP {step + 1} OF 3
+        {STEPS[step]} · STEP {step + 1} OF {STEPS.length}
       </Text>
 
       {step === 0 && (
@@ -243,6 +261,9 @@ export default function DirectorOnboarding() {
       )}
       {step === 2 && (
         <LocationStep form={form} set={set} />
+      )}
+      {step === 3 && (
+        <HeadshotStep photo={photo} onChange={setPhoto} who="referees" />
       )}
     </ScrollScreen>
   );

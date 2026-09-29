@@ -5,7 +5,7 @@ import { canSendToParticipants, type MessagingRole } from "./permissions";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type ConversationKind = "dm" | "game_crew" | "director_crew_note";
+export type ConversationKind = "dm" | "game_crew" | "director_crew_note" | "roster_blast";
 
 export type ConversationRow = {
   id: string;
@@ -32,6 +32,18 @@ export type MessageRow = {
 
 // ── Conversation list ────────────────────────────────────────────────────────
 
+/** Announcements are always sent by the roster's assignor: show their name. */
+function blastSenderName(conversation: any, viewerId: string): string {
+  const lastMsg = (conversation.messages ?? [])[0];
+  const senderId = lastMsg?.sender_id ?? conversation.created_by;
+  if (senderId === viewerId) return "Your roster";
+  const sender = (conversation.conversation_participants ?? []).find(
+    (p: any) => p.user_id === senderId
+  );
+  const prof = Array.isArray(sender?.public_profiles) ? sender.public_profiles[0] : sender?.public_profiles;
+  return prof?.display_name ?? "Assignor";
+}
+
 export async function fetchConversations(
   userId: string
 ): Promise<{ conversations: ConversationRow[]; error: Error | null }> {
@@ -49,7 +61,7 @@ export async function fetchConversations(
   const { data, error } = await supabase
     .from("conversations")
     .select(
-      `id, kind, job_id, last_message_at,
+      `id, kind, job_id, created_by, last_message_at,
        jobs(title),
        conversation_participants(user_id, public_profiles(display_name)),
        messages(body, sender_id, created_at)`
@@ -79,8 +91,10 @@ export async function fetchConversations(
         c.kind === "game_crew"
           ? `${job?.title ?? "Game"} — Crew`
           : c.kind === "director_crew_note"
-            ? `${job?.title ?? "Game"} — Director updates`
-            : otherNames[0] ?? "Conversation";
+            ? `${job?.title ?? "Game"} — Updates`
+            : c.kind === "roster_blast"
+              ? `${blastSenderName(c, userId)} — Roster announcements`
+              : otherNames[0] ?? "Conversation";
 
       return {
         id: c.id,
@@ -183,6 +197,14 @@ export async function canSendInConversation(
     return {
       allowed: false,
       readOnlyReason: "Director updates are one-way. Contact your crew or assignor if you need help.",
+      error: null,
+    };
+  }
+
+  if (conversation.kind === "roster_blast") {
+    return {
+      allowed: false,
+      readOnlyReason: "Roster announcements are one-way. Message your assignor directly to reply.",
       error: null,
     };
   }

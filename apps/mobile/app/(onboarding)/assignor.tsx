@@ -16,9 +16,10 @@ import { createAssignorProfile } from "@/lib/assignor/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
+import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
+import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
-
-const STEPS = ["NAME", "LOCATION"];
+const STEPS = ["NAME", "LOCATION", "HEADSHOT"];
 
 type FormData = {
   firstName: string;
@@ -45,6 +46,8 @@ export default function AssignorOnboarding() {
     dobDigits: "",
   });
 
+  const [photo, setPhoto] = useState<PickedHeadshot | null>(null);
+
   const set = (key: keyof FormData) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
@@ -53,6 +56,7 @@ export default function AssignorOnboarding() {
       form.lastName.trim().length >= 1 &&
       isAdult(usDateInput(form.dobDigits).iso),
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
+    photo !== null, // headshot is required — creating the account is blocked without it
   ];
 
   const handleNext = () => {
@@ -90,7 +94,21 @@ export default function AssignorOnboarding() {
         return;
       }
 
+      if (!photo) {
+        setError("Add a headshot to finish signing up.");
+        setLoading(false);
+        return;
+      }
+      const { avatarUrl, error: photoError } = await uploadSignupHeadshot(user.id, photo);
+      if (photoError || !avatarUrl) {
+        setError(photoError?.message ?? "Couldn't upload your photo. Please try again.");
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setLoading(false);
+        return;
+      }
+
       const { error: saveError } = await createAssignorProfile(user.id, {
+        avatarUrl,
         firstName: form.firstName.trim(),
         lastInitial: form.lastName.trim()[0]?.toUpperCase() ?? "?",
         city: form.city.trim(),
@@ -135,8 +153,8 @@ export default function AssignorOnboarding() {
     );
   };
 
-  const isLastStep = step === 1;
-  const progress = (step + 1) / 2;
+  const isLastStep = step === STEPS.length - 1;
+  const progress = (step + 1) / STEPS.length;
 
   return (
     <ScrollScreen
@@ -155,7 +173,7 @@ export default function AssignorOnboarding() {
               style={{ letterSpacing: 2 }}
             >
               <Text className="text-ink">{String(step + 1).padStart(2, "0")}</Text>
-              {" / 02 · ASSIGNOR"}
+              {` / ${String(STEPS.length).padStart(2, "0")} · ASSIGNOR`}
             </Text>
             <Pressable
               onPress={handleExit}
@@ -218,11 +236,12 @@ export default function AssignorOnboarding() {
         className="text-signal font-mono-bold text-[10px] uppercase mb-3"
         style={{ letterSpacing: 2 }}
       >
-        {STEPS[step]} · STEP {step + 1} OF 2
+        {STEPS[step]} · STEP {step + 1} OF {STEPS.length}
       </Text>
 
       {step === 0 && <NameStep form={form} set={set} />}
       {step === 1 && <LocationStep form={form} set={set} />}
+      {step === 2 && <HeadshotStep photo={photo} onChange={setPhoto} who="directors and the referees on your roster" />}
     </ScrollScreen>
   );
 }

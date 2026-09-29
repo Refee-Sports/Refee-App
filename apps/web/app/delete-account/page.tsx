@@ -36,7 +36,7 @@ export default function DeleteAccountPage() {
       <Section heading="What is deleted">
         <p>
           Refee removes your sign-in identities, personal and public profiles, roles, avatar,
-          device tokens, identity-verification session, and connected payment or payout account
+          any uploaded background check, roster memberships, device tokens, identity-verification session, and connected payment or payout account
           where the provider permits immediate deletion. Message content is redacted.
         </p>
         <p>

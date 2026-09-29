@@ -16,7 +16,8 @@ import { saveFullProfile, CertEntry } from "@/lib/profile/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
-
+import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
+import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
 
@@ -37,8 +38,9 @@ const LEVELS = [
   { id: "pro_am",      label: "Pro-Am",               tier: "PRO" },
 ];
 
-const STEP_LABELS = ["NAME", "LOCATION", "SPORT", "RATE", "CERTIFICATIONS", "LEVELS"];
-const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08"];
+const STEP_LABELS = ["NAME", "LOCATION", "SPORT", "RATE", "CERTIFICATIONS", "LEVELS", "HEADSHOT"];
+const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08", "09"];
+const LAST_STEP = STEP_LABELS.length - 1;
 
 type StringFormKey = "firstName" | "lastName" | "city" | "state" | "sportId" | "yearsExperience" | "minPay" | "travelRadius" | "dobDigits";
 type StringSetter = (k: StringFormKey) => (v: string) => void;
@@ -56,6 +58,8 @@ type FormData = {
   levels: string[];
   /** Date of birth as typed on the keypad: MMDDYYYY digits. */
   dobDigits: string;
+  /** Required headshot, chosen on the last step and uploaded on submit. */
+  photo: PickedHeadshot | null;
 };
 
 export default function Onboarding() {
@@ -79,6 +83,7 @@ export default function Onboarding() {
     certs: [],
     levels: [],
     dobDigits: "",
+    photo: null,
   });
 
   const set: StringSetter = (key) => (val) => setForm((f) => ({ ...f, [key]: val }));
@@ -118,6 +123,7 @@ export default function Onboarding() {
     parseInt(form.minPay, 10) >= 1 && parseInt(form.travelRadius, 10) >= 1,
     true, // certs are optional
     form.levels.length >= 1,
+    form.photo !== null, // headshot is required — finishing is blocked without it
   ];
 
   const handleNext = () => {
@@ -171,10 +177,25 @@ export default function Onboarding() {
         return;
       }
 
+      if (!form.photo) {
+        setError("Add a headshot to finish signing up.");
+        setLoading(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+      const { avatarUrl, error: photoError } = await uploadSignupHeadshot(user.id, form.photo);
+      if (photoError || !avatarUrl) {
+        setError(photoError?.message ?? "Couldn't upload your photo. Please try again.");
+        setLoading(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+
       const lastName = form.lastName.trim();
       const lastInitial = lastName.length > 0 ? lastName[0].toUpperCase() : "?";
 
       const { error: saveError } = await saveFullProfile(user.id, {
+        avatarUrl,
         firstName: form.firstName.trim(),
         lastInitial,
         city: form.city.trim(),
@@ -222,10 +243,11 @@ export default function Onboarding() {
       case 3: return <RateStep form={form} set={set} />;
       case 4: return <CertStep certs={form.certs} onToggle={toggleCert} onSetLicense={setCertLicense} />;
       case 5: return <LevelStep selectedLevels={form.levels} onToggle={toggleLevel} />;
+      case 6: return <HeadshotStep photo={form.photo} onChange={(photo) => setForm((f) => ({ ...f, photo }))} />;
     }
   };
 
-  const isLastStep = step === 5;
+  const isLastStep = step === LAST_STEP;
 
   return (
     <ScrollScreen
@@ -243,7 +265,7 @@ export default function Onboarding() {
               className="text-ink-60 font-mono-bold text-[9px] uppercase"
               style={{ letterSpacing: 2 }}
             >
-              <Text className="text-ink">{STEP_NUMBERS[step]}</Text> / 08
+              <Text className="text-ink">{STEP_NUMBERS[step]}</Text> / {STEP_NUMBERS[LAST_STEP]}
             </Text>
             <Pressable
               onPress={handleExit}
@@ -255,7 +277,7 @@ export default function Onboarding() {
           <View className="h-0.5 bg-ink-20 mx-5">
             <View
               className="h-full bg-signal"
-              style={{ width: `${((step + 1) / 6) * 100}%` }}
+              style={{ width: `${((step + 1) / STEP_LABELS.length) * 100}%` }}
             />
           </View>
         </>

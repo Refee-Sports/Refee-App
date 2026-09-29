@@ -688,7 +688,30 @@ export default function RefereeProfilePage() {
         </>
       )}
 
-      <div className="mx-5 sm:mx-0 mt-6">
+      <div className="mx-5 mt-6 grid gap-2 sm:mx-0">
+        <Link
+          href="/app/organizations"
+          className="flex items-center justify-between border border-ink bg-chalk px-4 py-3.5 hover:bg-ink hover:text-paper"
+        >
+          <span>
+            <span className="block font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>My organizations</span>
+            <span className="mt-0.5 block font-mono text-[9px] uppercase opacity-60" style={{ letterSpacing: 1 }}>Assignor rosters you&apos;re on</span>
+          </span>
+          <Icon name="chevron-right" size={16} />
+        </Link>
+        <Link
+          href="/app/background-check"
+          className="flex items-center justify-between border border-ink bg-chalk px-4 py-3.5 hover:bg-ink hover:text-paper"
+        >
+          <span>
+            <span className="block font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>Background check</span>
+            <span className="mt-0.5 block font-mono text-[9px] uppercase opacity-60" style={{ letterSpacing: 1 }}>Upload · valid for 1 year</span>
+          </span>
+          <Icon name="chevron-right" size={16} />
+        </Link>
+      </div>
+
+      <div className="mx-5 sm:mx-0 mt-4">
         <RoleSwitcher />
       </div>
 

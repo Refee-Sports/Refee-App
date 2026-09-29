@@ -8,6 +8,8 @@ export default function AssignorLayout() {
       <Stack.Screen name="tournament/import" options={{ animation: "slide_from_bottom" }} />
       <Stack.Screen name="game/[id]" options={{ animation: "slide_from_right" }} />
       <Stack.Screen name="conversation/[id]" options={{ animation: "slide_from_right" }} />
+      <Stack.Screen name="invite" options={{ animation: "slide_from_right" }} />
+      <Stack.Screen name="announce" options={{ animation: "slide_from_right" }} />
     </Stack>
   );
 }

@@ -48,11 +48,17 @@ module.exports = {
     },
     ios: {
       ...appJson.expo.ios,
-      infoPlist: {
-        NSAppTransportSecurity: {
-          NSAllowsLocalNetworking: true,
-        },
-      },
+      // Talking to a Supabase on this laptop needs local networking. Store
+      // builds don't, and shouldn't ship the exception.
+      ...(process.env.EXPO_PUBLIC_APP_ENV === "production"
+        ? {}
+        : {
+            infoPlist: {
+              NSAppTransportSecurity: {
+                NSAllowsLocalNetworking: true,
+              },
+            },
+          }),
     },
   },
 };

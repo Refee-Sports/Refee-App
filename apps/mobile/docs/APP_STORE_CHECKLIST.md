@@ -5,8 +5,10 @@ stores, in the order it needs doing. Product-level launch blockers (pricing,
 trust & safety, messaging) live in [LAUNCH_CHECKLIST.md](LAUNCH_CHECKLIST.md);
 this file is only about shipping the binary.
 
-**Status (Sep 13, 2026):** never built for the stores — no EAS project, not on
-TestFlight or Play. EAS work starts Sep 14.
+**Status (Sep 28, 2026):** EAS project exists (`@ggatling/refee`, ID in `app.json`);
+code prep in §2 is done except the icon/splash artwork. Never built for the
+stores yet — the first build is blocked on the Apple/Google accounts (§1), the
+artwork, and the production environment variables (§3).
 
 Owners: **G** = Gerda (accounts, dashboards, content) · **C** = Claude (code).
 
@@ -21,15 +23,17 @@ Owners: **G** = Gerda (accounts, dashboards, content) · **C** = Claude (code).
 
 ## 2. Code prep in `apps/mobile`
 
-- [ ] **C** — `eas init` from `apps/mobile`: adds `extra.eas.projectId` to `app.json`. (EAS builds from the monorepo; installs run at the repo root.)
-- [ ] **C** — App icon (1024×1024, no transparency for iOS) and splash screen wired into `app.json`. `assets/` is empty today. **G** supplies the artwork.
-- [ ] **C** — **In-app account deletion** (Apple guideline 5.1.1(v)): a "Delete account" screen and a backend function that removes the user's data, plus a web URL for Google's account-deletion requirement.
-- [ ] **C** — Permission wording in `app.json` plugins: location ("Show games near you"), photos/camera ("Add a headshot"). Generic defaults risk rejection.
-- [ ] **C** — `ios.usesAppleSignIn: true` (Sign in with Apple entitlement; required on iOS when Google sign-in is offered) and `ios.config.usesNonExemptEncryption: false`.
-- [ ] **C** — `expo-updates` + `runtimeVersion` policy **before the first store build**, so JS-only fixes can ship without review later.
-- [ ] **C** — Minimum-supported-version check at launch (backend row + "Update Refee" screen), so old installs can be forced to update.
-- [ ] **C** — `eas.json` submit profile: App Store Connect app ID (`ascAppId`) and the Google Play service-account key path.
-- [ ] **C** — Versioning: `appVersionSource: remote` + `autoIncrement` already set for production. Bump `version` in `app.json` (0.1.0 → 1.0.0) for launch.
+- [x] **C** — `eas init`: done Sep 28 — project `fd10513b-047f-4df3-9169-80c377812980` on the `ggatling` Expo account, written into `app.json` (`extra.eas.projectId` and the `updates.url`). The CLI can't write it itself because `app.config.js` is dynamic, so it was added by hand.
+- [ ] **G** — App icon (1024×1024, no transparency for iOS), Android adaptive-icon foreground, and splash image. `assets/` doesn't exist yet. **C** wires them into `app.json` (`icon`, `android.adaptiveIcon.foregroundImage`, `splash.image`) the moment the files land — a store build can't be submitted without an icon.
+- [x] **C** — **In-app account deletion** (Apple guideline 5.1.1(v)): "Delete account" screen (`app/account.tsx`), `delete-account` edge function (also empties the private `background-checks` bucket), and the web URL `/delete-account` for Google's requirement.
+- [x] **C** — Permission wording in `app.json` plugins: location is *while-using only* (no background), camera and photos say "headshot / background check".
+- [x] **C** — `ios.usesAppleSignIn: true` and `ios.config.usesNonExemptEncryption: false`.
+- [x] **C** — `expo-updates` + `runtimeVersion: { policy: "appVersion" }`, and an update channel per build profile (`development` / `staging` / `production`).
+- [x] **C** — Minimum-supported-version check: migration 0058 (`app_min_versions`, `get_min_app_version`) + an "Update Refee" screen that replaces the app for older installs. Fails open if offline. **G** sets the store URLs as `EXPO_PUBLIC_IOS_STORE_URL` / `EXPO_PUBLIC_ANDROID_STORE_URL` once the listings exist.
+- [ ] **G** — `eas.json` submit profile: App Store Connect app ID (`ascAppId`, add under `submit.production.ios`) and the Google Play service-account key (`submit.production.android.serviceAccountKeyPath`). The Android track is preset to `internal` / `draft`.
+- [x] **C** — Versioning: `appVersionSource: remote` + `autoIncrement` for production; `version` is now `1.0.0`.
+- [x] **C** — Crash reporting: `@sentry/react-native`, initialised in `app/_layout.tsx`. It stays off until **G** sets `EXPO_PUBLIC_SENTRY_DSN` (a Sentry project is a free account) — no PII is attached. To get readable stack traces also set `SENTRY_ORG`, `SENTRY_PROJECT` and `SENTRY_AUTH_TOKEN` in EAS.
+- [x] **C** — The `NSAllowsLocalNetworking` exception (for a Supabase on a laptop) is no longer in production builds (`app.config.js`).
 - [x] **C** — Time zones: every mobile screen shows the venue's zone ("1:30 PM ET"); chat uses the viewer's time; tournament create defaults to the venue's zone and offers Atlantic (Puerto Rico); the feed's "This week" follows the venue's week.
 
 ## 3. Production configuration
@@ -44,7 +48,8 @@ Owners: **G** = Gerda (accounts, dashboards, content) · **C** = Claude (code).
 
 ## 4. Backend readiness
 
-- [ ] Hosted database at the latest migration (0033 column guard pending approval at time of writing).
+- [ ] Hosted database at the latest migration. **0057** (headshot required at sign-up, background-check uploads, roster email/QR invites, roster announcements) and **0058** (minimum app version) are applied locally and not yet pushed — back up, `supabase db push --linked --dry-run`, then push. Deploy the `send-roster-invites` function and set `RESEND_API_KEY` (and optionally `ROSTER_INVITE_FROM`, `WEB_URL`) or email invites will say they weren't sent.
+- [ ] **G** — Add `RESEND_API_KEY` (resend.com, free tier is fine) to the Supabase function secrets so invited people without an account get an email.
 - [ ] From the first store release on: **no migration may remove a column, policy or function a supported app version uses.** Add the new thing → ship both apps → raise the minimum version → remove the old thing.
 
 ## 5. Build & submit
@@ -71,7 +76,7 @@ npx eas-cli submit --platform android   # → Play Console testing track
 - [ ] **G** — Name, subtitle, description, keywords, category (Sports), support URL, marketing URL.
 - [ ] **G/C** — Privacy policy and terms pages hosted by the web app (`/privacy`, `/terms`); **G** writes the text, **C** builds the pages.
 - [ ] **G** — Screenshots: iPhone 6.9" (required set), Android phone (min 2), Play feature graphic 1024×500.
-- [ ] **G** — Apple **App Privacy** labels and Google **Data safety** form. Refee collects: phone number, name, precise location (when in use), photos (headshot), messages, payment info (via Stripe), user ID. Linked to the user; not used for tracking.
+- [ ] **G** — Apple **App Privacy** labels and Google **Data safety** form. Refee collects: phone number, email (optional, when a Google/Apple sign-in is linked or invited by email), name, date of birth, precise location (when in use), photos (headshot), a background-check document referees choose to upload (private; only the owner can open it — others see only "current until <date>"), messages, payment info (via Stripe), government-ID verification (via Didit), user ID. Linked to the user; not used for tracking.
 - [ ] **G** — Age rating / content rating questionnaires.
 
 ## 8. Review notes
@@ -83,8 +88,8 @@ npx eas-cli submit --platform android   # → Play Console testing track
 ## 9. Release & after
 
 - [ ] **G** — Apple: phased release over 7 days. Google: staged rollout (e.g. 20% → 100%).
-- [ ] **C** — Crash reporting before launch (e.g. Sentry via `sentry-expo`); none is wired today.
-- [ ] **C** — Document the hotfix path: JS-only → `eas update`; native changes → new build + review.
+- [x] **C** — Crash reporting: wired (Sentry, off until the DSN is set — see §2).
+- [x] **C** — Hotfix path: a JS-only fix ships with `npx eas-cli update --channel production --message "…"` from `apps/mobile` and reaches installs of the *same* `version` within minutes, with no store review (`runtimeVersion` policy is `appVersion`). Anything native — a new library, a permission, an `app.json` plugin change, an SDK upgrade — needs a new build, a `version` bump and store review. To force everyone off a broken release: raise `app_min_versions` in Supabase (that is what the "Update Refee" screen reads).
 
 Realistic timeline to first public release: **1–2 weeks**, gated by D-U-N-S and
 (for personal Play accounts) the 14-day closed test. Code prep is 2–3 days.

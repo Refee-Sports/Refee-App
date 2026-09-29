@@ -10,6 +10,8 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createDirectorProfile } from "@/lib/director/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
+import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
+import { headshotFileError, uploadSignupHeadshot } from "@/lib/profile/avatar";
 
 
 const ORG_TYPES = [
@@ -34,6 +36,7 @@ export default function DirectorOnboardingPage() {
   const { refreshProfile } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
@@ -55,6 +58,7 @@ export default function DirectorOnboardingPage() {
       isAdult(form.dateOfBirth),
     form.orgName.trim().length >= 1 && !!form.orgType,
     form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
+    headshotFileError(photo) === null, // headshot is required — finishing is blocked without it
   ];
 
   const leaveSetup = async () => {
@@ -84,7 +88,20 @@ export default function DirectorOnboardingPage() {
         return;
       }
 
+      if (!photo) {
+        setError("Add a headshot to finish signing up.");
+        setLoading(false);
+        return;
+      }
+      const { avatarUrl, error: photoError } = await uploadSignupHeadshot(user.id, photo);
+      if (photoError || !avatarUrl) {
+        setError(photoError?.message ?? "Couldn't upload your photo. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       const { error: saveError } = await createDirectorProfile(user.id, {
+        avatarUrl,
         contactFirstName: form.firstName.trim(),
         contactLastInitial: form.lastName.trim()[0]?.toUpperCase() ?? "?",
         orgName: form.orgName.trim(),
@@ -112,7 +129,7 @@ export default function DirectorOnboardingPage() {
     }
   };
 
-  const isLastStep = step === 2;
+  const isLastStep = step === 3;
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -129,7 +146,7 @@ export default function DirectorOnboardingPage() {
           className="font-mono-bold text-[9px] uppercase text-ink-60"
           style={{ letterSpacing: 2 }}
         >
-          <span className="text-ink">{`0${step + 1}`}</span> / 03 · Director setup
+          <span className="text-ink">{`0${step + 1}`}</span> / 04 · Director setup
         </span>
         <button
           type="button"
@@ -141,7 +158,7 @@ export default function DirectorOnboardingPage() {
         </button>
       </div>
       <div className="mx-5 h-0.5 bg-ink-20">
-        <div className="h-full bg-signal" style={{ width: `${((step + 1) / 3) * 100}%` }} />
+        <div className="h-full bg-signal" style={{ width: `${((step + 1) / 4) * 100}%` }} />
       </div>
 
       <div className="flex-1 px-5 py-6">
@@ -250,6 +267,8 @@ export default function DirectorOnboardingPage() {
             />
           </div>
         )}
+
+        {step === 3 && <HeadshotStep file={photo} onChange={setPhoto} who="Referees" />}
       </div>
 
       <div className="action-bar sticky bottom-0">

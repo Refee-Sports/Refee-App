@@ -49,9 +49,18 @@
 
 ---
 
-## 🧩 Assignor role & flow — MAJOR BUILD (required; not yet built/tested)
+## 🧩 Assignor role & flow — built on mobile and web; needs a real-device pass
 
-**Status:** scaffolded only. Schema in 0004 (applied) + **0019 roster + 0020 fee-type (uncommitted, NOT on hosted)**; `lib/assignor/queries.ts` and a stub `app/(onboarding)/assignor.tsx`. **No working UI/flow, untested.** (Was previously mis-filed as a one-line "nice to have.")
+**Status (Sep 28, 2026 audit):** the backend is solid and covered by pgTAP (`0030`, `0032`, `0057`): roster invites, per-game staffing modes (assignor offers → referee accepts, or roster self-claim), roster-only visibility, schedule-conflict and crew-full checks, multiple rosters per referee, and an assignor who also referees other games (multi-role, migration 0052).
+
+Gaps the audit found, now closed (migration 0057 + screens on both apps):
+- No way to grow a roster beyond searching existing users → **invite by email (typed or CSV), a QR code / join code, and a code-entry screen.** Unknown emails become pending invites that turn into roster invites on first sign-in; the `send-roster-invites` function emails them (needs `RESEND_API_KEY`).
+- Referees couldn't see which rosters they were on → **My organizations** (list, accept/decline invites, leave, join by code).
+- No way to message a game's crew or the whole roster → assignors can now **post a one-way update to a game's crew, DM a referee from the game screen, and send a one-way announcement to the roster** (referees can read it but not reply; push is sent in batches of 200).
+- The "offer from roster" list hid anyone whose availability switch was off → now shows everyone on the roster, available first.
+- Assignors can see each roster member's background-check status (never the document).
+
+Still to verify by hand on real devices: the full tournament flow end to end (director hires assignor → assignor staffs games → referee accepts → crew chat → payout), a QR scan from a phone camera into the app (the `refee://join/<code>` link only works once the app is installed; the QR carries the web link `https://refee.app/join/<code>`, which needs an "open in app" universal link to hand off — see the store checklist), and email delivery once Resend is configured.
 
 Requirements (per Gerda, Aug 2026):
 - [ ] **Director hires an assignor** to assign an entire tournament/league. Proposal → accept; assignor is paid a **flat fee or a % of ref fees** (0020). Schema: `assignor_proposals`, `tournaments.assignor_id/assignor_status`.

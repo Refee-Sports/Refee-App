@@ -28,6 +28,10 @@ import { registerForPushNotifications } from "@/lib/push/notifications";
 import { applyGlobalFontScaleCap } from "@/lib/ui/text-scaling";
 import { LogBox } from "react-native";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
+import { takePendingRosterCode } from "@/lib/roster/files";
+import { useUpdateRequired } from "@/lib/app/useUpdateRequired";
+import { UpdateRequired } from "@/components/app/UpdateRequired";
+import { initCrashReporting, wrapWithCrashReporting } from "@/lib/observability/sentry";
 
 // Bound OS Dynamic Type scaling app-wide so text stays scalable (accessibility)
 // without breaking the dense layouts. Runs once at module load.
@@ -40,7 +44,9 @@ WebBrowser.maybeCompleteAuthSession();
 
 SplashScreen.preventAutoHideAsync();
 
-export default function RootLayout() {
+initCrashReporting();
+
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     InterTight_500Medium,
     InterTight_700Bold,
@@ -51,6 +57,7 @@ export default function RootLayout() {
     JetBrainsMono_700Bold,
   });
 
+  const updateRequired = useUpdateRequired();
   const [session, setSession] = useState<Session | null>(null);
   const [authReady, setAuthReady] = useState(false);
   // Every role this account holds — someone can referee and also assign.
@@ -126,6 +133,16 @@ export default function RootLayout() {
 
   if (!splashReady) return null;
 
+  // This install is older than the backend supports: nothing else should run.
+  if (updateRequired) {
+    return (
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <UpdateRequired />
+      </SafeAreaProvider>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <StripeProvider
@@ -153,12 +170,17 @@ export default function RootLayout() {
             <Stack.Screen name="account" />
             {/* Belongs to every role, so AuthGate leaves it alone. */}
             <Stack.Screen name="verify" />
+            <Stack.Screen name="background-check" options={{ animation: "slide_from_right" }} />
+            <Stack.Screen name="my-organizations" options={{ animation: "slide_from_right" }} />
+            <Stack.Screen name="join/[code]" options={{ animation: "slide_from_right" }} />
           </Stack>
         </AuthGate>
       </StripeProvider>
     </SafeAreaProvider>
   );
 }
+
+export default wrapWithCrashReporting(RootLayout);
 
 function AuthGate({
   children,
@@ -230,6 +252,15 @@ function AuthGate({
       router.replace(home as any);
     }
   }, [session, profileComplete, primaryRole, roles, segments, router]);
+
+  // Someone scanned a roster QR code before they had an account or were signed
+  // in: the code was parked, so take them to the confirmation now.
+  useEffect(() => {
+    if (!session || profileComplete !== true || primaryRole === null) return;
+    void takePendingRosterCode().then((code) => {
+      if (code) router.push(`/join/${code}` as any);
+    });
+  }, [session, profileComplete, primaryRole, router]);
 
   return <>{children}</>;
 }

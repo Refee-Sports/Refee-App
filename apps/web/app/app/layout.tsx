@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { takePendingRosterCode } from "@/lib/roster/files";
 import { TabBar } from "@/components/layout/TabBar";
 import { SideNav } from "@/components/layout/SideNav";
 import { SetupNotice } from "@/components/layout/SetupNotice";
@@ -11,6 +14,15 @@ import { isSupabaseConfigured } from "@/lib/supabase";
  * same screens spread across the full viewport beside a persistent side nav.
  */
 export default function RefereeAppLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+
+  // Someone scanned a roster QR code before signing in: the code was parked, so
+  // take them to the confirmation now that they're in.
+  useEffect(() => {
+    const code = takePendingRosterCode();
+    if (code) router.replace(`/join/${code}`);
+  }, [router]);
+
   if (!isSupabaseConfigured) {
     return (
       <div className="app-shell flex flex-col">

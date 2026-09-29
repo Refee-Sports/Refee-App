@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import {
   type AssignorGameRow,
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
+import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
@@ -35,6 +36,8 @@ export default function AssignorGameDetail() {
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const [posting, setPosting] = useState(false);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -80,6 +83,36 @@ export default function AssignorGameDetail() {
     }
   };
 
+  /** One-way update to everyone confirmed on this game (they see it in their inbox). */
+  const sendNote = async () => {
+    if (!id || posting || note.trim().length === 0) return;
+    setPosting(true);
+    const result = await postCrewNote(id, note);
+    setPosting(false);
+    if (result.error) {
+      Alert.alert("Not sent", result.error.message);
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    setNote("");
+    Alert.alert("Sent", "Everyone confirmed on this game will see your update.");
+  };
+
+  /** Private 1:1 thread with a referee on this game. */
+  const messageRef = async (refId: string) => {
+    if (busyId) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setBusyId(`dm:${refId}`);
+    const { conversationId, error: dmError } = await getOrCreateDM(session.user.id, refId);
+    setBusyId(null);
+    if (dmError || !conversationId) {
+      Alert.alert("Couldn't open the conversation", dmError?.message ?? "Try again.");
+      return;
+    }
+    router.push(`/(assignor)/conversation/${conversationId}` as any);
+  };
+
   const remove = (assignment: CrewRow) => {
     Alert.alert("Remove from game?", `${assignment.display_name} will lose this assignment.`, [
       { text: "Keep", style: "cancel" },
@@ -98,7 +131,11 @@ export default function AssignorGameDetail() {
   if (!game) return <View className="flex-1 bg-paper items-center justify-center"><Text className="font-mono-bold text-ink">GAME NOT AVAILABLE</Text></View>;
 
   const assignedIds = new Set(crew.map((member) => member.ref_id));
-  const available = roster.filter((member) => member.status === "accepted" && member.is_available && !assignedIds.has(member.ref_id));
+  // Everyone on the roster can be offered a game — the availability switch on a
+  // referee's profile only orders the list, it doesn't hide them from their own assignor.
+  const available = roster
+    .filter((member) => member.status === "accepted" && !assignedIds.has(member.ref_id))
+    .sort((a, b) => Number(b.is_available) - Number(a.is_available));
   const mode = game.assignor_staffing_mode ?? "assignor_direct";
 
   return (
@@ -145,11 +182,34 @@ export default function AssignorGameDetail() {
                   <Text className="font-mono-bold text-[10px] text-ink uppercase">{member.display_name}</Text>
                   <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{member.role} · {member.status}</Text>
                 </View>
+                <Pressable disabled={busyId !== null} onPress={() => void messageRef(member.ref_id)} className="border border-ink px-2.5 py-2 mr-2">
+                  {busyId === `dm:${member.ref_id}` ? <ActivityIndicator size="small" color="#08111C" /> : <Feather name="message-square" size={12} color="#08111C" />}
+                </Pressable>
                 <Pressable disabled={busyId !== null} onPress={() => remove(member)} className="border border-foul px-2.5 py-2">
                   {busyId === member.id ? <ActivityIndicator size="small" color="#E53E3E" /> : <Text className="font-mono-bold text-[8px] text-foul">REMOVE</Text>}
                 </Pressable>
               </View>
             ))}
+
+            <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>MESSAGE THE CREW</Text>
+            <TextInput
+              value={note}
+              onChangeText={setNote}
+              placeholder="A one-way update for everyone confirmed on this game"
+              placeholderTextColor="rgba(8,17,28,0.35)"
+              multiline
+              className="border border-ink bg-chalk px-3 py-3 text-ink"
+              style={{ minHeight: 70, textAlignVertical: "top", fontSize: 14 }}
+            />
+            <Pressable
+              onPress={() => void sendNote()}
+              disabled={posting || note.trim().length === 0}
+              className={`py-3 items-center mt-2 ${note.trim().length > 0 && !posting ? "bg-ink" : "bg-ink-20"}`}
+            >
+              {posting ? <ActivityIndicator size="small" color="#E5E1D6" /> : (
+                <Text className={`font-mono-bold text-[10px] uppercase ${note.trim().length > 0 ? "text-paper" : "text-ink-40"}`} style={{ letterSpacing: 1.5 }}>SEND UPDATE</Text>
+              )}
+            </Pressable>
 
             {mode === "assignor_direct" && <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>AVAILABLE ROSTER ({available.length})</Text>}
           </View>

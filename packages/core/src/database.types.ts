@@ -7,31 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       account_deletion_receipts: {
@@ -155,6 +130,57 @@ export type Database = {
             columns: ["tournament_id"]
             isOneToOne: false
             referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_min_versions: {
+        Row: {
+          min_version: string
+          platform: string
+          updated_at: string
+        }
+        Insert: {
+          min_version: string
+          platform: string
+          updated_at?: string
+        }
+        Update: {
+          min_version?: string
+          platform?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assignor_invite_codes: {
+        Row: {
+          assignor_id: string
+          code: string
+          created_at: string
+        }
+        Insert: {
+          assignor_id: string
+          code: string
+          created_at?: string
+        }
+        Update: {
+          assignor_id?: string
+          code?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignor_invite_codes_assignor_id_fkey"
+            columns: ["assignor_id"]
+            isOneToOne: true
+            referencedRelation: "active_assignors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignor_invite_codes_assignor_id_fkey"
+            columns: ["assignor_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -325,6 +351,48 @@ export type Database = {
             foreignKeyName: "availability_prefs_ref_id_fkey"
             columns: ["ref_id"]
             isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      background_check_documents: {
+        Row: {
+          expires_at: string
+          file_name: string | null
+          file_path: string
+          id: string
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string
+          file_name?: string | null
+          file_path: string
+          id?: string
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_check_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
@@ -1364,6 +1432,65 @@ export type Database = {
           },
         ]
       }
+      roster_email_invites: {
+        Row: {
+          assignor_id: string
+          claimed_at: string | null
+          claimed_by: string | null
+          created_at: string
+          email: string
+          id: string
+          status: string
+        }
+        Insert: {
+          assignor_id: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          status?: string
+        }
+        Update: {
+          assignor_id?: string
+          claimed_at?: string | null
+          claimed_by?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roster_email_invites_assignor_id_fkey"
+            columns: ["assignor_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roster_email_invites_assignor_id_fkey"
+            columns: ["assignor_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roster_email_invites_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "active_assignors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roster_email_invites_claimed_by_fkey"
+            columns: ["claimed_by"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sports: {
         Row: {
           display_name: string
@@ -1696,6 +1823,30 @@ export type Database = {
           },
         ]
       }
+      background_check_status: {
+        Row: {
+          expires_at: string | null
+          is_valid: boolean | null
+          uploaded_at: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_check_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "active_assignors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_check_documents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       account_deletion_blocker: { Args: { p_user: string }; Returns: string }
@@ -1761,6 +1912,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      can_manage_crew_note: {
+        Args: { p_job_id: string; p_user: string }
+        Returns: boolean
+      }
       can_notify: {
         Args: { p_caller: string; p_target: string }
         Returns: boolean
@@ -1770,6 +1925,7 @@ export type Database = {
         Returns: boolean
       }
       cancel_game: { Args: { p_job_id: string }; Returns: Json }
+      claim_roster_invites: { Args: never; Returns: number }
       complete_game: { Args: { p_job_id: string }; Returns: Json }
       director_invite_assignor: {
         Args: {
@@ -1790,6 +1946,7 @@ export type Database = {
         Returns: string
       }
       get_crew_thread: { Args: { p_job_id: string }; Returns: Json }
+      get_min_app_version: { Args: { p_platform: string }; Returns: string }
       get_or_create_crew_thread: { Args: { p_job_id: string }; Returns: string }
       import_tournament_schedule: {
         Args: { p_games: Json; p_tournament_id: string }
@@ -1799,6 +1956,7 @@ export type Database = {
         Args: { p_ref_id: string }
         Returns: string
       }
+      invite_to_roster_by_email: { Args: { p_emails: string[] }; Returns: Json }
       invoke_run_payouts: { Args: never; Returns: undefined }
       is_accepted_crew_member: {
         Args: { p_job_id: string; p_user_id: string }
@@ -1806,12 +1964,18 @@ export type Database = {
       }
       is_admin: { Args: { p_user: string }; Returns: boolean }
       is_adult: { Args: { p_dob: string }; Returns: boolean }
+      is_assignor: { Args: { p_user: string }; Returns: boolean }
       is_conversation_participant: {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
       is_identity_verified: { Args: { p_user: string }; Returns: boolean }
+      is_referee: { Args: { p_user: string }; Returns: boolean }
       is_suspended: { Args: { p_user: string }; Returns: boolean }
+      join_roster_by_code: { Args: { p_code: string }; Returns: string }
+      leave_roster: { Args: { p_roster_id: string }; Returns: undefined }
+      my_roster_invite_code: { Args: never; Returns: string }
+      new_roster_code: { Args: never; Returns: string }
       notifiable_user_ids: {
         Args: { p_caller: string; p_targets: string[] }
         Returns: string[]
@@ -1824,9 +1988,20 @@ export type Database = {
         Args: { p_body: string; p_job_id: string }
         Returns: string
       }
+      post_roster_blast: { Args: { p_body: string }; Returns: Json }
       prepare_account_deletion: {
         Args: { p_fingerprint: string; p_user: string }
         Returns: Json
+      }
+      preview_roster_invite_code: {
+        Args: { p_code: string }
+        Returns: {
+          assignor_id: string
+          avatar_url: string
+          city: string
+          display_name: string
+          state: string
+        }[]
       }
       remove_ref_from_assignor_game: {
         Args: { p_assignment_id: string }
@@ -1845,6 +2020,11 @@ export type Database = {
         Args: { p_accept: boolean; p_roster_id: string }
         Returns: string
       }
+      revoke_roster_email_invite: {
+        Args: { p_invite_id: string }
+        Returns: undefined
+      }
+      rotate_roster_invite_code: { Args: never; Returns: string }
       set_assignor_staffing_mode: {
         Args: { p_job_id: string; p_mode: string }
         Returns: string
@@ -1994,9 +2174,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

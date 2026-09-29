@@ -82,6 +82,8 @@ export async function saveFullProfile(
     dateOfBirth: string;
     legalFirstName: string;
     legalLastName: string;
+    /** Public URL of the headshot uploaded during sign-up. A new profile can't be created without one (0057). */
+    avatarUrl?: string;
   }
 ) {
   // Refee is 18+. This goes first so someone too young is turned away
@@ -108,6 +110,7 @@ export async function saveFullProfile(
     last_initial: args.lastInitial,
     city: args.city,
     state: args.state,
+    ...(args.avatarUrl ? { avatar_url: args.avatarUrl } : {}),
   });
   if (profileError) return { error: profileError };
 

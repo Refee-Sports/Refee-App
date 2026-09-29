@@ -673,7 +673,30 @@ export default function Profile() {
         </>
       )}
 
-      <View className="px-5 mt-6">
+      <View className="mx-5 mt-6 gap-2">
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); router.push("/my-organizations" as any); }}
+          className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
+        >
+          <View>
+            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>MY ORGANIZATIONS</Text>
+            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>ASSIGNOR ROSTERS YOU&apos;RE ON</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color="#08111C" />
+        </Pressable>
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); router.push("/background-check" as any); }}
+          className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
+        >
+          <View>
+            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>BACKGROUND CHECK</Text>
+            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>UPLOAD · VALID FOR 1 YEAR</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color="#08111C" />
+        </Pressable>
+      </View>
+
+      <View className="px-5 mt-4">
         <RoleSwitcher />
       </View>
 

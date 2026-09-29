@@ -6,6 +6,8 @@ import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
+import { RosterInvitePanel } from "@/components/assignor/RosterInvitePanel";
+import { backgroundCheckLabel, fetchBackgroundCheckStatuses } from "@/lib/referee/backgroundCheck";
 import { supabase } from "@/lib/supabase";
 import {
   fetchMyRoster,
@@ -20,6 +22,7 @@ import {
 export default function AssignorRosterPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [members, setMembers] = useState<RosterMemberRow[]>([]);
+  const [backgroundChecks, setBackgroundChecks] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RefSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,6 +41,8 @@ export default function AssignorRosterPage() {
     setUserId(session.user.id);
     const result = await fetchMyRoster(session.user.id);
     setMembers(result.members);
+    const bg = await fetchBackgroundCheckStatuses(result.members.map((m) => m.ref_id));
+    setBackgroundChecks(bg.statuses);
     setError(result.error?.message ?? null);
     setLoading(false);
   }, []);
@@ -127,6 +132,10 @@ export default function AssignorRosterPage() {
         <ZebraRule variant="signal" thin />
       </div>
 
+      <div className="px-5 sm:px-0">
+        <RosterInvitePanel onChanged={() => void load()} />
+      </div>
+
       <div className="mx-5 mb-4 flex items-center border border-ink bg-chalk px-3 sm:mx-0 lg:max-w-xl">
         <span className="text-ink-60">
           <Icon name="search" size={14} />
@@ -177,7 +186,7 @@ export default function AssignorRosterPage() {
           </div>
         ) : visible.length === 0 ? (
           <p className="py-16 text-center font-mono text-[9px] uppercase text-ink-40" style={{ letterSpacing: 1 }}>
-            Search above to invite referees already on Refee.
+            Search above to invite referees already on Refee, or use the QR code and email invites to bring in new ones.
           </p>
         ) : (
           <div className="card-grid">
@@ -185,7 +194,7 @@ export default function AssignorRosterPage() {
               <PersonRow
                 key={m.roster_id}
                 name={m.display_name}
-                meta={`${m.city}, ${m.state} · ${m.status}`}
+                meta={`${m.city}, ${m.state} · ${m.status} · BG check: ${backgroundCheckLabel(backgroundChecks[m.ref_id])}`}
                 action="Remove"
                 destructive
                 busy={busyId === m.roster_id}

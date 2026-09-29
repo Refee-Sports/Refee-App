@@ -10,12 +10,13 @@ import {
   View,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { supabase } from "@/lib/supabase";
+import { backgroundCheckLabel, fetchBackgroundCheckStatuses } from "@/lib/referee/backgroundCheck";
 import {
   fetchMyRoster,
   inviteToRoster,
@@ -27,8 +28,10 @@ import {
 
 export default function AssignorRoster() {
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const [userId, setUserId] = useState<string | null>(null);
   const [members, setMembers] = useState<RosterMemberRow[]>([]);
+  const [backgroundChecks, setBackgroundChecks] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RefSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,6 +53,8 @@ export default function AssignorRoster() {
     setUserId(session.user.id);
     const result = await fetchMyRoster(session.user.id);
     setMembers(result.members);
+    const bg = await fetchBackgroundCheckStatuses(result.members.map((m) => m.ref_id));
+    setBackgroundChecks(bg.statuses);
     setError(result.error?.message ?? null);
     setLoading(false);
     setRefreshing(false);
@@ -127,6 +132,27 @@ export default function AssignorRoster() {
       </View>
       <View className="px-5 mb-4"><ZebraRule variant="signal" thin /></View>
 
+      <View className="mx-5 mb-3 flex-row gap-2">
+        <Pressable
+          onPress={() => router.push("/(assignor)/invite" as any)}
+          className="flex-1 bg-ink py-3 flex-row items-center justify-center gap-2 active:opacity-80"
+        >
+          <Feather name="user-plus" size={13} color="#E5E1D6" />
+          <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+            INVITE / QR
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={() => router.push("/(assignor)/announce" as any)}
+          className="flex-1 border border-ink py-3 flex-row items-center justify-center gap-2 active:opacity-70"
+        >
+          <Feather name="radio" size={13} color="#08111C" />
+          <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+            ANNOUNCE
+          </Text>
+        </Pressable>
+      </View>
+
       <View className="mx-5 mb-3 border border-ink bg-chalk flex-row items-center px-3">
         <Feather name="search" size={14} color="rgba(8,17,28,0.5)" />
         <TextInput
@@ -147,7 +173,7 @@ export default function AssignorRoster() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 90 }}
           ListEmptyComponent={!searching ? (
             <Text className="font-mono text-[9px] text-ink-40 uppercase text-center py-10" style={{ letterSpacing: 1 }}>
-              No eligible referees found. Email/SMS invitations for people without accounts are still being built.
+              No eligible referees found. Use INVITE / QR above to bring in people who aren&apos;t on Refee yet.
             </Text>
           ) : null}
           renderItem={({ item }) => (
@@ -170,13 +196,13 @@ export default function AssignorRoster() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />}
           ListEmptyComponent={(
             <Text className="font-mono text-[9px] text-ink-40 uppercase text-center py-16" style={{ letterSpacing: 1 }}>
-              Search above to invite referees already on Refee.
+              Search above to invite referees already on Refee, or tap INVITE / QR to bring in new ones.
             </Text>
           )}
           renderItem={({ item }) => (
             <PersonRow
               name={item.display_name}
-              meta={`${item.city}, ${item.state} · ${item.status}`}
+              meta={`${item.city}, ${item.state} · ${item.status} · BG CHECK: ${backgroundCheckLabel(backgroundChecks[item.ref_id]).toUpperCase()}`}
               action="REMOVE"
               destructive
               busy={busyId === item.roster_id}

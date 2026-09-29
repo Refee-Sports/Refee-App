@@ -118,12 +118,15 @@ Deno.serve(async (req) => {
 
     // Auth deletion is refused while the user owns Storage objects. Remove
     // every avatar in their folder, not only today's canonical filename.
-    const { data: objects, error: listError } = await admin.storage.from("avatars").list(user.id);
-    if (listError) return json({ error: listError.message }, 500);
-    if (objects?.length) {
-      const paths = objects.map((object) => `${user.id}/${object.name}`);
-      const { error: storageError } = await admin.storage.from("avatars").remove(paths);
-      if (storageError) return json({ error: storageError.message }, 500);
+    // The same goes for the private background-check bucket (migration 0057).
+    for (const bucket of ["avatars", "background-checks"]) {
+      const { data: objects, error: listError } = await admin.storage.from(bucket).list(user.id);
+      if (listError) return json({ error: listError.message }, 500);
+      if (objects?.length) {
+        const paths = objects.map((object) => `${user.id}/${object.name}`);
+        const { error: storageError } = await admin.storage.from(bucket).remove(paths);
+        if (storageError) return json({ error: storageError.message }, 500);
+      }
     }
 
     const { error: deleteError } = await admin.auth.admin.deleteUser(user.id, false);

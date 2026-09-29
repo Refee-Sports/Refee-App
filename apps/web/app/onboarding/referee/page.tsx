@@ -10,7 +10,8 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, type CertEntry } from "@/lib/profile/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
-
+import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
+import { headshotFileError, uploadSignupHeadshot } from "@/lib/profile/avatar";
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
 
@@ -31,7 +32,8 @@ const LEVELS = [
   { id: "pro_am", label: "Pro-Am", tier: "PRO" },
 ];
 
-const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08"];
+const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08", "09"];
+const LAST_STEP = STEP_NUMBERS.length - 1;
 
 type FormData = {
   firstName: string;
@@ -56,6 +58,7 @@ export default function RefereeOnboardingPage() {
   const { refreshProfile } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(0);
+  const [photo, setPhoto] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>({
@@ -109,6 +112,7 @@ export default function RefereeOnboardingPage() {
     parseInt(form.minPay, 10) >= 1 && parseInt(form.travelRadius, 10) >= 1,
     true, // certs are optional
     form.levels.length >= 1,
+    headshotFileError(photo) === null, // headshot is required — finishing is blocked without it
   ];
 
   const leaveSetup = async () => {
@@ -140,10 +144,23 @@ export default function RefereeOnboardingPage() {
         return;
       }
 
+      if (!photo) {
+        setError("Add a headshot to finish signing up.");
+        setLoading(false);
+        return;
+      }
+      const { avatarUrl, error: photoError } = await uploadSignupHeadshot(user.id, photo);
+      if (photoError || !avatarUrl) {
+        setError(photoError?.message ?? "Couldn't upload your photo. Please try again.");
+        setLoading(false);
+        return;
+      }
+
       const lastName = form.lastName.trim();
       const lastInitial = lastName.length > 0 ? lastName[0].toUpperCase() : "?";
 
       const { error: saveError } = await saveFullProfile(user.id, {
+        avatarUrl,
         firstName: form.firstName.trim(),
         lastInitial,
         city: form.city.trim(),
@@ -178,7 +195,7 @@ export default function RefereeOnboardingPage() {
     }
   };
 
-  const isLastStep = step === 5;
+  const isLastStep = step === LAST_STEP;
 
   return (
     <div className="flex min-h-screen flex-col bg-paper">
@@ -196,7 +213,7 @@ export default function RefereeOnboardingPage() {
           className="font-mono-bold text-[9px] uppercase text-ink-60"
           style={{ letterSpacing: 2 }}
         >
-          <span className="text-ink">{STEP_NUMBERS[step]}</span> / 08
+          <span className="text-ink">{STEP_NUMBERS[step]}</span> / {STEP_NUMBERS[LAST_STEP]}
         </span>
         <button
           type="button"
@@ -208,7 +225,7 @@ export default function RefereeOnboardingPage() {
         </button>
       </div>
       <div className="mx-5 h-0.5 bg-ink-20">
-        <div className="h-full bg-signal" style={{ width: `${((step + 1) / 6) * 100}%` }} />
+        <div className="h-full bg-signal" style={{ width: `${((step + 1) / STEP_NUMBERS.length) * 100}%` }} />
       </div>
 
       {/* Step body */}
@@ -221,6 +238,7 @@ export default function RefereeOnboardingPage() {
           <CertStep certs={form.certs} onToggle={toggleCert} onSetLicense={setCertLicense} />
         )}
         {step === 5 && <LevelStep selectedLevels={form.levels} onToggle={toggleLevel} />}
+        {step === 6 && <HeadshotStep file={photo} onChange={setPhoto} />}
       </div>
 
       {/* Footer */}

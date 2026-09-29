@@ -7,6 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "channel": "development",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "development",
         "EXPO_PUBLIC_SUPABASE_URL": "https://rwqodozmniqjvkyjtcaw.supabase.co",
@@ -16,6 +17,7 @@
     },
     "staging": {
       "distribution": "internal",
+      "channel": "staging",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "staging",
         "EXPO_PUBLIC_SUPABASE_URL": "https://bccbzmvbtjhbcnkgcndm.supabase.co",
@@ -24,6 +26,7 @@
     },
     "production": {
       "autoIncrement": true,
+      "channel": "production",
       "env": {
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_SUPABASE_URL": "https://rwqodozmniqjvkyjtcaw.supabase.co",
@@ -32,6 +35,11 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }
