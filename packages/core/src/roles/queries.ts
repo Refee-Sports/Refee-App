@@ -86,6 +86,69 @@ export async function setPrimaryRole(
   return { error: error ? new Error(error.message) : null };
 }
 
+/** Organization types a director can pick (onboarding and taking on the role). */
+export const ORG_TYPES = [
+  { id: "tournament", label: "TOURNAMENT" },
+  { id: "league", label: "LEAGUE" },
+  { id: "school", label: "SCHOOL / UNIVERSITY" },
+  { id: "parks_rec", label: "PARKS & REC" },
+] as const;
+
+/**
+ * Takes on the director role, with the organization it needs.
+ *
+ * Every director screen works through a hirer row (the organization that
+ * posts and pays for games). Adding only the role used to land people on
+ * "Director profile not found". Name and city come from the profile they
+ * already have; an organization they made before is reused.
+ */
+export async function addDirectorRole(
+  userId: string,
+  /** Needed only when they don't have an organization yet. */
+  org?: { orgName: string; orgType: string }
+): Promise<{ error: Error | null }> {
+  const { data: existing, error: readError } = await supabase
+    .from("hirers")
+    .select("id")
+    .eq("user_id", userId)
+    .limit(1)
+    .maybeSingle();
+  if (readError) return { error: new Error(readError.message) };
+
+  if (!existing) {
+    const orgName = org?.orgName.trim();
+    if (!orgName) return { error: new Error("Enter your organization name.") };
+    if (!org?.orgType) return { error: new Error("Choose your organization type.") };
+
+    const { data: profile, error: profileError } = await supabase
+      .from("public_profiles")
+      .select("first_name, last_initial, city, state")
+      .eq("id", userId)
+      .maybeSingle();
+    if (profileError) return { error: new Error(profileError.message) };
+    if (!profile) return { error: new Error("Profile not found.") };
+
+    const { error: hirerError } = await supabase
+      .from("hirers")
+      .insert({
+        user_id: userId,
+        org_name: orgName,
+        org_type: org.orgType,
+        city: profile.city,
+        state: profile.state,
+        contact_first_name: profile.first_name,
+        contact_last_initial: profile.last_initial,
+      })
+      .select("id")
+      .single();
+    if (hirerError) return { error: new Error(hirerError.message) };
+  }
+
+  const { error: roleError } = await addRole(userId, "director");
+  if (roleError) return { error: roleError };
+  return setPrimaryRole(userId, "director");
+}
+
 /** The roles this account could still take on. */
 export function availableRoles(held: Role[]): Role[] {
   return (["referee", "assignor", "director"] as Role[]).filter((r) => !held.includes(r));

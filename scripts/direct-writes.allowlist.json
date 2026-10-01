@@ -33,5 +33,6 @@
   "packages/core/src/director/queries.ts::private_profiles.upsert": "A user saves their own date of birth at sign-up; the backend refuses under 18.",
   "packages/core/src/assignor/queries.ts::private_profiles.upsert": "A user saves their own date of birth at sign-up; the backend refuses under 18.",
   "packages/core/src/roles/queries.ts::public_profiles.update": "A user selects the default landing role on their own profile.",
+  "packages/core/src/roles/queries.ts::hirers.insert": "Taking on the director role creates the user's own organizer record.",
   "packages/core/src/roles/queries.ts::user_roles.upsert": "A user adds a role to their own account."
 }

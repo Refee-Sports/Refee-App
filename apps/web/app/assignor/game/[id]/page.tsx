@@ -7,6 +7,8 @@ import { Spinner } from "@/components/ui/AppButton";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
 import { supabase } from "@/lib/supabase";
 import {
+  assignMyself,
+  canAssignMyself,
   directAssignRefToGame,
   fetchAssignorGame,
   fetchGameCrew,
@@ -17,6 +19,7 @@ import {
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
 import { deleteGame } from "@/lib/director/queries";
+import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
@@ -38,6 +41,8 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
   const [busyId, setBusyId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
 
   const load = useCallback(() => {
     let cancelled = false;
@@ -50,12 +55,15 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
         if (!cancelled) setLoading(false);
         return;
       }
-      const [gRes, cRes, rRes] = await Promise.all([
+      const [gRes, cRes, rRes, rolesRes] = await Promise.all([
         fetchAssignorGame(id),
         fetchGameCrew(id),
         fetchMyRoster(session.user.id),
+        fetchRoles(session.user.id),
       ]);
       if (cancelled) return;
+      setUserId(session.user.id);
+      setRoles(rolesRes.roles);
       setGame(gRes.game);
       setCrew(cRes.crew);
       setRoster(rRes.members);
@@ -84,6 +92,16 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
     const result = await directAssignRefToGame(id, member.ref_id);
     setBusyId(null);
     if (result.error) setError(`Offer not sent: ${result.error.message}`);
+    else load();
+  };
+
+  // ADR 0002, case C: an assignor who also referees can put themselves on the game.
+  const assignSelf = async () => {
+    if (busyId || !userId || !game) return;
+    setBusyId("self");
+    const result = await assignMyself(id, userId, game.assignor_staffing_mode ?? "assignor_direct");
+    setBusyId(null);
+    if (result.error) setError(`Couldn't add you: ${result.error.message}`);
     else load();
   };
 
@@ -132,6 +150,9 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
   const available = roster.filter((m) => m.status === "accepted" && m.is_available && !assigned.has(m.ref_id));
   const mode = game.assignor_staffing_mode ?? "assignor_direct";
   const full = crew.length >= game.crew_size;
+  const showAssignSelf =
+    userId !== null &&
+    canAssignMyself({ userId, roles, crewRefIds: crew.map((m) => m.ref_id), crewSize: game.crew_size });
   const hasAcceptedRef = crew.some((m) => ["accepted", "needs_reconfirm", "completed"].includes(m.status));
 
   return (
@@ -211,6 +232,25 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
                 </div>
               ))
             )}
+
+            {showAssignSelf ? (
+              <div className="mt-3 flex items-center border-[1.5px] border-signal bg-chalk px-4 py-3">
+                <span className="flex-1 pr-3">
+                  <span className="block font-mono-bold text-[10px] uppercase text-ink">Work this game yourself</span>
+                  <span className="mt-1 block font-mono text-[8px] uppercase text-ink-40">
+                    You referee too · schedule conflicts are still checked
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  disabled={busyId !== null}
+                  onClick={() => void assignSelf()}
+                  className="bg-signal px-3 py-2 font-mono-bold text-[8px] uppercase text-paper disabled:opacity-50"
+                >
+                  {busyId === "self" ? <Spinner /> : "Assign myself"}
+                </button>
+              </div>
+            ) : null}
           </div>
 
           <div className="min-w-0">

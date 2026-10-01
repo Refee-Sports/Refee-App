@@ -575,6 +575,40 @@ export async function directAssignRefToGame(
   return { error: error ? new Error(error.message) : null };
 }
 
+/**
+ * Whether to offer "Assign myself" on a game (ADR 0002, case C): the assignor
+ * also referees, isn't on this crew yet, and a slot is open.
+ */
+export function canAssignMyself(args: {
+  userId: string;
+  roles: readonly string[];
+  crewRefIds: readonly string[];
+  crewSize: number;
+}): boolean {
+  return (
+    args.roles.includes("referee") &&
+    !args.crewRefIds.includes(args.userId) &&
+    args.crewRefIds.length < args.crewSize
+  );
+}
+
+/**
+ * The assignor puts themselves on one of their own games. In offer-from-roster
+ * mode that's a direct assignment (accepted at once — no offer to yourself);
+ * in self-claim mode they claim it like any roster member.
+ */
+export async function assignMyself(
+  jobId: string,
+  userId: string,
+  mode: "assignor_direct" | "self_assign"
+): Promise<{ error: Error | null }> {
+  const { error } =
+    mode === "self_assign"
+      ? await supabase.rpc("respond_to_job", { p_job_id: jobId, p_accept: true })
+      : await supabase.rpc("offer_ref_to_game", { p_job_id: jobId, p_ref_id: userId, p_role: "official" });
+  return { error: error ? new Error(error.message) : null };
+}
+
 export async function removeRefFromGame(assignmentId: string): Promise<{ error: Error | null }> {
   const { error } = await supabase.rpc("remove_ref_from_assignor_game", {
     p_assignment_id: assignmentId,

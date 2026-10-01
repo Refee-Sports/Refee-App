@@ -19,12 +19,7 @@ import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
-const ORG_TYPES = [
-  { id: "tournament", label: "TOURNAMENT" },
-  { id: "league",     label: "LEAGUE" },
-  { id: "school",     label: "SCHOOL / UNIVERSITY" },
-  { id: "parks_rec",  label: "PARKS & REC" },
-];
+import { ORG_TYPES } from "@/lib/roles/queries";
 
 const STEPS = ["NAME", "ORGANIZATION", "LOCATION", "HEADSHOT"];
 

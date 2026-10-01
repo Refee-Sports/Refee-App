@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import {
+  assignMyself,
+  canAssignMyself,
   directAssignRefToGame,
   fetchAssignorGame,
   fetchGameCrew,
@@ -16,6 +18,7 @@ import {
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
 import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
+import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
@@ -38,6 +41,8 @@ export default function AssignorGameDetail() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [posting, setPosting] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [roles, setRoles] = useState<Role[]>([]);
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -45,11 +50,14 @@ export default function AssignorGameDetail() {
     setError(null);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
-    const [gameResult, crewResult, rosterResult] = await Promise.all([
+    setUserId(session.user.id);
+    const [gameResult, crewResult, rosterResult, rolesResult] = await Promise.all([
       fetchAssignorGame(id),
       fetchGameCrew(id),
       fetchMyRoster(session.user.id),
+      fetchRoles(session.user.id),
     ]);
+    setRoles(rolesResult.roles);
     setGame(gameResult.game);
     setCrew(crewResult.crew);
     setRoster(rosterResult.members);
@@ -77,6 +85,19 @@ export default function AssignorGameDetail() {
     const result = await directAssignRefToGame(id, member.ref_id);
     setBusyId(null);
     if (result.error) Alert.alert("Offer not sent", result.error.message);
+    else {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await load();
+    }
+  };
+
+  // ADR 0002, case C: an assignor who also referees can put themselves on the game.
+  const assignSelf = async () => {
+    if (!id || !userId || busyId || !game) return;
+    setBusyId("self");
+    const result = await assignMyself(id, userId, game.assignor_staffing_mode ?? "assignor_direct");
+    setBusyId(null);
+    if (result.error) Alert.alert("Couldn't add you", result.error.message);
     else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await load();
@@ -137,6 +158,9 @@ export default function AssignorGameDetail() {
     .filter((member) => member.status === "accepted" && !assignedIds.has(member.ref_id))
     .sort((a, b) => Number(b.is_available) - Number(a.is_available));
   const mode = game.assignor_staffing_mode ?? "assignor_direct";
+  const showAssignSelf =
+    userId !== null &&
+    canAssignMyself({ userId, roles, crewRefIds: crew.map((m) => m.ref_id), crewSize: game.crew_size });
 
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
@@ -190,6 +214,18 @@ export default function AssignorGameDetail() {
                 </Pressable>
               </View>
             ))}
+
+            {showAssignSelf && (
+              <View className="border-[1.5px] border-signal bg-chalk px-4 py-3 mt-1 flex-row items-center">
+                <View className="flex-1 pr-3">
+                  <Text className="font-mono-bold text-[10px] text-ink uppercase">WORK THIS GAME YOURSELF</Text>
+                  <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">You referee too · schedule conflicts are still checked</Text>
+                </View>
+                <Pressable disabled={busyId !== null} onPress={() => void assignSelf()} className="px-3 py-2 bg-signal">
+                  {busyId === "self" ? <ActivityIndicator size="small" color="#E5E1D6" /> : <Text className="font-mono-bold text-[8px] text-paper">ASSIGN MYSELF</Text>}
+                </Pressable>
+              </View>
+            )}
 
             <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>MESSAGE THE CREW</Text>
             <TextInput

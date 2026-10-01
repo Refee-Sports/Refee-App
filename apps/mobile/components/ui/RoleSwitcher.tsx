@@ -1,14 +1,17 @@
 import { useEffect, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
+import { fetchMyHirerId } from "@/lib/director/queries";
 import {
+  addDirectorRole,
   addRole,
   addRoleLabel,
   availableRoles,
   fetchRoles,
+  ORG_TYPES,
   ROLE_LABELS,
   setPrimaryRole as persistPrimaryRole,
   type Role,
@@ -35,6 +38,8 @@ export function RoleSwitcher() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [busy, setBusy] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Taking on the director role needs an organization (ADR 0002 decision 4).
+  const [orgForm, setOrgForm] = useState<{ orgName: string; orgType: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -82,6 +87,12 @@ export function RoleSwitcher() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setBusy(role);
     setError(null);
+    // A director works through an organization. Ask for one unless they already have it.
+    if (role === "director" && !orgForm && !(await fetchMyHirerId(userId))) {
+      setBusy(null);
+      setOrgForm({ orgName: "", orgType: "" });
+      return;
+    }
     // Some profiles predate consistent user_roles writes. Preserve the role
     // they are using before making the newly added role their default.
     const { error: currentRoleError } = await addRole(userId, primaryRole as Role);
@@ -90,21 +101,21 @@ export function RoleSwitcher() {
       setBusy(null);
       return;
     }
-    const { error: e } = await addRole(userId, role);
+    // Land them in the new role straight away.
+    const { error: e } =
+      role === "director"
+        ? await addDirectorRole(userId, orgForm ?? undefined)
+        : await addRole(userId, role).then(async (r) => (r.error ? r : persistPrimaryRole(userId, role)));
+    setBusy(null);
     if (e) {
       setError(e.message);
-      setBusy(null);
       return;
     }
-    // Land them in the new role straight away.
-    const { error: primaryError } = await persistPrimaryRole(userId, role);
-    setBusy(null);
-    if (primaryError) {
-      setError(primaryError.message);
-      return;
-    }
+    setOrgForm(null);
     setRoles((prev) => Array.from(new Set<Role>([primaryRole as Role, ...prev, role])));
     go(role);
+    // A new referee has no sport, rate or travel radius yet: start them there.
+    if (role === "referee") router.push("/edit-profile" as never);
   };
 
   return (
@@ -181,6 +192,73 @@ export function RoleSwitcher() {
             ))}
           </View>
         </>
+      ) : null}
+
+      {orgForm ? (
+        <View className="mt-4 border-t border-ink-20 pt-4">
+          <Text className="text-ink-60 font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
+            Your organization
+          </Text>
+          <Text className="mt-2 text-ink-80 text-[13px] leading-[20px]">
+            Shown on every game you post.
+          </Text>
+          <TextInput
+            value={orgForm.orgName}
+            onChangeText={(orgName) => setOrgForm((f) => (f ? { ...f, orgName } : f))}
+            placeholder="Austin Hoops Classic"
+            placeholderTextColor="rgba(8,17,28,0.35)"
+            autoCapitalize="words"
+            autoFocus
+            accessibilityLabel="Organization name"
+            className="mt-3 border border-ink bg-paper px-3 py-3 text-ink"
+            style={{ fontSize: 15 }}
+          />
+          <View className="mt-2 flex-row flex-wrap gap-2">
+            {ORG_TYPES.map((t) => {
+              const selected = orgForm.orgType === t.id;
+              return (
+                <Pressable
+                  key={t.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setOrgForm((f) => (f ? { ...f, orgType: t.id } : f));
+                  }}
+                  accessibilityState={{ selected }}
+                  className={`border-[1.5px] px-3 py-2.5 ${selected ? "border-signal bg-signal/10" : "border-ink"}`}
+                >
+                  <Text
+                    className={`font-mono-bold text-[10px] ${selected ? "text-signal" : "text-ink"}`}
+                    style={{ letterSpacing: 1 }}
+                  >
+                    {t.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          <View className="mt-4 flex-row gap-2">
+            <Pressable
+              onPress={() => void take("director")}
+              disabled={busy !== null || !orgForm.orgName.trim() || !orgForm.orgType}
+              className={`flex-1 py-3.5 items-center ${
+                orgForm.orgName.trim() && orgForm.orgType ? "bg-ink" : "bg-ink-20"
+              }`}
+            >
+              <Text className="text-paper font-mono-bold text-[12px]" style={{ letterSpacing: 2 }}>
+                {busy === "director" ? "SETTING UP…" : "START POSTING GAMES"}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setOrgForm(null)}
+              disabled={busy !== null}
+              className="border border-ink px-4 py-3.5 active:opacity-70"
+            >
+              <Text className="text-ink font-mono-bold text-[12px]" style={{ letterSpacing: 2 }}>
+                CANCEL
+              </Text>
+            </Pressable>
+          </View>
+        </View>
       ) : null}
 
       {error ? (

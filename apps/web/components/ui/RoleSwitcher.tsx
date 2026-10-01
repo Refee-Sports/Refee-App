@@ -4,10 +4,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AppButton } from "@/components/ui/AppButton";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { fetchMyHirerId } from "@/lib/director/queries";
 import {
+  addDirectorRole,
   addRole,
   addRoleLabel,
   availableRoles,
+  ORG_TYPES,
   ROLE_HOME,
   ROLE_LABELS,
   setPrimaryRole,
@@ -27,6 +30,8 @@ export function RoleSwitcher() {
   const router = useRouter();
   const [busy, setBusy] = useState<Role | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Taking on the director role needs an organization (ADR 0002 decision 4).
+  const [orgForm, setOrgForm] = useState<{ orgName: string; orgType: string } | null>(null);
 
   if (!userId || !primaryRole) return null;
 
@@ -50,6 +55,12 @@ export function RoleSwitcher() {
   const take = async (role: Role) => {
     setBusy(role);
     setError(null);
+    // A director works through an organization. Ask for one unless they already have it.
+    if (role === "director" && !orgForm && !(await fetchMyHirerId(userId))) {
+      setBusy(null);
+      setOrgForm({ orgName: "", orgType: "" });
+      return;
+    }
     // Older profiles predate consistent user_roles writes. Preserve the role
     // they are using now before changing primary_role to the new one.
     const { error: currentRoleError } = await addRole(userId, primaryRole as Role);
@@ -58,19 +69,22 @@ export function RoleSwitcher() {
       setBusy(null);
       return;
     }
-    const { error: e } = await addRole(userId, role);
+    // Land them in the new role straight away — taking it on and then having
+    // to find it would be a strange place to stop.
+    const { error: e } =
+      role === "director"
+        ? await addDirectorRole(userId, orgForm ?? undefined)
+        : await addRole(userId, role).then(async (r) => (r.error ? r : setPrimaryRole(userId, role)));
     if (e) {
       setError(e.message);
       setBusy(null);
       return;
     }
-    // Land them in the new role straight away — taking it on and then having
-    // to find it would be a strange place to stop.
-    const { error: primaryError } = await setPrimaryRole(userId, role);
-    if (primaryError) setError(primaryError.message);
+    setOrgForm(null);
     await refreshProfile();
     setBusy(null);
-    router.replace(ROLE_HOME[role]);
+    // A new referee has no sport, rate or travel radius yet: start them there.
+    router.replace(role === "referee" ? "/app/edit-profile" : ROLE_HOME[role]);
   };
 
   return (
@@ -136,6 +150,59 @@ export function RoleSwitcher() {
             ))}
           </div>
         </>
+      )}
+
+      {orgForm && (
+        <form
+          className="mt-4 border-t border-ink-20 pt-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void take("director");
+          }}
+        >
+          <h3 className="font-mono-bold text-[10px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
+            Your organization
+          </h3>
+          <p className="mt-2 text-[13px] leading-5 text-ink-80">Shown on every game you post.</p>
+          <label className="mt-3 block">
+            <span className="sr-only">Organization name</span>
+            <input
+              value={orgForm.orgName}
+              onChange={(e) => setOrgForm((f) => (f ? { ...f, orgName: e.target.value } : f))}
+              placeholder="Austin Hoops Classic"
+              autoFocus
+              className="w-full border border-ink bg-paper px-3 py-3 text-[15px] text-ink"
+            />
+          </label>
+          <fieldset className="mt-2 flex flex-wrap gap-2">
+            <legend className="sr-only">Organization type</legend>
+            {ORG_TYPES.map((t) => {
+              const selected = orgForm.orgType === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setOrgForm((f) => (f ? { ...f, orgType: t.id } : f))}
+                  className={`border-[1.5px] px-3 py-2.5 font-mono-bold text-[10px] ${
+                    selected ? "border-signal bg-signal/10 text-signal" : "border-ink text-ink"
+                  }`}
+                  style={{ letterSpacing: 1 }}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </fieldset>
+          <div className="mt-4 flex gap-2">
+            <AppButton
+              type="submit"
+              label={busy === "director" ? "Setting up…" : "Start posting games"}
+              disabled={busy !== null || !orgForm.orgName.trim() || !orgForm.orgType}
+            />
+            <AppButton label="Cancel" variant="secondary" disabled={busy !== null} onClick={() => setOrgForm(null)} />
+          </div>
+        </form>
       )}
 
       {error && (
