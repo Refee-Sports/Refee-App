@@ -53,6 +53,13 @@ export default function TermsPage() {
           background check, an endorsement, or a guarantee of anyone&apos;s
           conduct or competence.
         </p>
+        <p>
+          Referees may upload a background check they already have. Refee does
+          not verify, review, or evaluate uploaded documents. Other users see
+          only that a document was uploaded and when it expires. An upload is
+          not a Refee background check and is not a guarantee of anyone&apos;s
+          conduct or competence.
+        </p>
       </Section>
 
       <Section heading="Money">

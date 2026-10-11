@@ -32,7 +32,7 @@ function Hero() {
         <div>
           <span className="badge badge-signal">
             <span className="dot dot-pulse" />
-            On-demand · Vetted · Background-checked
+            Basketball first · ID-verified · 18+
           </span>
 
           <h1 className="mt-6 font-display font-black leading-[0.95] tracking-tighter text-ink text-[clamp(1.75rem,8vw,3.25rem)] lg:text-[clamp(3rem,5vw,4rem)]">
@@ -42,9 +42,9 @@ function Hero() {
           </h1>
 
           <p className="mt-6 max-w-md text-lg leading-relaxed text-ink-80">
-            Refee is the on-demand marketplace for sports officials. Refs and
-            umpires get booked and paid. Assignors staff their events. Leagues
-            fill every game. Pick your side to get started.
+            Refee is where officials find games and get paid, and where
+            assignors and leagues find officials. Pick your side to get
+            started.
           </p>
 
           {/* One card per role on the platform */}
@@ -52,15 +52,15 @@ function Hero() {
             <PathCard
               kicker="I'm an official"
               title="Get booked & paid"
-              desc="Set your sports, rates, and availability. Accept jobs near you and cash out fast."
-              cta="Ref with Refee"
+              desc="Pick your sports, set your rate, and take the games that fit your week."
+              cta="Get the app"
               href="#officials"
               accent="hi"
             />
             <PathCard
               kicker="I assign officials"
               title="Staff your events"
-              desc="Bring your roster, take on tournaments, and fill every game from one board."
+              desc="Bring your roster, take on tournaments, and see every game on one board."
               cta="Start assigning"
               href="#assignors"
               accent="whistle"
@@ -68,15 +68,15 @@ function Hero() {
             <PathCard
               kicker="I run a league"
               title="Fill every game"
-              desc="Post games and fill them with vetted, background-checked officials — in minutes."
-              cta="Find officials"
+              desc="Post your games and see which officials near the venue take them."
+              cta="Post games"
               href="#leagues"
               accent="signal"
             />
           </div>
 
           <p className="mt-6 kicker">
-            Free to download · iOS &amp; Android · No booking fees to start
+            Free to download · iOS &amp; Android · Officials pay no fees
           </p>
         </div>
 
@@ -153,10 +153,10 @@ function PathCard({
 /* STATS STRIP                                                         */
 /* ------------------------------------------------------------------ */
 const STATS = [
-  { num: "< 5 min", label: "Avg. time to fill a game" },
-  { num: "100%", label: "Officials background-checked" },
-  { num: "48 hr", label: "Typical payout after a game" },
-  { num: "Hoops", label: "Basketball first — more soon" },
+  { num: "Hoops", label: "Basketball first, more sports soon" },
+  { num: "$0", label: "Fees charged to officials" },
+  { num: "You", label: "Set your own rate" },
+  { num: "ID", label: "Every user ID-verified" },
 ];
 
 function StatsStrip() {
@@ -185,22 +185,22 @@ const OFFICIAL_STEPS = [
   {
     n: "01",
     title: "Get verified",
-    desc: "Identity check, background screen, and credentials — all in the app.",
+    desc: "ID check and credentials, all in the app. Add a background check if you have one.",
   },
   {
     n: "02",
     title: "Set availability",
-    desc: "Choose your sports, travel radius, and rates. Go on-duty when you're ready.",
+    desc: "Choose your sports, travel distance, and rates. Go on duty when you want work.",
   },
   {
     n: "03",
     title: "Accept & officiate",
-    desc: "Grab jobs near you. Show up, run the game, confirm the result.",
+    desc: "Take games near you. Show up, work the game, confirm it's done.",
   },
   {
     n: "04",
     title: "Get paid",
-    desc: "Payouts land in your bank via Stripe. 1099s handled automatically.",
+    desc: "Payouts go through Stripe. Your first bank deposit can take about a week; after that, a couple of business days.",
   },
 ];
 
@@ -208,7 +208,7 @@ const ASSIGNOR_STEPS = [
   {
     n: "01",
     title: "Get verified",
-    desc: "The same ID check every official passes, so directors know who they're handing a schedule to.",
+    desc: "The same ID check every official passes, so directors know who they're scheduling.",
   },
   {
     n: "02",
@@ -223,7 +223,7 @@ const ASSIGNOR_STEPS = [
   {
     n: "04",
     title: "Staff every game",
-    desc: "Offer games, watch confirmations land, and fill the gaps before game day.",
+    desc: "Offer games, track confirmations, and fill gaps before game day.",
   },
 ];
 
@@ -231,22 +231,22 @@ const LEAGUE_STEPS = [
   {
     n: "01",
     title: "Post your games",
-    desc: "Sport, level, location, and time. Bulk-import a whole season if you like.",
+    desc: "Sport, level, location, and time. Bulk-import a whole season if you want.",
   },
   {
     n: "02",
-    title: "Match instantly",
-    desc: "Refee surfaces qualified, available officials near each game.",
+    title: "Officials see it",
+    desc: "Officials whose travel range covers the venue see the game and can take it.",
   },
   {
     n: "03",
-    title: "Confirm & relax",
-    desc: "Officials accept, you get confirmations, and no-shows get backfilled.",
+    title: "Confirm",
+    desc: "Officials accept and you see confirmations. If someone drops out, the slot reopens.",
   },
   {
     n: "04",
     title: "Pay once",
-    desc: "One invoice covers every official. Refee handles the disbursement.",
+    desc: "Pay the crew in one charge. Refee sends each official their share.",
   },
 ];
 
@@ -255,8 +255,8 @@ function HowItWorks() {
     <section id="how" className="mx-auto max-w-wrap px-6 py-16 md:px-8 lg:py-24">
       <SectionHeader
         kicker="How it works"
-        title="Three roles. One whistle."
-        desc="Whether you blow the whistle, staff the schedule, or run the event, Refee is four simple steps."
+        title="Pick your side."
+        desc="Officials, assignors, and leagues each get four steps."
       />
       <div className="mt-12 grid gap-10 lg:grid-cols-3">
         <StepTrack
@@ -335,19 +335,19 @@ function StepTrack({
 const OFFICIAL_BENEFITS = [
   {
     title: "You set the price",
-    desc: "Name your rate per sport and level. No lowball assignments.",
+    desc: "Set a rate for each sport and level. You see the pay before you accept.",
   },
   {
-    title: "Fast, transparent pay",
-    desc: "See the payout before you accept. Money hits your bank via Stripe — with tax docs handled.",
+    title: "Clear pay",
+    desc: "See the payout before you accept. Money goes to your bank through Stripe.",
   },
   {
-    title: "Games that fit your life",
-    desc: "Filter by sport, distance, and time. Go on-duty when you want the work.",
+    title: "Games that fit your week",
+    desc: "Filter by sport, distance, and time. Go on duty when you want work.",
   },
   {
-    title: "Build your reputation",
-    desc: "Ratings and reliability travel with you. Great officials get first pick.",
+    title: "Your record stays with you",
+    desc: "Directors rate officials after each game, and those ratings show on your profile.",
   },
 ];
 
@@ -364,13 +364,13 @@ function OfficialsSection() {
             For officials
           </span>
           <h2 className="mt-5 font-display text-4xl font-black leading-[0.98] tracking-tighter text-ink sm:text-5xl">
-            Turn your whistle
+            Pick your games.
             <br />
-            into a paycheck.
+            Set your rate.
           </h2>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-80">
-            Whether you officiate weekends for extra income or work games
-            full-time, Refee puts the schedule in your hands.
+            Work a few weekends for extra money or run a full schedule. You
+            decide which games you take.
           </p>
           <div className="mt-8">
             <StoreButtons />
@@ -401,7 +401,7 @@ function OfficialsSection() {
 const ASSIGNOR_BENEFITS = [
   {
     title: "Your roster travels with you",
-    desc: "The officials you trust stay yours across every event you staff.",
+    desc: "The officials you trust stay on your roster across every event you staff.",
   },
   {
     title: "Name your fee",
@@ -409,11 +409,11 @@ const ASSIGNOR_BENEFITS = [
   },
   {
     title: "One board, every game",
-    desc: "See what's open, what's confirmed, and what still needs a whistle.",
+    desc: "See what's open, what's confirmed, and what still needs an official.",
   },
   {
-    title: "Paid with the crew",
-    desc: "Your fee settles out of the same escrow that pays the officials.",
+    title: "Fee on the record",
+    desc: "Your fee is recorded on the event once the director agrees to it.",
   },
 ];
 
@@ -435,9 +435,8 @@ function AssignorsSection() {
             <span className="text-whistle-ink">work the game.</span>
           </h2>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-80">
-            Bring the roster you have spent years building. Refee handles the
-            verification, the confirmations, and the money — you decide who
-            takes the floor.
+            Bring the roster you've built. Refee handles ID checks,
+            confirmations, and payment. You decide who works.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="/auth/welcome" className="btn btn-primary">
@@ -469,20 +468,20 @@ function AssignorsSection() {
 /* ------------------------------------------------------------------ */
 const LEAGUE_BENEFITS = [
   {
-    title: "Never scramble again",
-    desc: "Post a game and Refee finds available, qualified officials nearby — automatically.",
+    title: "Post it once",
+    desc: "Post a game and officials near the venue see it. No group texts.",
   },
   {
-    title: "Only vetted officials",
-    desc: "Every official is identity-verified and background-checked before they take the field.",
+    title: "ID-verified officials",
+    desc: "Every official verifies their ID before taking games. Officials can also upload a background check.",
   },
   {
-    title: "No-show protection",
-    desc: "If an official can't make it, Refee backfills the assignment so your game still runs.",
+    title: "If someone drops out",
+    desc: "When an official withdraws, the slot reopens so another official can take it.",
   },
   {
-    title: "One invoice, done",
-    desc: "Pay for all your officials in one place. We handle payouts and paperwork.",
+    title: "One place to pay",
+    desc: "Pay your crew in one charge. Refee handles the payouts to each official.",
   },
 ];
 
@@ -515,8 +514,8 @@ function LeaguesSection() {
             <span className="text-signal">Skip the phone tree.</span>
           </h2>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-80">
-            Stop chasing officials one text at a time. Post your schedule and
-            let Refee match, confirm, and pay — so you can run the league.
+            Stop texting officials one at a time. Post your games, see who
+            takes them, and pay everyone in one place.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="#download" className="btn btn-primary">
@@ -537,20 +536,20 @@ function LeaguesSection() {
 /* ------------------------------------------------------------------ */
 const TRUST_ITEMS = [
   {
-    title: "Background checks",
-    desc: "Every official is screened through an NCYS-endorsed provider built for youth sports — before their first game.",
+    title: "Background check uploads",
+    desc: "Officials can upload a background check to their profile. Refee doesn't review it yet. Hirers see that one was uploaded and when it expires.",
   },
   {
     title: "Identity verification",
-    desc: "Government-ID identity checks confirm officials are who they say they are.",
+    desc: "A government ID check confirms officials are who they say they are.",
   },
   {
     title: "Privacy by design",
-    desc: "Sensitive data is locked down at the database level. Public profiles show only first name, city, and rating.",
+    desc: "Sensitive data is locked down at the database level. Public profiles show first name and last initial, city, and rating.",
   },
   {
     title: "Secure payments",
-    desc: "Payouts run on Stripe Connect. Refee never touches your bank credentials.",
+    desc: "Payouts run through Stripe. Refee never sees your bank details.",
   },
 ];
 
@@ -563,13 +562,13 @@ function TrustSection() {
           Trust &amp; safety
         </span>
         <h2 className="mt-5 max-w-2xl font-display text-4xl font-black leading-[0.98] tracking-tighter text-paper sm:text-5xl">
-          Built safe enough
+          Built for games
           <br />
-          for youth sports.
+          with kids in them.
         </h2>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-paper/70">
-          Trust is the whole product. Refee vets every official and protects
-          everyone's data by default — not as an afterthought.
+          Every user verifies their ID. Officials can add a background check to
+          their profile. Everyone's data is private by default.
         </p>
 
         <div className="mt-12 grid gap-px overflow-hidden border border-paper/20 bg-paper/20 sm:grid-cols-2 lg:grid-cols-4">
@@ -599,15 +598,15 @@ function DownloadCTA() {
       <div className="zebra-rule--signal zebra-rule mb-12" />
       <div className="grid items-center gap-10 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
-          <span className="kicker">Ready when you are</span>
+          <span className="kicker">Download</span>
           <h2 className="mt-3 font-display text-5xl font-black leading-[0.95] tracking-tighter text-ink sm:text-6xl">
-            Get the whistle
+            Get the app.
             <br />
-            in your pocket.
+            Find a game.
           </h2>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-80">
-            Download Refee free. Officials, get booked. Leagues, get covered.
-            It only takes a minute to set up.
+            Free on iOS and Android. Setup takes a few minutes: verify your
+            ID, set your rate, and start finding games.
           </p>
           <div className="mt-8">
             <StoreButtons />

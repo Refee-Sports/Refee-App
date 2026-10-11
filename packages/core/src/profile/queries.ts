@@ -52,7 +52,7 @@ export async function fetchMyProfile(userId: string) {
 export async function fetchMyRefSports(userId: string) {
   return supabase
     .from("ref_sports")
-    .select("sport_id, years_experience, sports(display_name)")
+    .select("sport_id, years_experience, leagues_worked, sports(display_name)")
     .eq("ref_id", userId);
 }
 
@@ -75,6 +75,8 @@ export async function saveFullProfile(
     state: string;
     sportId: string;
     yearsExperience: number;
+    /** Optional note of leagues worked (run through cleanLeaguesWorked). */
+    leaguesWorked?: string | null;
     minPayPerGame: number;
     travelRadiusMiles: number;
     certs: CertEntry[];
@@ -132,6 +134,7 @@ export async function saveFullProfile(
     ref_id: userId,
     sport_id: args.sportId,
     years_experience: args.yearsExperience,
+    ...(args.leaguesWorked !== undefined ? { leagues_worked: args.leaguesWorked } : {}),
   });
   if (sportError) return { error: sportError };
 
@@ -214,6 +217,8 @@ export async function updateFullProfile(
     state: string;
     sportId: string;
     yearsExperience: number;
+    /** Optional note of leagues worked (run through cleanLeaguesWorked). */
+    leaguesWorked?: string | null;
     minPayPerGame: number;
     travelRadiusMiles: number;
     availableDays: number;
@@ -246,6 +251,7 @@ export async function updateFullProfile(
     ref_id: userId,
     sport_id: args.sportId,
     years_experience: args.yearsExperience,
+    ...(args.leaguesWorked !== undefined ? { leagues_worked: args.leaguesWorked } : {}),
   });
   if (sportError) return { error: sportError };
 

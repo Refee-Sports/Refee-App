@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { use, useCallback, useState } from "react";
 import { ScreenHeader } from "@/components/layout/ScreenHeader";
@@ -215,12 +216,12 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
             ) : (
               crew.map((m) => (
                 <div key={m.id} className="mb-2 flex items-center border border-ink bg-chalk px-4 py-3">
-                  <span className="flex-1">
+                  <Link href={`/assignor/referee/${m.ref_id}`} className="flex-1">
                     <span className="block font-mono-bold text-[10px] uppercase text-ink">{m.display_name}</span>
                     <span className="mt-1 block font-mono text-[8px] uppercase text-ink-40">
-                      {m.role} · {m.status}
+                      {m.role} · {m.status} · view profile
                     </span>
-                  </span>
+                  </Link>
                   <button
                     type="button"
                     disabled={busyId !== null}
@@ -266,12 +267,12 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
                 ) : (
                   available.map((m) => (
                     <div key={m.ref_id} className="mb-2 flex items-center border border-ink bg-chalk px-4 py-3">
-                      <span className="flex-1">
+                      <Link href={`/assignor/referee/${m.ref_id}`} className="flex-1">
                         <span className="block font-mono-bold text-[10px] uppercase text-ink">{m.display_name}</span>
                         <span className="mt-1 block font-mono text-[8px] uppercase text-ink-40">
-                          {m.city}, {m.state} · {m.rating.toFixed(1)} rating
+                          {m.city}, {m.state} · {m.rating.toFixed(1)} rating · view profile
                         </span>
-                      </span>
+                      </Link>
                       <button
                         type="button"
                         disabled={busyId !== null || full}

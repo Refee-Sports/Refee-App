@@ -9,7 +9,9 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, type CertEntry } from "@/lib/profile/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
-import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
+import { dateOfBirthError, isAdult } from "@refee/core/identity/age";
+import { LEAGUES_WORKED_MAX, cleanLeaguesWorked } from "@refee/core/profile/leagues";
+import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { headshotFileError, uploadSignupHeadshot } from "@/lib/profile/avatar";
 
@@ -42,6 +44,7 @@ type FormData = {
   state: string;
   sportId: string;
   yearsExperience: string;
+  leaguesWorked: string;
   minPay: string;
   travelRadius: string;
   certs: CertEntry[];
@@ -68,6 +71,7 @@ export default function RefereeOnboardingPage() {
     state: "",
     sportId: "basketball",
     yearsExperience: "",
+    leaguesWorked: "",
     minPay: "35",
     travelRadius: "25",
     certs: [],
@@ -167,6 +171,7 @@ export default function RefereeOnboardingPage() {
         state: form.state.trim().toUpperCase(),
         sportId: form.sportId,
         yearsExperience: parseInt(form.yearsExperience || "0", 10),
+        leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
         minPayPerGame: parseInt(form.minPay, 10),
         travelRadiusMiles: parseInt(form.travelRadius, 10),
         certs: form.certs,
@@ -326,7 +331,7 @@ function NameStep({ form, set }: { form: FormData; set: SetFn }) {
       <DateField
         value={form.dateOfBirth}
         onChange={set("dateOfBirth")}
-        max={latestAdultBirthDate()}
+        max={new Date().toISOString().slice(0, 10)}
       />
       {dateOfBirthError(form.dateOfBirth) ? (
         <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
@@ -337,6 +342,7 @@ function NameStep({ form, set }: { form: FormData; set: SetFn }) {
           Refee is 18+. We check this against your ID.
         </p>
       )}
+      <UnderAgeNotice dateOfBirth={form.dateOfBirth} />
       {form.firstName.trim() && form.lastName.trim() ? (
         <div className="mt-5 flex items-center gap-2 border border-signal/30 bg-signal/5 px-3.5 py-2.5">
           <span className="font-mono text-base text-signal">▸</span>
@@ -411,6 +417,13 @@ function SportStep({ form, set }: { form: FormData; set: SetFn }) {
         placeholder="5"
         inputMode="numeric"
         hint="How many years have you been officiating this sport?"
+      />
+      <Label className="mt-5">Leagues worked (optional)</Label>
+      <TextField
+        value={form.leaguesWorked}
+        onChange={(e) => set("leaguesWorked")(e.target.value.slice(0, LEAGUES_WORKED_MAX))}
+        placeholder="AAU, YMCA, city rec, HS JV"
+        hint="Leagues or organizations you've officiated for. Directors see this."
       />
     </div>
   );

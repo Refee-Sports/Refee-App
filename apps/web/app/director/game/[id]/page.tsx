@@ -18,6 +18,7 @@ import {
   declineApplicantForGame,
   fetchExistingRating,
   fetchGameApplicants,
+  markNoShow,
   fetchGameById,
   fetchGameRatedRefIds,
   fetchMyHirerId,
@@ -133,6 +134,23 @@ export default function DirectorGameDetailPage({
     setNoteText("");
     const { thread } = await fetchCrewThread(id);
     if (thread) setCrewThread(thread);
+  };
+
+  const handleNoShow = async (a: ApplicantRow) => {
+    const name = a.profile ? `${a.profile.first_name} ${a.profile.last_initial}.` : "this referee";
+    if (
+      !window.confirm(
+        `Mark ${name} as a no-show? They won't be paid for this game and will be told. Only do this if they never arrived.`
+      )
+    ) {
+      return;
+    }
+    const { error: nsErr } = await markNoShow(id, a.ref_id);
+    if (nsErr) {
+      setNotice(`Couldn't mark no-show: ${nsErr.message}`);
+      return;
+    }
+    load();
   };
 
   const handleMessageRef = async (refId: string) => {
@@ -396,6 +414,8 @@ export default function DirectorGameDetailPage({
     (a) => a.status === "accepted" || a.status === "needs_reconfirm" || a.status === "completed"
   );
   const declined = applicants.filter((a) => a.status === "declined");
+  // Confirmed refs who dropped out or never showed — they used to vanish from every section.
+  const dropped = applicants.filter((a) => a.status === "withdrawn" || a.status === "no_show");
   const slotsLeft = Math.max(0, game.crew_size - accepted.length);
   const gameStarted = new Date(game.starts_at) <= new Date();
   const isCompleted = game.status === "completed";
@@ -881,12 +901,30 @@ export default function DirectorGameDetailPage({
             showActions={false}
             onMessage={() => handleMessageRef(a.ref_id)}
             onRate={
-              gameStarted && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined
+              a.status === "completed" && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined
             }
             rated={ratedRefIds.has(a.ref_id)}
+            onNoShow={
+              gameStarted && !isClosed && (a.status === "accepted" || a.status === "needs_reconfirm")
+                ? () => void handleNoShow(a)
+                : undefined
+            }
           />
         ))}
       </ApplicantSection>
+
+      {dropped.length > 0 && (
+        <ApplicantSection
+          title={`DROPPED · ${dropped.length}`}
+          accentColor="#E53E3E"
+          empty=""
+          count={dropped.length}
+        >
+          {dropped.map((a) => (
+            <ApplicantCard key={a.id} applicant={a} actioning={false} showActions={false} />
+          ))}
+        </ApplicantSection>
+      )}
 
       {declined.length > 0 && (
         <ApplicantSection
@@ -1094,6 +1132,7 @@ function ApplicantCard({
   onMessage,
   onRate,
   rated,
+  onNoShow,
 }: {
   applicant: ApplicantRow;
   onApprove?: () => void;
@@ -1103,6 +1142,7 @@ function ApplicantCard({
   onMessage?: () => void;
   onRate?: () => void;
   rated?: boolean;
+  onNoShow?: () => void;
 }) {
   const p = applicant.profile;
   const initials = p ? `${p.first_name[0] ?? "?"}${p.last_initial}`.toUpperCase() : "??";
@@ -1115,11 +1155,15 @@ function ApplicantCard({
     needs_reconfirm: "#E53E3E",
     completed: "#00A85C",
     cancelled: "rgba(8,17,28,0.36)",
+    withdrawn: "#E53E3E",
+    no_show: "#E53E3E",
   };
 
   const statusLabel: Record<string, string> = {
     needs_reconfirm: "AWAITING RE-CONFIRM",
     completed: "WORKED ✓",
+    withdrawn: applicant.withdrew_late ? "WITHDREW (LATE)" : "WITHDREW",
+    no_show: "NO-SHOW",
   };
 
   return (
@@ -1144,6 +1188,14 @@ function ApplicantCard({
               style={{ letterSpacing: 1 }}
             >
               {p.city.toUpperCase()}, {p.state} · ★ {p.rating.toFixed(2)}
+            </span>
+          )}
+          {applicant.late_minutes != null && applicant.status === "accepted" && (
+            <span
+              className="block font-mono-bold text-[9px] uppercase text-foul"
+              style={{ letterSpacing: 1 }}
+            >
+              ⏱ Running ~{applicant.late_minutes} min late
             </span>
           )}
         </span>
@@ -1190,7 +1242,7 @@ function ApplicantCard({
         </div>
       )}
 
-      {!showActions && (onMessage || onRate || rated) && (
+      {!showActions && (onMessage || onRate || rated || onNoShow) && (
         <div className="flex border-t border-ink-20">
           {onMessage && (
             <button
@@ -1219,6 +1271,17 @@ function ApplicantCard({
                 style={{ letterSpacing: 1.5 }}
               >
                 Rate
+              </span>
+            </button>
+          )}
+          {onNoShow && (
+            <button
+              type="button"
+              onClick={onNoShow}
+              className="flex flex-1 items-center justify-center gap-1.5 border-l border-ink-20 py-2.5 text-foul hover:opacity-70"
+            >
+              <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+                No-show
               </span>
             </button>
           )}

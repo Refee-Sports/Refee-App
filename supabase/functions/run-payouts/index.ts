@@ -6,7 +6,7 @@
 //    minutes, for any director with a card on file.
 // 2. Pay out. Prepaid games that have completed or been cancelled: pay each
 //    ref from the up-front charge and refund what nobody earned. Games
-//    auto-complete 24h after they end, so this lands well inside the 48h
+//    auto-complete 2h after they end, so this lands well inside the 48h
 //    payout window.
 //
 // Not callable from the apps: the gateway verifies the JWT, and this function

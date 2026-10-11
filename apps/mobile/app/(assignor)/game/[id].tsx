@@ -202,10 +202,10 @@ export default function AssignorGameDetail() {
               <Text className="font-mono text-[9px] text-ink-40 uppercase py-3">No offers or accepted referees yet.</Text>
             ) : crew.map((member) => (
               <View key={member.id} className="border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">
-                <View className="flex-1">
+                <Pressable className="flex-1" onPress={() => router.push(`/(assignor)/referee/${member.ref_id}` as any)}>
                   <Text className="font-mono-bold text-[10px] text-ink uppercase">{member.display_name}</Text>
-                  <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{member.role} · {member.status}</Text>
-                </View>
+                  <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{member.role} · {member.status} · VIEW PROFILE</Text>
+                </Pressable>
                 <Pressable disabled={busyId !== null} onPress={() => void messageRef(member.ref_id)} className="border border-ink px-2.5 py-2 mr-2">
                   {busyId === `dm:${member.ref_id}` ? <ActivityIndicator size="small" color="#08111C" /> : <Feather name="message-square" size={12} color="#08111C" />}
                 </Pressable>
@@ -255,10 +255,10 @@ export default function AssignorGameDetail() {
         ) : null}
         renderItem={({ item }) => (
           <View className="border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">
-            <View className="flex-1">
+            <Pressable className="flex-1" onPress={() => router.push(`/(assignor)/referee/${item.ref_id}` as any)}>
               <Text className="font-mono-bold text-[10px] text-ink uppercase">{item.display_name}</Text>
-              <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{item.city}, {item.state} · {item.rating.toFixed(1)} RATING</Text>
-            </View>
+              <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{item.city}, {item.state} · {item.rating.toFixed(1)} RATING · VIEW PROFILE</Text>
+            </Pressable>
             <Pressable disabled={busyId !== null || crew.length >= game.crew_size} onPress={() => void offer(item)} className={`px-3 py-2 border border-ink ${crew.length >= game.crew_size ? "bg-ink-20" : "bg-ink"}`}>
               {busyId === item.ref_id ? <ActivityIndicator size="small" color="#E5E1D6" /> : <Text className="font-mono-bold text-[8px] text-paper">OFFER</Text>}
             </Pressable>

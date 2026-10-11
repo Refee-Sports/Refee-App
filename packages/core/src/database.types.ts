@@ -672,6 +672,8 @@ export type Database = {
           applied_at: string | null
           id: string
           job_id: string | null
+          late_minutes: number | null
+          late_reported_at: string | null
           offered_at: string | null
           offered_by: string | null
           paid_at: string | null
@@ -689,6 +691,8 @@ export type Database = {
           applied_at?: string | null
           id?: string
           job_id?: string | null
+          late_minutes?: number | null
+          late_reported_at?: string | null
           offered_at?: string | null
           offered_by?: string | null
           paid_at?: string | null
@@ -706,6 +710,8 @@ export type Database = {
           applied_at?: string | null
           id?: string
           job_id?: string | null
+          late_minutes?: number | null
+          late_reported_at?: string | null
           offered_at?: string | null
           offered_by?: string | null
           paid_at?: string | null
@@ -1065,6 +1071,56 @@ export type Database = {
           },
         ]
       }
+      new_game_alerts: {
+        Row: {
+          job_id: string
+          sent_at: string
+          user_id: string
+        }
+        Insert: {
+          job_id: string
+          sent_at?: string
+          user_id: string
+        }
+        Update: {
+          job_id?: string
+          sent_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "new_game_alerts_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          crew_messages: boolean
+          game_updates: boolean
+          new_games: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          crew_messages?: boolean
+          game_updates?: boolean
+          new_games?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          crew_messages?: boolean
+          game_updates?: boolean
+          new_games?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       private_profiles: {
         Row: {
           background_check_completed_at: string | null
@@ -1394,16 +1450,19 @@ export type Database = {
       }
       ref_sports: {
         Row: {
+          leagues_worked: string | null
           ref_id: string
           sport_id: string
           years_experience: number | null
         }
         Insert: {
+          leagues_worked?: string | null
           ref_id: string
           sport_id: string
           years_experience?: number | null
         }
         Update: {
+          leagues_worked?: string | null
           ref_id?: string
           sport_id?: string
           years_experience?: number | null
@@ -1697,6 +1756,30 @@ export type Database = {
           },
         ]
       }
+      under_18_waitlist: {
+        Row: {
+          age: number
+          created_at: string
+          email: string
+          state: string | null
+          user_id: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          email: string
+          state?: string | null
+          user_id: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          email?: string
+          state?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           added_at: string | null
@@ -1912,6 +1995,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      can_alert_for_job: {
+        Args: { p_caller: string; p_job_id: string }
+        Returns: boolean
+      }
       can_manage_crew_note: {
         Args: { p_job_id: string; p_user: string }
         Returns: boolean
@@ -1925,6 +2012,13 @@ export type Database = {
         Returns: boolean
       }
       cancel_game: { Args: { p_job_id: string }; Returns: Json }
+      claim_new_game_alerts: {
+        Args: { p_job_id: string }
+        Returns: {
+          distance_miles: number
+          user_id: string
+        }[]
+      }
       claim_roster_invites: { Args: never; Returns: number }
       complete_game: { Args: { p_job_id: string }; Returns: Json }
       director_invite_assignor: {
@@ -1972,12 +2066,32 @@ export type Database = {
       is_identity_verified: { Args: { p_user: string }; Returns: boolean }
       is_referee: { Args: { p_user: string }; Returns: boolean }
       is_suspended: { Args: { p_user: string }; Returns: boolean }
+      job_notify_targets: { Args: { p_job_id: string }; Returns: Json }
       join_roster_by_code: { Args: { p_code: string }; Returns: string }
+      join_under_18_waitlist: {
+        Args: { p_age: number; p_state?: string }
+        Returns: undefined
+      }
       leave_roster: { Args: { p_roster_id: string }; Returns: undefined }
+      mark_no_show: {
+        Args: { p_job_id: string; p_ref_id: string }
+        Returns: Json
+      }
+      matching_referees_for_job: {
+        Args: { p_job_id: string }
+        Returns: {
+          distance_miles: number
+          user_id: string
+        }[]
+      }
       my_roster_invite_code: { Args: never; Returns: string }
       new_roster_code: { Args: never; Returns: string }
       notifiable_user_ids: {
         Args: { p_caller: string; p_targets: string[] }
+        Returns: string[]
+      }
+      notification_enabled_user_ids: {
+        Args: { p_kind: string; p_targets: string[] }
         Returns: string[]
       }
       offer_ref_to_game: {
@@ -2010,6 +2124,10 @@ export type Database = {
       remove_ref_from_roster: {
         Args: { p_roster_id: string }
         Returns: undefined
+      }
+      report_running_late: {
+        Args: { p_job_id: string; p_minutes: number }
+        Returns: Json
       }
       require_admin: { Args: never; Returns: undefined }
       respond_to_job: {

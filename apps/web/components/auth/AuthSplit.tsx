@@ -19,16 +19,6 @@ export function AuthSplit({ children }: { children: ReactNode }) {
     <div className="auth-split">
       <aside className="auth-split__aside">
         <div className="flex w-full flex-col justify-center px-12 py-16 xl:px-16">
-          <div className="mb-4 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-hi-vis" />
-            <span
-              className="font-mono-bold text-[10px] uppercase text-hi-vis"
-              style={{ letterSpacing: 2 }}
-            >
-              Called up · Live roster
-            </span>
-          </div>
-
           <h2
             className="font-display text-[56px] leading-[58px] text-paper xl:text-[68px] xl:leading-[70px]"
             style={{ letterSpacing: -2.5 }}
@@ -41,8 +31,8 @@ export function AuthSplit({ children }: { children: ReactNode }) {
           </h2>
 
           <p className="mb-9 mt-5 max-w-sm text-[15px] leading-6 text-paper/70">
-            The on-demand marketplace for officials. Find games, set your rate,
-            get paid in 48 hours.
+            Find games, set your rate, and get paid through Stripe after the
+            game.
           </p>
 
           <ValueStrip />

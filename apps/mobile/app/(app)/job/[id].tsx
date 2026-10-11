@@ -19,7 +19,8 @@ import { useJobAssignment } from "@/hooks/useJobAssignment";
 import { useJobDetail } from "@/hooks/useJobsFeed";
 import { supabase } from "@/lib/supabase";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
-import { withdrawFromJob, isLateWithdrawal } from "@/lib/jobs/queries";
+import { withdrawFromJob, isLateWithdrawal, reportRunningLate, canReportRunningLate } from "@/lib/jobs/queries";
+import { jobAvailability } from "@refee/core/jobs/availability";
 
 const ACTION_BAR_HEIGHT = 88;
 
@@ -82,8 +83,8 @@ export default function JobDetailScreen() {
     Alert.alert(
       "Withdraw from this game?",
       late
-        ? "⚠ Tip-off is less than 24 hours away. Withdrawing now counts against your reliability record."
-        : "You're more than 24 hours out, so this won't affect your rating. The slot reopens for other refs.",
+        ? "⚠ Tip-off is less than 48 hours away. Withdrawing now counts against your reliability record."
+        : "You're more than 48 hours out, so this won't affect your rating. The slot reopens for other refs.",
       [
         { text: "Stay On Crew", style: "cancel" },
         {
@@ -102,6 +103,19 @@ export default function JobDetailScreen() {
         },
       ]
     );
+  };
+
+  const handleRunningLate = async (minutes: number) => {
+    if (!id) return;
+    Haptics.selectionAsync();
+    const { error: lateErr } = await reportRunningLate(supabase, id, minutes);
+    if (lateErr) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      Alert.alert("Couldn't send", lateErr.message);
+      return;
+    }
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    Alert.alert("Organizer notified", `They know you're about ${minutes} minutes late.`);
   };
 
   const handleDecline = () => {
@@ -176,6 +190,18 @@ export default function JobDetailScreen() {
     );
   }
 
+  // Opened from an old notification or a stale list, the last spot may be gone.
+  // Someone already on the game still sees their own actions (withdraw, chat).
+  const confirmedCount = crewMembers.filter((m) => m.status === "● LOCKED").length;
+  const availability = jobAvailability({
+    status: job.status,
+    startsAtIso: job.startsAtIso,
+    crewSize: job.crewSize,
+    confirmedCount,
+  });
+  const hasStake = ["accepted", "pending", "offered", "needs_reconfirm"].includes(assignmentStatus ?? "");
+  const unavailable = !availability.available && !hasStake;
+
   return (
     <View className="flex-1 bg-paper">
       <StatusBar style="dark" />
@@ -195,6 +221,16 @@ export default function JobDetailScreen() {
         }}
         showsVerticalScrollIndicator={false}
       >
+        {!availability.available && unavailable ? (
+          <View className="mt-4 border border-foul bg-foul/10 px-4 py-3" accessibilityRole="alert">
+            <Text className="font-mono-bold text-[10px] text-foul uppercase" style={{ letterSpacing: 1.5 }}>
+              NO LONGER AVAILABLE
+            </Text>
+            <Text className="text-ink-80 mt-1" style={{ fontSize: 13, lineHeight: 18 }}>
+              {availability.message}
+            </Text>
+          </View>
+        ) : null}
         <JobDetailHero job={job} />
         <JobDetailScheduleCard job={job} />
         <JobDetailMapCard job={job} />
@@ -208,6 +244,18 @@ export default function JobDetailScreen() {
         {job.hirerNote ? <JobDetailHirerNote note={job.hirerNote} /> : <View className="h-2" />}
       </ScrollView>
 
+      {unavailable ? (
+        <View className="border-t border-ink bg-paper px-5 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
+          <Pressable
+            onPress={() => router.replace("/(app)/(tabs)/jobs" as never)}
+            className="border border-ink py-4 items-center active:opacity-70"
+          >
+            <Text className="font-mono-bold text-[12px] text-ink uppercase" style={{ letterSpacing: 2 }}>
+              BACK TO GAMES
+            </Text>
+          </Pressable>
+        </View>
+      ) : (
       <JobDetailActionBar
         bottomInset={insets.bottom}
         assignmentStatus={assignmentStatus}
@@ -217,7 +265,13 @@ export default function JobDetailScreen() {
         onAccept={() => void handleAccept()}
         onMessageCrew={() => void handleMessageCrew()}
         onWithdraw={handleWithdraw}
+        onRunningLate={
+          job?.startsAtIso && canReportRunningLate(job.startsAtIso, job.durationMinutes)
+            ? (m) => void handleRunningLate(m)
+            : undefined
+        }
       />
+      )}
     </View>
   );
 }

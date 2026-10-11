@@ -19,6 +19,7 @@ import { ZebraRule } from "@/components/ui/ZebraRule";
 import {
   fetchGameById,
   fetchGameApplicants,
+  markNoShow,
   approveApplicant,
   declineApplicantForGame,
   fetchMyHirerId,
@@ -120,6 +121,32 @@ export default function GameDetail() {
     setNoteOpen(false);
     setNoteText("");
     void loadCrewThread();
+  };
+
+  const handleNoShow = (a: ApplicantRow) => {
+    if (!id) return;
+    const name = a.profile ? `${a.profile.first_name} ${a.profile.last_initial}.` : "this referee";
+    Alert.alert(
+      "Mark as no-show?",
+      `${name} won't be paid for this game, and will be told. Only do this if they never arrived.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Mark No-Show",
+          style: "destructive",
+          onPress: async () => {
+            const { error: nsErr } = await markNoShow(id, a.ref_id);
+            if (nsErr) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Couldn't mark no-show", nsErr.message);
+              return;
+            }
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            void load();
+          },
+        },
+      ]
+    );
   };
 
   const handleMessageRef = async (refId: string) => {
@@ -354,6 +381,9 @@ export default function GameDetail() {
     (a) => a.status === "accepted" || a.status === "needs_reconfirm" || a.status === "completed"
   );
   const declined = applicants.filter((a) => a.status === "declined");
+  // Refs who were confirmed and then dropped out or never showed. Directors used to
+  // lose track of them entirely: they vanished from every section.
+  const dropped = applicants.filter((a) => a.status === "withdrawn" || a.status === "no_show");
   const slotsLeft = Math.max(0, game.crew_size - accepted.length);
   const gameStarted = new Date(game.starts_at) <= new Date();
   const isCompleted = game.status === "completed";
@@ -678,11 +708,30 @@ export default function GameDetail() {
                 actioning={false}
                 showActions={false}
                 onMessage={() => handleMessageRef(a.ref_id)}
-                onRate={gameStarted && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined}
+                onRate={a.status === "completed" && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined}
                 rated={ratedRefIds.has(a.ref_id)}
+                onNoShow={gameStarted && !isCompleted && !isCancelled && (a.status === "accepted" || a.status === "needs_reconfirm") ? () => handleNoShow(a) : undefined}
               />
             ))}
           </ApplicantSection>
+
+          {dropped.length > 0 && (
+            <ApplicantSection
+              title={`DROPPED · ${dropped.length}`}
+              accentColor="#E53E3E"
+              empty=""
+            >
+              {dropped.map((a) => (
+                <ApplicantCard
+                  key={a.id}
+                  applicant={a}
+                  onViewProfile={() => router.push(`/(director)/referee/${a.ref_id}` as any)}
+                  actioning={false}
+                  showActions={false}
+                />
+              ))}
+            </ApplicantSection>
+          )}
 
           {declined.length > 0 && (
             <ApplicantSection
@@ -854,6 +903,7 @@ function ApplicantCard({
   onMessage,
   onRate,
   rated,
+  onNoShow,
 }: {
   applicant: ApplicantRow;
   onApprove?: () => void;
@@ -864,6 +914,7 @@ function ApplicantCard({
   onMessage?: () => void;
   onRate?: () => void;
   rated?: boolean;
+  onNoShow?: () => void;
 }) {
   const p = applicant.profile;
   const initials = p
@@ -880,11 +931,15 @@ function ApplicantCard({
     needs_reconfirm: "#E53E3E",
     completed: "#00A85C",
     cancelled: "rgba(8,17,28,0.36)",
+    withdrawn: "#E53E3E",
+    no_show: "#E53E3E",
   };
 
   const statusLabel: Record<string, string> = {
     needs_reconfirm: "AWAITING RE-CONFIRM",
     completed: "WORKED ✓",
+    withdrawn: applicant.withdrew_late ? "WITHDREW (LATE)" : "WITHDREW",
+    no_show: "NO-SHOW",
   };
 
   return (
@@ -906,6 +961,11 @@ function ApplicantCard({
           {p && (
             <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
               {p.city.toUpperCase()}, {p.state} · ★ {p.rating.toFixed(2)}
+            </Text>
+          )}
+          {applicant.late_minutes != null && applicant.status === "accepted" && (
+            <Text className="font-mono-bold text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1, color: "#E53E3E" }}>
+              ⏱ RUNNING ~{applicant.late_minutes} MIN LATE
             </Text>
           )}
         </View>
@@ -946,7 +1006,7 @@ function ApplicantCard({
         </View>
       )}
 
-      {!showActions && (onMessage || onRate || rated) && (
+      {!showActions && (onMessage || onRate || rated || onNoShow) && (
         <View className="border-t border-ink-20 flex-row">
           {onMessage && (
             <Pressable
@@ -967,6 +1027,16 @@ function ApplicantCard({
               <Feather name="star" size={11} color="#C9F031" />
               <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
                 RATE
+              </Text>
+            </Pressable>
+          )}
+          {onNoShow && (
+            <Pressable
+              onPress={onNoShow}
+              className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20 active:opacity-70"
+            >
+              <Text className="text-foul font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+                NO-SHOW
               </Text>
             </Pressable>
           )}

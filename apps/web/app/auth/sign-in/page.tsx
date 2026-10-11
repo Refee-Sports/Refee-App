@@ -95,11 +95,7 @@ export default function SignInPage() {
     <div className="flex min-h-screen flex-col bg-paper">
       <ScreenHeader
         backHref="/auth/welcome"
-        title={
-          <>
-            <span className="text-ink">01</span> / 08
-          </>
-        }
+        title="Sign in"
       />
 
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
@@ -132,7 +128,7 @@ export default function SignInPage() {
               className="mb-3 mt-2 font-mono-bold text-[10px] uppercase text-signal"
               style={{ letterSpacing: 2 }}
             >
-              Email · Step 1
+              Email
             </p>
             <h1
               className="font-display text-ink"
@@ -143,8 +139,8 @@ export default function SignInPage() {
               <span className="text-signal">EMAIL.</span>
             </h1>
             <p className="mb-6 mt-3 text-ink-80" style={{ fontSize: 14, lineHeight: "20px" }}>
-              We&apos;ll email you a 6-digit code. No passwords. New here? The same code creates
-              your account — and it&apos;s the same account as the Refee app.
+              We&apos;ll email you a 6-digit code. No password. If you&apos;re new, the same code
+              creates your account, and it works in the Refee app too.
             </p>
 
             {isDevelopment && supabaseHost ? (

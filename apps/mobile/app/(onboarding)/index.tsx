@@ -13,9 +13,11 @@ import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { saveFullProfile, CertEntry } from "@/lib/profile/queries";
+import { LEAGUES_WORKED_MAX, cleanLeaguesWorked } from "@refee/core/profile/leagues";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
+import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
@@ -42,7 +44,7 @@ const STEP_LABELS = ["NAME", "LOCATION", "SPORT", "RATE", "CERTIFICATIONS", "LEV
 const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08", "09"];
 const LAST_STEP = STEP_LABELS.length - 1;
 
-type StringFormKey = "firstName" | "lastName" | "city" | "state" | "sportId" | "yearsExperience" | "minPay" | "travelRadius" | "dobDigits";
+type StringFormKey = "firstName" | "lastName" | "city" | "state" | "sportId" | "yearsExperience" | "leaguesWorked" | "minPay" | "travelRadius" | "dobDigits";
 type StringSetter = (k: StringFormKey) => (v: string) => void;
 
 type FormData = {
@@ -52,6 +54,7 @@ type FormData = {
   state: string;
   sportId: string;
   yearsExperience: string;
+  leaguesWorked: string;
   minPay: string;
   travelRadius: string;
   certs: CertEntry[];
@@ -78,6 +81,7 @@ export default function Onboarding() {
     state: "",
     sportId: "basketball",
     yearsExperience: "",
+    leaguesWorked: "",
     minPay: "35",
     travelRadius: "25",
     certs: [],
@@ -202,6 +206,7 @@ export default function Onboarding() {
         state: form.state.trim().toUpperCase(),
         sportId: form.sportId,
         yearsExperience: parseInt(form.yearsExperience || "0", 10),
+        leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
         minPayPerGame: parseInt(form.minPay, 10),
         travelRadiusMiles: parseInt(form.travelRadius, 10),
         certs: form.certs,
@@ -389,6 +394,7 @@ function NameStep({ form, set }: { form: FormData; set: StringSetter }) {
         error={dateOfBirthError(usDateInput(form.dobDigits).iso) ?? undefined}
         hint="Refee is 18+. We check this against your ID."
       />
+      <UnderAgeNotice dateOfBirth={usDateInput(form.dobDigits).iso} />
 
       {form.firstName.trim() && form.lastName.trim() ? (
         <View className="mt-5 border border-signal/30 bg-signal/5 px-3.5 py-2.5 flex-row items-center gap-2">
@@ -490,6 +496,14 @@ function SportStep({ form, set }: { form: FormData; set: StringSetter }) {
         placeholder="5"
         keyboardType="number-pad"
         hint="How many years have you been officiating this sport?"
+      />
+
+      <Label style={{ marginTop: 20 }}>LEAGUES WORKED (OPTIONAL)</Label>
+      <StyledInput
+        value={form.leaguesWorked}
+        onChangeText={(v) => set("leaguesWorked")(v.slice(0, LEAGUES_WORKED_MAX))}
+        placeholder="AAU, YMCA, city rec, HS JV"
+        hint="Leagues or organizations you've officiated for. Directors see this."
       />
     </View>
   );

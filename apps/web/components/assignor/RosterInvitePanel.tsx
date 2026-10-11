@@ -258,10 +258,10 @@ export function RosterInvitePanel({ onChanged }: { onChanged?: () => void }) {
         {emailNote ? <p className="mt-2 font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>{emailNote}</p> : null}
       </section>
 
-      {/* Announcement */}
+      {/* Message blast */}
       <section className="border border-ink bg-chalk p-5">
         <h2 className="font-mono-bold text-[9px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
-          Announce to your roster
+          Send message blast to roster
         </h2>
         <p className="mt-2 text-[13px] leading-5 text-ink-80">
           A one-way notification to every referee on your roster. They see it in their inbox and can&apos;t reply.
@@ -270,7 +270,7 @@ export function RosterInvitePanel({ onChanged }: { onChanged?: () => void }) {
           value={blast}
           onChange={(e) => setBlast(e.target.value.slice(0, MAX_BLAST))}
           placeholder="What do your referees need to know?"
-          aria-label="Announcement"
+          aria-label="Message blast"
           rows={5}
           className="mt-3 w-full border border-ink bg-paper px-3 py-2 text-[14px] text-ink outline-none"
         />
@@ -288,7 +288,7 @@ export function RosterInvitePanel({ onChanged }: { onChanged?: () => void }) {
           }`}
           style={{ letterSpacing: 1.5 }}
         >
-          {sending ? <Spinner /> : "Send announcement"}
+          {sending ? <Spinner /> : "Send message blast"}
         </button>
         {blastError ? <p className="mt-2 font-mono text-[10px] uppercase text-foul" role="alert">{blastError}</p> : null}
         {blastNote ? <p className="mt-2 font-mono text-[10px] uppercase text-court">{blastNote}</p> : null}

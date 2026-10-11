@@ -36,8 +36,8 @@ export default function PrivacyPage() {
         </p>
         <p>
           <strong>If you choose to:</strong> a background check you upload. Only
-          you can open the file; other people on Refee see only whether you have
-          a current one and when it expires.
+          you can open the file; other people on Refee see only that you
+          uploaded one and when it expires. Refee does not review its contents.
         </p>
         <p>
           <strong>To verify who you are:</strong> your legal name and date of
@@ -167,6 +167,17 @@ export default function PrivacyPage() {
           again if the date of birth on a verified ID shows the person is a
           minor.
         </p>
+        <p>
+          If you tell us you are 16 or 17 and ask to hear from us if we build
+          something for you, we keep the email on your account and your age
+          (16 or 17), and nothing else. We do not keep your date of birth, and
+          we use the email only to tell you about that. We do not collect this
+          from anyone under 16. Deleting your account deletes it.
+        </p>
+        <NeedsCounsel>
+          Needs counsel to confirm the wording and any state rules on contacting
+          minors, and the under-13 position.
+        </NeedsCounsel>
       </Section>
     </LegalShell>
   );

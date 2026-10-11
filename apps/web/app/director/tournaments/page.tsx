@@ -302,7 +302,7 @@ function DirectorHome() {
             className="px-4 py-2 font-mono text-[8px] uppercase text-ink/50"
             style={{ letterSpacing: 1 }}
           >
-            Auto-completes 24h after game end if not done
+            Auto-completes 2h after game end if not done
           </p>
         </div>
       )}

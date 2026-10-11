@@ -338,7 +338,7 @@ export async function sendRosterBlast(
     void sendPush(ids.slice(i, i + PUSH_BATCH), "Roster announcement", preview, {
       type: "message",
       conversationId: result?.conversation_id,
-    });
+    }, "game_updates");
   }
   return { recipientIds: ids, error: null };
 }

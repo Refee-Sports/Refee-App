@@ -216,7 +216,22 @@ export default function RefereePublicProfile() {
           </>
         )}
 
-        {ref.certifications.length === 0 && ref.levels.length === 0 && (
+        {/* Leagues worked */}
+        {ref.leagues_worked && (
+          <>
+            <SectionHead
+              num={String(1 + (ref.certifications.length > 0 ? 1 : 0) + (ref.levels.length > 0 ? 1 : 0)).padStart(2, "0")}
+              title="Leagues Worked"
+            />
+            <View className="mx-5 border border-ink-20 bg-chalk px-4 py-3">
+              <Text className="text-ink font-mono text-sm" style={{ letterSpacing: 0.5, lineHeight: 20 }}>
+                {ref.leagues_worked}
+              </Text>
+            </View>
+          </>
+        )}
+
+        {ref.certifications.length === 0 && ref.levels.length === 0 && !ref.leagues_worked && (
           <View className="mx-5 border border-dashed border-ink-20 px-4 py-6 items-center">
             <Text className="font-mono text-ink-40 text-[11px] text-center uppercase" style={{ letterSpacing: 1 }}>
               No credentials or levels listed.

@@ -163,15 +163,21 @@ describe("isLateWithdrawal", () => {
   it(`flags withdrawals inside the ${WITHDRAW_FREE_WINDOW_HOURS}h window`, () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-01T00:00:00Z"));
-    // Game 12h out — inside the 24h window.
+    // Game 12h out, and 36h out (inside 48h, outside the old 24h rule): both late.
     expect(isLateWithdrawal("2026-09-01T12:00:00Z")).toBe(true);
+    expect(isLateWithdrawal("2026-09-02T12:00:00Z")).toBe(true);
+  });
+
+  it("is a 48 hour window", () => {
+    expect(WITHDRAW_FREE_WINDOW_HOURS).toBe(48);
   });
 
   it("does not flag withdrawals comfortably before the window", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-09-01T00:00:00Z"));
-    // Game 48h out — outside the 24h window.
+    // Exactly 48h out and 72h out — outside the window, so free.
     expect(isLateWithdrawal("2026-09-03T00:00:00Z")).toBe(false);
+    expect(isLateWithdrawal("2026-09-04T00:00:00Z")).toBe(false);
   });
 });
 

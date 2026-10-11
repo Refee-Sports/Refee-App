@@ -16,6 +16,7 @@ import {
   type CertEntry,
 } from "@/lib/profile/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { LEAGUES_WORKED_MAX, cleanLeaguesWorked } from "@refee/core/profile/leagues";
 
 
 const CERT_BODIES = [
@@ -52,6 +53,7 @@ type FormData = {
   state: string;
   sportId: string;
   yearsExperience: string;
+  leaguesWorked: string;
   minPay: string;
   travelRadius: string;
   availableDays: number;
@@ -72,6 +74,7 @@ export default function EditProfilePage() {
     state: "",
     sportId: "basketball",
     yearsExperience: "",
+    leaguesWorked: "",
     minPay: "35",
     travelRadius: "25",
     availableDays: 0,
@@ -96,7 +99,7 @@ export default function EditProfilePage() {
       ]);
 
       const p = profileRes.data as { first_name?: string; last_initial?: string; city?: string; state?: string } | null;
-      const sport = (sportsRes.data ?? [])[0] as { sport_id?: string; years_experience?: number } | undefined;
+      const sport = (sportsRes.data ?? [])[0] as { sport_id?: string; years_experience?: number; leagues_worked?: string | null } | undefined;
       const av = availRes.data as {
         min_pay_per_game?: number;
         travel_radius_miles?: number;
@@ -112,6 +115,7 @@ export default function EditProfilePage() {
         state: p?.state ?? "",
         sportId: sport?.sport_id ?? "basketball",
         yearsExperience: sport?.years_experience ? String(sport.years_experience) : "",
+        leaguesWorked: sport?.leagues_worked ?? "",
         minPay: av?.min_pay_per_game ? String(av.min_pay_per_game) : "35",
         travelRadius: snapRadius(av?.travel_radius_miles ?? 25),
         availableDays: av?.available_days ?? 0,
@@ -186,6 +190,7 @@ export default function EditProfilePage() {
       state: form.state.trim().toUpperCase(),
       sportId: form.sportId,
       yearsExperience: parseInt(form.yearsExperience || "0", 10),
+      leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
       minPayPerGame: parseInt(form.minPay, 10),
       travelRadiusMiles: parseInt(form.travelRadius, 10),
       availableDays: form.availableDays,
@@ -279,6 +284,13 @@ export default function EditProfilePage() {
             placeholder="5"
             inputMode="numeric"
             hint="How many years you've been officiating basketball"
+          />
+          <Label>Leagues worked</Label>
+          <TextField
+            value={form.leaguesWorked}
+            onChange={(e) => set("leaguesWorked")(e.target.value.slice(0, LEAGUES_WORKED_MAX))}
+            placeholder="AAU, YMCA, city rec, HS JV"
+            hint="Leagues or organizations you've officiated for. Directors and assignors see this."
           />
         </FormSection>
 

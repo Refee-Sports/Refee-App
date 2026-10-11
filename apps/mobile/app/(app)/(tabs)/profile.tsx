@@ -35,6 +35,7 @@ import {
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
+import { NotificationsRow } from "@/components/profile/NotificationsRow";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -690,10 +691,14 @@ export default function Profile() {
         >
           <View>
             <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>BACKGROUND CHECK</Text>
-            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>UPLOAD · VALID FOR 1 YEAR</Text>
+            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>UPLOAD · NOT VERIFIED YET</Text>
           </View>
           <Feather name="chevron-right" size={16} color="#08111C" />
         </Pressable>
+      </View>
+
+      <View className="px-5 mt-3">
+        <NotificationsRow />
       </View>
 
       <View className="px-5 mt-4">

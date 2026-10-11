@@ -15,6 +15,8 @@ type Props = {
   onAccept: () => void;
   onMessageCrew?: () => void;
   onWithdraw?: () => void;
+  /** Shown only around tip-off; reports a delay in minutes to the organizers. */
+  onRunningLate?: (minutes: number) => void;
 };
 
 /** Port of the app's JobDetailActionBar — one bar per assignment state. */
@@ -27,6 +29,7 @@ export function JobDetailActionBar({
   onAccept,
   onMessageCrew,
   onWithdraw,
+  onRunningLate,
 }: Props) {
   const shell = "sticky bottom-0 z-10 border-t-[1.5px] border-ink bg-paper px-4 pt-3";
   const shellStyle = { paddingBottom: "calc(12px + env(safe-area-inset-bottom))" };
@@ -72,6 +75,29 @@ export function JobDetailActionBar({
             </button>
           )}
         </div>
+        {onRunningLate && (
+          <div className="mt-2 flex items-center gap-2">
+            <span
+              className="font-mono-bold text-[9px] uppercase text-ink-60"
+              style={{ letterSpacing: 1.5 }}
+            >
+              Running late?
+            </span>
+            {[10, 15, 30].map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => onRunningLate(m)}
+                disabled={actionLoading}
+                className="flex-1 border border-ink bg-chalk py-2 hover:opacity-70 disabled:opacity-40"
+              >
+                <span className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
+                  {m} min
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
         {onWithdraw && (
           <button
             type="button"

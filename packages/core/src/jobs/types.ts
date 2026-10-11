@@ -72,10 +72,14 @@ export type JobDetail = {
   parking: string | null;
   hirerNote: string | null;
   slotsOpen: number;
+  /** The game's stored status (open, staffed, completed, cancelled). Absent on mock rows. */
+  status?: string;
   closesInLabel: string | null;
   isFeatured: boolean;
   /** Raw ISO start time — absent on mock rows */
   startsAtIso?: string;
+  /** Scheduled length in minutes, when the director set one. */
+  durationMinutes?: number | null;
   /** IANA zone of the venue; times on this job are shown in it. */
   timeZone?: string | null;
   /** For mock / UI-only rows */

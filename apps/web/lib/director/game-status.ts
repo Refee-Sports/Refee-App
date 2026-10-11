@@ -76,7 +76,7 @@ export type PayoutDisplay = { tone: PayoutTone; label: string };
 
 const DEFAULT_GAME_MINUTES = 120;
 /** sweep_game_lifecycle auto-completes a game this long after it ends. */
-const AUTO_COMPLETE_HOURS = 24;
+const AUTO_COMPLETE_HOURS = 2;
 
 /** "TUE, SEP 22" in the venue's zone. */
 function shortDate(ms: number, tz?: string | null): string {

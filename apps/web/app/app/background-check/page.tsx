@@ -20,15 +20,15 @@ import {
 
 const STATE_STYLE = {
   none: { box: "border-ink-20 bg-chalk", text: "text-ink-60", title: "No background check on file" },
-  valid: { box: "border-court bg-court/10", text: "text-court", title: "Background check current" },
+  valid: { box: "border-court bg-court/10", text: "text-court", title: "Background check uploaded" },
   expiring: { box: "border-ink bg-hivis", text: "text-ink", title: "Expiring soon" },
-  expired: { box: "border-foul bg-foul/10", text: "text-foul", title: "Background check expired" },
+  expired: { box: "border-foul bg-foul/10", text: "text-foul", title: "Upload expired" },
 } as const;
 
 /**
  * Referees upload their background check (PDF or photo). It counts for one year
- * from the upload date. Directors and assignors see whether it's current —
- * never the document.
+ * from the upload date. Refee does not verify it yet. Directors and assignors
+ * see that one was uploaded and when it expires, never the document.
  */
 export default function BackgroundCheckPage() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -118,8 +118,8 @@ export default function BackgroundCheckPage() {
       ) : (
         <div className="px-5 sm:px-0 lg:max-w-xl">
           <p className="mb-5 text-[14px] leading-5 text-ink-80">
-            Upload your background check (a PDF or a photo). It&apos;s good for one year from the day you upload it — after that
-            you&apos;ll need to add a new one. Directors and assignors can see that you have a current check, but never the document.
+            Upload a background check you already have (a PDF or a photo). Refee doesn&apos;t review or verify it yet. Directors and
+            assignors can see that you uploaded one and when it expires, but never the document. It counts for one year from upload.
           </p>
 
           <div className={`border px-4 py-4 ${style.box}`}>
@@ -133,7 +133,8 @@ export default function BackgroundCheckPage() {
                 </p>
                 <p className="mt-1 truncate font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
                   {check.file_name ?? "Uploaded file"} · uploaded{" "}
-                  {new Date(check.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                  {new Date(check.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })} · counts until{" "}
+                  {new Date(check.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </p>
               </>
             ) : null}
@@ -142,7 +143,7 @@ export default function BackgroundCheckPage() {
           {state === "expiring" || state === "expired" ? (
             <p className="mt-3 font-mono-bold text-[10px] uppercase text-foul" style={{ letterSpacing: 1.2 }}>
               {state === "expired"
-                ? "Your check has expired. Upload a new one so assignors and directors see you as current."
+                ? "Your upload has expired. Upload a new one so it shows as on file."
                 : "Upload a new one before this expires so there's no gap."}
             </p>
           ) : null}

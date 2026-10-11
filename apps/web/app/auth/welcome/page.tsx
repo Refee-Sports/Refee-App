@@ -17,7 +17,7 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
  * Welcome — port of refee-mobile/refee/app/(auth)/welcome.tsx.
  *
  * Inverse palette: ink canvas + paper text + hi-vis accents. The three-cell
- * value strip is the entire pitch: 48H / 0% / YOU set rate.
+ * value strip is the entire pitch: 0% / YOU set rate / ID verified.
  *
  * On phones this stacks — hero, then the sign-in block pinned to the bottom.
  * From `lg` up it becomes a full-bleed two-panel front door: the pitch on the
@@ -70,17 +70,6 @@ export default function WelcomePage() {
         <ZebraRule variant="signal" noMargin />
 
         <div className="flex flex-1 flex-col px-6 pb-6 pt-10 lg:flex-none lg:px-14 lg:py-16 xl:px-20">
-          {/* Live tag */}
-          <div className="mb-4 flex items-center gap-2">
-            <span className="h-1.5 w-1.5 rounded-full bg-hi-vis" />
-            <span
-              className="font-mono-bold text-[10px] uppercase text-hi-vis"
-              style={{ letterSpacing: 2 }}
-            >
-              Called up · Live roster
-            </span>
-          </div>
-
           <h1
             className="font-display text-[64px] leading-[72px] text-paper lg:text-[80px] lg:leading-[80px] xl:text-[96px] xl:leading-[96px]"
             style={{ letterSpacing: -2.5 }}
@@ -96,8 +85,7 @@ export default function WelcomePage() {
             className="mb-8 mt-5 max-w-[280px] text-paper/70 lg:mb-10 lg:max-w-md lg:text-[17px] lg:leading-7"
             style={{ fontSize: 15, lineHeight: "22px" }}
           >
-            The on-demand marketplace for officials. Find games, set your rate, get
-            paid in 48 hours.
+            Find games, set your rate, and get paid through Stripe after the game.
           </p>
 
           {/* Three-cell value strip */}
@@ -125,7 +113,7 @@ export default function WelcomePage() {
               className="mt-2 font-mono text-[11px] uppercase text-paper/50"
               style={{ letterSpacing: 1.4 }}
             >
-              New or returning · same account
+              New or returning, same sign-in
             </p>
           </div>
 

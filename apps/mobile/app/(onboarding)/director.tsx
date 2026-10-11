@@ -16,6 +16,7 @@ import { createDirectorProfile } from "@/lib/director/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age";
+import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
@@ -302,6 +303,7 @@ function NameStep({
       <Text className="text-ink-60 font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
         Refee is 18+. We check this against your ID.
       </Text>
+      <UnderAgeNotice dateOfBirth={usDateInput(form.dobDigits).iso} />
 
       {form.firstName.trim() && form.lastName.trim() ? (
         <View className="mt-5 border border-signal/30 bg-signal/5 px-3.5 py-2.5 flex-row items-center gap-2">

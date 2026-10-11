@@ -170,7 +170,8 @@ export async function sendMessage(
     others,
     sender?.display_name ?? "New message",
     trimmed.length > 80 ? `${trimmed.slice(0, 77)}...` : trimmed,
-    { type: "message", conversationId }
+    { type: "message", conversationId },
+    "crew_messages"
   );
   return { error: null };
 }

@@ -54,10 +54,14 @@ describe("background check expiry (valid for one year)", () => {
 
   it("describes each state in plain words", () => {
     expect(backgroundCheckLabel(null, NOW)).toBe("Not uploaded");
-    expect(backgroundCheckLabel(daysFromNow(365), NOW)).toMatch(/^Valid until /);
-    expect(backgroundCheckLabel(daysFromNow(12), NOW)).toBe("Expires in 12 days");
-    expect(backgroundCheckLabel(daysFromNow(1), NOW)).toBe("Expires in 1 day");
-    expect(backgroundCheckLabel(daysFromNow(-5), NOW)).toMatch(/^Expired /);
+    // Refee does not verify uploads yet, so no label may say "valid" or "current".
+    expect(backgroundCheckLabel(daysFromNow(365), NOW)).toBe("Uploaded, not verified");
+    expect(backgroundCheckLabel(daysFromNow(12), NOW)).toBe("Uploaded, expires in 12 days");
+    expect(backgroundCheckLabel(daysFromNow(1), NOW)).toBe("Uploaded, expires in 1 day");
+    expect(backgroundCheckLabel(daysFromNow(-5), NOW)).toMatch(/^Upload expired /);
+    for (const days of [365, 12, 1, -5]) {
+      expect(backgroundCheckLabel(daysFromNow(days), NOW)).not.toMatch(/valid|current|cleared/i);
+    }
   });
 });
 

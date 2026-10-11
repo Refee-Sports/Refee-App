@@ -9,7 +9,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createDirectorProfile } from "@/lib/director/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
-import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
+import { dateOfBirthError, isAdult } from "@refee/core/identity/age";
+import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { headshotFileError, uploadSignupHeadshot } from "@/lib/profile/avatar";
 
@@ -184,7 +185,7 @@ export default function DirectorOnboardingPage() {
             <DateField
               value={form.dateOfBirth}
               onChange={set("dateOfBirth")}
-              max={latestAdultBirthDate()}
+              max={new Date().toISOString().slice(0, 10)}
             />
             {dateOfBirthError(form.dateOfBirth) ? (
               <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
@@ -195,6 +196,7 @@ export default function DirectorOnboardingPage() {
                 Refee is 18+. We check this against your ID.
               </p>
             )}
+            <UnderAgeNotice dateOfBirth={form.dateOfBirth} />
             {form.firstName.trim() && form.lastName.trim() ? (
               <div className="mt-5 flex items-center gap-2 border border-signal/30 bg-signal/5 px-3.5 py-2.5">
                 <span className="font-mono text-base text-signal">▸</span>

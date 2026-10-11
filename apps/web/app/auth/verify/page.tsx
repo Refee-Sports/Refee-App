@@ -82,11 +82,7 @@ function VerifyInner() {
     <div className="flex min-h-screen flex-col bg-paper">
       <ScreenHeader
         backHref="/auth/sign-in"
-        title={
-          <>
-            <span className="text-ink">02</span> / 08
-          </>
-        }
+        title="Enter code"
       />
 
       <div className="flex-1 px-5 pb-6">
@@ -94,7 +90,7 @@ function VerifyInner() {
           className="mb-3 mt-4 font-mono-bold text-[10px] uppercase text-signal"
           style={{ letterSpacing: 2 }}
         >
-          Verify · Step 2
+          Code
         </p>
         <h1
           className="font-display text-ink"

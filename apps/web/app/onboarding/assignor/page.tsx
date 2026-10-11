@@ -9,7 +9,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 import { createAssignorProfile } from "@/lib/assignor/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
-import { dateOfBirthError, isAdult, latestAdultBirthDate } from "@refee/core/identity/age";
+import { dateOfBirthError, isAdult } from "@refee/core/identity/age";
+import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { headshotFileError, uploadSignupHeadshot } from "@/lib/profile/avatar";
 
@@ -137,7 +138,7 @@ export default function AssignorOnboardingPage() {
             <DateField
               value={form.dateOfBirth}
               onChange={set("dateOfBirth")}
-              max={latestAdultBirthDate()}
+              max={new Date().toISOString().slice(0, 10)}
             />
             {dateOfBirthError(form.dateOfBirth) ? (
               <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
@@ -148,6 +149,7 @@ export default function AssignorOnboardingPage() {
                 Refee is 18+. We check this against your ID.
               </p>
             )}
+            <UnderAgeNotice dateOfBirth={form.dateOfBirth} />
           </div>
         ) : step === 2 ? (
           <HeadshotStep file={photo} onChange={setPhoto} who="Directors and the referees on your roster" />

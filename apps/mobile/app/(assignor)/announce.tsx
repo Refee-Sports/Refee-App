@@ -8,7 +8,7 @@ import { sendRosterBlast } from "@/lib/assignor/queries";
 
 const MAX_LENGTH = 1000;
 
-/** One-way announcement to everyone on the roster. Referees see it in their inbox and can't reply. */
+/** Message blast: one-way message to everyone on the roster. Referees see it in their inbox and can't reply. */
 export default function AnnounceToRoster() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -38,7 +38,7 @@ export default function AnnounceToRoster() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               Alert.alert(
                 "Sent",
-                `Your announcement went to ${recipientIds.length} ${recipientIds.length === 1 ? "referee" : "referees"}.`,
+                `Your message blast went to ${recipientIds.length} ${recipientIds.length === 1 ? "referee" : "referees"}.`,
                 [{ text: "Done", onPress: () => router.back() }]
               );
             })();
@@ -58,7 +58,7 @@ export default function AnnounceToRoster() {
           <Feather name="arrow-left" size={16} color="#08111C" />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
-          ANNOUNCE TO ROSTER
+          SEND MESSAGE BLAST TO ROSTER
         </Text>
         <View className="w-9" />
       </View>
@@ -96,7 +96,7 @@ export default function AnnounceToRoster() {
               className={`font-mono-bold ${canSend ? "text-paper" : "text-ink-40"}`}
               style={{ fontSize: 12, letterSpacing: 2.5 }}
             >
-              SEND ANNOUNCEMENT
+              SEND MESSAGE BLAST
             </Text>
           )}
         </Pressable>

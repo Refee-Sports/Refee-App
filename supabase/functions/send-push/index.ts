@@ -1,5 +1,7 @@
 // Sends an Expo push notification to one or more users.
-// Body: { userIds: string[], title, body, data? }
+// Body: { userIds: string[], title, body, data?, kind? }
+// kind ("new_games" | "crew_messages" | "game_updates") skips anyone who turned that
+// kind of notification off (migration 0062). Callers should always pass it.
 // Looks up each user's registered tokens and posts to Expo's push API.
 //
 // The app invokes this after an action (accept, message, payment), so the
@@ -28,6 +30,8 @@ const MAX_TARGETS = 200;
 // Far above what an active director or assignor generates in a day.
 const DAILY_LIMIT = Number(Deno.env.get("PUSH_DAILY_LIMIT") ?? "200");
 
+const KINDS = ["new_games", "crew_messages", "game_updates"];
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 Deno.serve(async (req) => {
@@ -38,9 +42,12 @@ Deno.serve(async (req) => {
     const caller = await getCaller(req);
     if (!caller) return json({ error: "Unauthorized" }, 401);
 
-    const { userIds, title, body, data } = await req.json();
+    const { userIds, title, body, data, kind } = await req.json();
     if (!Array.isArray(userIds) || userIds.length === 0 || !title || !body) {
       return json({ error: "userIds, title, body required" }, 400);
+    }
+    if (kind !== undefined && kind !== null && !KINDS.includes(kind)) {
+      return json({ error: "Unknown notification kind" }, 400);
     }
     if (userIds.length > MAX_TARGETS) {
       return json({ error: "Too many recipients" }, 400);
@@ -73,9 +80,21 @@ Deno.serve(async (req) => {
     );
     if (allowedError) return json({ error: allowedError.message }, 500);
 
-    const allowed = (allowedRows ?? []).map((row: unknown) =>
+    let allowed = (allowedRows ?? []).map((row: unknown) =>
       typeof row === "string" ? row : (row as { notifiable_user_ids: string }).notifiable_user_ids
     );
+
+    // Anyone who turned this kind of notification off is left out.
+    if (kind && allowed.length > 0) {
+      const { data: enabledRows, error: enabledError } = await admin.rpc(
+        "notification_enabled_user_ids",
+        { p_targets: allowed, p_kind: kind }
+      );
+      if (enabledError) return json({ error: enabledError.message }, 500);
+      allowed = (enabledRows ?? []).map((row: unknown) =>
+        typeof row === "string" ? row : (row as { notification_enabled_user_ids: string }).notification_enabled_user_ids
+      );
+    }
     const skipped = requested.length - allowed.length;
     if (allowed.length === 0) return json({ sent: 0, skipped });
 

@@ -1,5 +1,5 @@
 /**
- * The three-cell pitch — 48H payout / 0% ref fees / YOU set the rate.
+ * The three-cell pitch — 0% ref fees / YOU set the rate / ID-verified.
  * Shared by the welcome hero and the signed-out brand panel so the two can't
  * drift apart.
  */
@@ -9,9 +9,9 @@ export function ValueStrip({ size = "compact" }: { size?: "compact" | "hero" }) 
     <div
       className={`flex border border-paper/20 ${hero ? "lg:max-w-lg" : "max-w-md"}`}
     >
-      <ValueCell value="48" accent="H" label="Payout" bordered hero={hero} />
       <ValueCell value="0" accent="%" label="Ref fees" bordered hero={hero} />
-      <ValueCell value="YOU" accent="." label="Set rate" hero={hero} />
+      <ValueCell value="YOU" accent="." label="Set rate" bordered hero={hero} />
+      <ValueCell value="ID" accent="." label="Verified" hero={hero} />
     </div>
   );
 }

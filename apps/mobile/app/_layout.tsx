@@ -1,7 +1,8 @@
 import "../global.css";
 import * as WebBrowser from "expo-web-browser";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as Notifications from "expo-notifications";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -25,6 +26,7 @@ import { Session } from "@supabase/supabase-js";
 import { profileExists, fetchPrimaryRole } from "@/lib/profile/queries";
 import { useOnboardingStore, type PrimaryRole } from "@/lib/stores/onboarding-store";
 import { registerForPushNotifications } from "@/lib/push/notifications";
+import { routeForNotification } from "@/lib/push/route";
 import { applyGlobalFontScaleCap } from "@/lib/ui/text-scaling";
 import { LogBox } from "react-native";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
@@ -171,9 +173,11 @@ function RootLayout() {
             {/* Belongs to every role, so AuthGate leaves it alone. */}
             <Stack.Screen name="verify" />
             <Stack.Screen name="background-check" options={{ animation: "slide_from_right" }} />
+            <Stack.Screen name="notifications" options={{ animation: "slide_from_right" }} />
             <Stack.Screen name="my-organizations" options={{ animation: "slide_from_right" }} />
             <Stack.Screen name="join/[code]" options={{ animation: "slide_from_right" }} />
           </Stack>
+          <NotificationRouter primaryRole={primaryRole} />
         </AuthGate>
       </StripeProvider>
     </SafeAreaProvider>
@@ -181,6 +185,30 @@ function RootLayout() {
 }
 
 export default wrapWithCrashReporting(RootLayout);
+
+/**
+ * Opens the right screen when someone taps a push notification — a new game
+ * opens that game, a message opens its conversation. Waits until we know the
+ * person's role, so a tap that launches the app from cold still lands correctly.
+ * Each notification is acted on once.
+ */
+function NotificationRouter({ primaryRole }: { primaryRole: PrimaryRole | null }) {
+  const router = useRouter();
+  const response = Notifications.useLastNotificationResponse();
+  const handled = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!response || !primaryRole) return;
+    if (response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+    const id = response.notification.request.identifier;
+    if (handled.current === id) return;
+    handled.current = id;
+    const path = routeForNotification(response.notification.request.content.data, primaryRole as never);
+    if (path) router.push(path as never);
+  }, [response, primaryRole, router]);
+
+  return null;
+}
 
 function AuthGate({
   children,

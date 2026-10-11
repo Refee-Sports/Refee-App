@@ -48,6 +48,16 @@ export function isAdult(value: string, asOf: Date = new Date()): boolean {
 }
 
 /**
+ * 16 or 17 for the only people who are offered the "tell me when there's
+ * something for me" list, otherwise null. Never younger: nothing is collected
+ * from someone under 16, and adults just sign up.
+ */
+export function waitlistAge(value: string, asOf: Date = new Date()): 16 | 17 | null {
+  const age = ageInYears(value, asOf);
+  return age === 16 || age === 17 ? age : null;
+}
+
+/**
  * What to tell someone about the date they entered, or null when it's fine.
  * Blank returns null — an empty field isn't an error until they try to move on.
  */

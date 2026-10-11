@@ -705,7 +705,7 @@ export default function RefereeProfilePage() {
         >
           <span>
             <span className="block font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>Background check</span>
-            <span className="mt-0.5 block font-mono text-[9px] uppercase opacity-60" style={{ letterSpacing: 1 }}>Upload · valid for 1 year</span>
+            <span className="mt-0.5 block font-mono text-[9px] uppercase opacity-60" style={{ letterSpacing: 1 }}>Upload · not verified yet</span>
           </span>
           <Icon name="chevron-right" size={16} />
         </Link>

@@ -20,7 +20,7 @@ import { useJobAssignment } from "@/hooks/useJobAssignment";
 import { useJobDetail } from "@/hooks/useJobsFeed";
 import { supabase } from "@/lib/supabase";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
-import { isLateWithdrawal, withdrawFromJob } from "@/lib/jobs/queries";
+import { canReportRunningLate, isLateWithdrawal, reportRunningLate, withdrawFromJob } from "@/lib/jobs/queries";
 
 /** Port of refee-mobile/refee/app/(app)/job/[id].tsx. */
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -76,8 +76,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setActionError(null);
     const late = job.startsAtIso ? isLateWithdrawal(job.startsAtIso) : false;
     const message = late
-      ? "Withdraw from this game?\n\n⚠ Tip-off is less than 24 hours away. Withdrawing now counts against your reliability record."
-      : "Withdraw from this game?\n\nYou're more than 24 hours out, so this won't affect your rating. The slot reopens for other refs.";
+      ? "Withdraw from this game?\n\n⚠ Tip-off is less than 48 hours away. Withdrawing now counts against your reliability record."
+      : "Withdraw from this game?\n\nYou're more than 48 hours out, so this won't affect your rating. The slot reopens for other refs.";
     if (!window.confirm(message)) return;
 
     const { error: wErr } = await withdrawFromJob(supabase, id);
@@ -86,6 +86,16 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
       return;
     }
     router.replace("/app/home");
+  };
+
+  const handleRunningLate = async (minutes: number) => {
+    setActionError(null);
+    const { error: lateErr } = await reportRunningLate(supabase, id, minutes);
+    if (lateErr) {
+      setActionError(lateErr.message);
+      return;
+    }
+    window.alert(`Organizer notified. They know you're about ${minutes} minutes late.`);
   };
 
   const handleDecline = async () => {
@@ -207,6 +217,11 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         onAccept={() => void handleAccept()}
         onMessageCrew={() => void handleMessageCrew()}
         onWithdraw={() => void handleWithdraw()}
+        onRunningLate={
+          job?.startsAtIso && canReportRunningLate(job.startsAtIso, job.durationMinutes)
+            ? (m) => void handleRunningLate(m)
+            : undefined
+        }
       />
     </div>
   );

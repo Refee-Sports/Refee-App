@@ -1,4 +1,5 @@
 import { supabase } from "../client";
+import { notifyNewGames } from "../push/send";
 
 // AI-assisted schedule import, shared by web and mobile. The extract-schedule
 // edge function reads a photo, PDF or CSV and returns games for review; nothing
@@ -133,6 +134,8 @@ export async function importScheduleGames(
   });
   if (error) return { count: 0, gameIds: [], error: new Error(error.message) };
   const result = data as { count?: number; game_ids?: string[] } | null;
+  // Tell the referees these games suit. Best-effort; the backend decides who.
+  void notifyNewGames(result?.game_ids ?? []);
   return { count: Number(result?.count ?? games.length), gameIds: result?.game_ids ?? [], error: null };
 }
 

@@ -6,6 +6,7 @@ import {
   latestAdultBirthDate,
   parseDateOfBirth,
   usDateInput,
+  waitlistAge,
 } from "@refee/core/identity/age";
 import {
   extractDateOfBirth,
@@ -180,5 +181,30 @@ describe("typing a date on a phone keypad", () => {
     expect(dateOfBirthError(usDateInput("02302001").iso, NOW)).toBe(
       "Enter your date of birth as YYYY-MM-DD."
     );
+  });
+});
+
+describe("who is offered the 16–17 waitlist", () => {
+  it("offers it to 16 and 17 year olds only", () => {
+    expect(waitlistAge("2010-06-15", NOW)).toBe(16);
+    expect(waitlistAge("2009-09-19", NOW)).toBe(17); // 17th birthday is today
+    expect(waitlistAge("2009-09-20", NOW)).toBe(16); // turns 17 tomorrow
+  });
+
+  it("never offers it to adults", () => {
+    expect(waitlistAge("2008-09-19", NOW)).toBeNull(); // turned 18 today
+    expect(waitlistAge("1990-01-01", NOW)).toBeNull();
+  });
+
+  it("never offers it to anyone under 16, so nothing is collected from younger children", () => {
+    expect(waitlistAge("2010-09-20", NOW)).toBeNull(); // 15 until tomorrow
+    expect(waitlistAge("2013-01-01", NOW)).toBeNull();
+    expect(waitlistAge("2020-05-05", NOW)).toBeNull();
+  });
+
+  it("offers nothing for a date that isn't real or isn't finished", () => {
+    expect(waitlistAge("", NOW)).toBeNull();
+    expect(waitlistAge("2010-02-31", NOW)).toBeNull();
+    expect(waitlistAge("not a date", NOW)).toBeNull();
   });
 });

@@ -258,10 +258,25 @@ export default function RefereePublicProfilePage({
         </>
       )}
 
+      {/* Leagues worked */}
+      {ref.leagues_worked && (
+        <>
+          <SectionHead
+            num={String(1 + (ref.certifications.length > 0 ? 1 : 0) + (ref.levels.length > 0 ? 1 : 0)).padStart(2, "0")}
+            title="Leagues Worked"
+          />
+          <div className="mx-5 sm:mx-0 mb-4 border border-ink-20 bg-chalk px-4 py-3">
+            <p className="font-mono text-sm text-ink" style={{ letterSpacing: 0.5, lineHeight: "20px" }}>
+              {ref.leagues_worked}
+            </p>
+          </div>
+        </>
+      )}
+
         </div>
       </div>
 
-      {ref.certifications.length === 0 && ref.levels.length === 0 && (
+      {ref.certifications.length === 0 && ref.levels.length === 0 && !ref.leagues_worked && (
         <div className="mx-5 sm:mx-0 flex items-center justify-center border border-dashed border-ink-20 px-4 py-6">
           <p
             className="text-center font-mono text-[11px] uppercase text-ink-40"

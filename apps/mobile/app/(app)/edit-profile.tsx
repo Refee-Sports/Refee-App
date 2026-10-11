@@ -22,6 +22,7 @@ import {
 } from "@/lib/profile/queries";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { LEAGUES_WORKED_MAX, cleanLeaguesWorked } from "@refee/core/profile/leagues";
 
 
 const CERT_BODIES = [
@@ -59,6 +60,7 @@ type FormData = {
   state: string;
   sportId: string;
   yearsExperience: string;
+  leaguesWorked: string;
   minPay: string;
   travelRadius: string;
   availableDays: number;
@@ -81,6 +83,7 @@ export default function EditProfile() {
     state: "",
     sportId: "basketball",
     yearsExperience: "",
+    leaguesWorked: "",
     minPay: "35",
     travelRadius: "25",
     availableDays: 0,
@@ -115,6 +118,7 @@ export default function EditProfile() {
         state: p?.state ?? "",
         sportId: sport?.sport_id ?? "basketball",
         yearsExperience: sport?.years_experience ? String(sport.years_experience) : "",
+        leaguesWorked: sport?.leagues_worked ?? "",
         minPay: av?.min_pay_per_game ? String(av.min_pay_per_game) : "35",
         travelRadius: snapRadius(av?.travel_radius_miles ?? 25),
         availableDays: av?.available_days ?? 0,
@@ -190,6 +194,7 @@ export default function EditProfile() {
       state: form.state.trim().toUpperCase(),
       sportId: form.sportId,
       yearsExperience: parseInt(form.yearsExperience || "0", 10),
+      leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
       minPayPerGame: parseInt(form.minPay, 10),
       travelRadiusMiles: parseInt(form.travelRadius, 10),
       availableDays: form.availableDays,
@@ -318,6 +323,13 @@ export default function EditProfile() {
             placeholder="5"
             keyboardType="number-pad"
             hint="How many years you've been officiating basketball"
+          />
+          <FieldLabel>LEAGUES WORKED</FieldLabel>
+          <FieldInput
+            value={form.leaguesWorked}
+            onChangeText={(v) => set("leaguesWorked")(v.slice(0, LEAGUES_WORKED_MAX))}
+            placeholder="AAU, YMCA, city rec, HS JV"
+            hint="Leagues or organizations you've officiated for. Directors and assignors see this."
           />
         </FormSection>
 

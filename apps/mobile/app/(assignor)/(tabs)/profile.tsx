@@ -13,6 +13,7 @@ import { fetchMyProfile, type ProfileRow } from "@/lib/profile/queries";
 import { fetchMyRoles } from "@/lib/assignor/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
+import { NotificationsRow } from "@/components/profile/NotificationsRow";
 
 export default function AssignorProfile() {
   const router = useRouter();
@@ -88,6 +89,10 @@ export default function AssignorProfile() {
         <InfoRow label="MEMBER SINCE" value={new Date(profile.member_since).getFullYear().toString()} />
         <View className="h-px bg-ink-20" />
         <InfoRow label="STATUS" value={profile.is_verified ? `${verificationLabel(true)} ✓` : verificationLabel(false)} />
+      </View>
+
+      <View className="mx-5 mt-4">
+        <NotificationsRow />
       </View>
 
       <View className="mx-5 mt-7">

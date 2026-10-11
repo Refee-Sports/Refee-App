@@ -139,17 +139,49 @@ export async function declineJob(
     p_job_id: jobId,
     p_accept: false,
   });
+  // Dropping out of a game the organizer changed frees a confirmed slot, so the
+  // organizers hear about it just like a withdrawal. A plain decline stays quiet.
+  if (!error && data === "withdrawn") {
+    await notifyOrganizers(supabase, jobId, (title) => ({
+      title: "Referee dropped out",
+      body: `A referee dropped out of "${title}" after your change. The slot is open again.`,
+    }));
+  }
   return {
     status: error ? null : ((data as AssignmentStatus) ?? null),
     error: error ? new Error(error.message) : null,
   };
 }
 
+/**
+ * Best-effort push to whoever runs the game (the director, and the assignor when
+ * there is one). The database says who they are, and only someone on the game may
+ * ask. Never fails the action that triggered it.
+ */
+async function notifyOrganizers(
+  supabase: SupabaseClient,
+  jobId: string,
+  message: (title: string) => { title: string; body: string }
+): Promise<void> {
+  try {
+    const { data } = await supabase.rpc("job_notify_targets", { p_job_id: jobId });
+    const targets = data as { title?: string; user_ids?: string[] } | null;
+    const userIds = targets?.user_ids ?? [];
+    if (userIds.length === 0) return;
+    const { title, body } = message(targets?.title ?? "your game");
+    await supabase.functions.invoke("send-push", {
+      body: { userIds, title, body, data: { type: "game_update", jobId }, kind: "game_updates" },
+    });
+  } catch {
+    /* best-effort */
+  }
+}
+
 /** @deprecated Use declineJob */
 export const declineInvite = declineJob;
 
 /** Withdrawing inside this window flags the ref's reliability. */
-export const WITHDRAW_FREE_WINDOW_HOURS = 24;
+export const WITHDRAW_FREE_WINDOW_HOURS = 48;
 
 export function isLateWithdrawal(startsAt: string): boolean {
   return (
@@ -161,7 +193,7 @@ export function isLateWithdrawal(startsAt: string): boolean {
 /**
  * Withdraws the ref from an accepted game via a security-definer RPC
  * (it also reopens the job slot, which the ref's own grants can't do).
- * Free if more than 24h before tip-off; inside 24h it's flagged late.
+ * Free if more than 48h before tip-off; inside 48h it's flagged late.
  */
 export async function withdrawFromJob(
   supabase: SupabaseClient,
@@ -170,7 +202,63 @@ export async function withdrawFromJob(
   const { data, error } = await supabase.rpc("withdraw_from_job", { p_job_id: jobId });
   if (error) return { error: new Error(error.message), late: false };
   if (data?.error) return { error: new Error(data.error as string), late: false };
-  return { error: null, late: !!data?.late };
+  const late = !!data?.late;
+  await notifyOrganizers(supabase, jobId, (title) => ({
+    title: late ? "Late withdrawal" : "Referee withdrew",
+    body: late
+      ? `A referee withdrew late (inside 48 hours of tip-off) from "${title}". The slot is open again.`
+      : `A referee withdrew from "${title}". The slot is open again.`,
+  }));
+  return { error: null, late };
+}
+
+/**
+ * Running late can be reported from 3 hours before tip-off until the game ends —
+ * the same window report_running_late enforces in the database (0064).
+ */
+export function canReportRunningLate(
+  startsAtIso: string,
+  durationMinutes: number | null | undefined,
+  now: Date = new Date()
+): boolean {
+  const start = new Date(startsAtIso).getTime();
+  const end = start + (durationMinutes ?? 120) * 60_000;
+  const t = now.getTime();
+  return t >= start - 3 * 3_600_000 && t <= end;
+}
+
+/**
+ * A confirmed ref tells the organizers they are running late. The delay is saved
+ * on their assignment so the director sees it, and the organizers are pushed.
+ */
+export async function reportRunningLate(
+  supabase: SupabaseClient,
+  jobId: string,
+  minutes: number
+): Promise<{ error: Error | null }> {
+  const { data, error } = await supabase.rpc("report_running_late", {
+    p_job_id: jobId,
+    p_minutes: minutes,
+  });
+  if (error) return { error: new Error(error.message) };
+  const result = data as { title?: string; ref_name?: string; minutes?: number; user_ids?: string[] } | null;
+  const userIds = result?.user_ids ?? [];
+  if (userIds.length > 0) {
+    try {
+      await supabase.functions.invoke("send-push", {
+        body: {
+          userIds,
+          title: "Referee running late",
+          body: `${result?.ref_name ?? "A referee"} is running about ${result?.minutes ?? minutes} min late for "${result?.title ?? "your game"}".`,
+          data: { type: "game_update", jobId },
+          kind: "game_updates",
+        },
+      });
+    } catch {
+      /* best-effort */
+    }
+  }
+  return { error: null };
 }
 
 export type CrewProfile = {

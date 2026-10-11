@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(36);
+select plan(39);
 
 -- Seeded users only (CI starts from seed.sql): refs A, B, C; director D.
 -- C also works as an assignor for the roster and proposal checks, as the
@@ -22,9 +22,12 @@ from public.hirers h,
      (values ('98100000-0000-4000-8000-0000000000a1', 'Crew Test Game', interval '3 days', 60, 'open'),
              ('98100000-0000-4000-8000-0000000000a2', 'Tonight Game', interval '2 hours', 60, 'open'),
              ('98100000-0000-4000-8000-0000000000a3', 'Finished Game', interval '-3 days', 60, 'completed'),
+             ('98100000-0000-4000-8000-0000000000a4', 'Tomorrow Game', interval '30 hours', 60, 'open'),
+             ('98100000-0000-4000-8000-0000000000a5', 'Two Days Out Game', interval '50 hours', 60, 'open'),
              ('98100000-0000-4000-8000-0000000000b1', 'Overdue Game', interval '-30 hours', 60, 'open'),
-             ('98100000-0000-4000-8000-0000000000b2', 'Recent Game', interval '-20 hours', 60, 'open'),
-             ('98100000-0000-4000-8000-0000000000b3', 'No Length Game', interval '-25 hours', null, 'open'))
+             ('98100000-0000-4000-8000-0000000000b2', 'Recent Game', interval '-90 minutes', 60, 'open'),
+             ('98100000-0000-4000-8000-0000000000b3', 'No Length Game', interval '-3 hours', null, 'open'),
+             ('98100000-0000-4000-8000-0000000000b4', 'Just Past Window Game', interval '-5 hours', 60, 'open'))
        as v(id, title, starts_in, minutes, status)
 where h.user_id = '11111111-1111-4111-8111-111111111101';
 
@@ -34,11 +37,14 @@ insert into public.job_assignments (job_id, ref_id, status, amount_due) values
   ('98100000-0000-4000-8000-0000000000a1', '22222222-2222-4222-8222-222222222202', 'pending', null),
   ('98100000-0000-4000-8000-0000000000a2', '22222222-2222-4222-8222-222222222200', 'accepted', null),
   ('98100000-0000-4000-8000-0000000000a3', '22222222-2222-4222-8222-222222222200', 'accepted', null),
+  ('98100000-0000-4000-8000-0000000000a4', '22222222-2222-4222-8222-222222222200', 'accepted', null),
+  ('98100000-0000-4000-8000-0000000000a5', '22222222-2222-4222-8222-222222222200', 'accepted', null),
   ('98100000-0000-4000-8000-0000000000b1', '22222222-2222-4222-8222-222222222200', 'accepted', null),
   ('98100000-0000-4000-8000-0000000000b1', '22222222-2222-4222-8222-222222222201', 'needs_reconfirm', 50),
   ('98100000-0000-4000-8000-0000000000b1', '22222222-2222-4222-8222-222222222202', 'withdrawn', null),
   ('98100000-0000-4000-8000-0000000000b2', '22222222-2222-4222-8222-222222222200', 'accepted', null),
-  ('98100000-0000-4000-8000-0000000000b3', '22222222-2222-4222-8222-222222222200', 'accepted', null);
+  ('98100000-0000-4000-8000-0000000000b3', '22222222-2222-4222-8222-222222222200', 'accepted', null),
+  ('98100000-0000-4000-8000-0000000000b4', '22222222-2222-4222-8222-222222222200', 'accepted', null);
 
 -- The seed may already have A on X's roster; make it an active entry either way.
 insert into public.assignor_rosters (assignor_id, ref_id, status)
@@ -132,7 +138,11 @@ set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '22222222-2222-4222-8222-222222222200', true);
 select is(public.withdraw_from_job('98100000-0000-4000-8000-0000000000a2')->>'late', 'true',
-  'withdrawing inside 24 hours is marked late');
+  'withdrawing inside 48 hours is marked late');
+select is(public.withdraw_from_job('98100000-0000-4000-8000-0000000000a4')->>'late', 'true',
+  'a game 30 hours out is inside the 48-hour window, so withdrawing is late');
+select is(public.withdraw_from_job('98100000-0000-4000-8000-0000000000a5')->>'late', 'false',
+  'a game 50 hours out is outside the 48-hour window, so withdrawing is free');
 select is(public.withdraw_from_job('98100000-0000-4000-8000-0000000000a3')->>'error', 'This game is already closed.',
   'no withdrawing from a finished game');
 select is(public.withdraw_from_job('98100000-0000-4000-8000-0000000000ff')->>'error', 'Game not found',
@@ -166,7 +176,9 @@ select is(
 -- ── Game lifecycle sweep (runs on a schedule, as the backend) ──────────────
 select public.sweep_game_lifecycle();
 select is((select status from public.jobs where id = '98100000-0000-4000-8000-0000000000b1'), 'completed',
-  'a game 24 hours past its end is completed automatically');
+  'a game more than 2 hours past its end is completed automatically');
+select is((select status from public.jobs where id = '98100000-0000-4000-8000-0000000000b4'), 'completed',
+  'a game that ended 4 hours ago is completed too');
 select ok((select completed_at is not null from public.jobs where id = '98100000-0000-4000-8000-0000000000b1'),
   'and records when');
 select is(
@@ -182,9 +194,9 @@ select is(
    where job_id = '98100000-0000-4000-8000-0000000000b1' and ref_id = '22222222-2222-4222-8222-222222222202'),
   'withdrawn', 'a ref who withdrew is not paid');
 select is((select status from public.jobs where id = '98100000-0000-4000-8000-0000000000b2'), 'open',
-  'a game that ended less than a day ago is left alone');
+  'a game that ended less than 2 hours ago is left alone');
 select is((select status from public.jobs where id = '98100000-0000-4000-8000-0000000000b3'), 'open',
-  'a game with no length on file is assumed to run 2 hours before the 24-hour wait');
+  'a game with no length on file is assumed to run 2 hours before the 2-hour wait');
 
 select * from finish();
 rollback;

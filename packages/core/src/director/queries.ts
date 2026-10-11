@@ -1,6 +1,6 @@
 import { supabase } from "../client";
 import { geocodeAddress } from "../geo/geocode";
-import { sendPush } from "../push/send";
+import { notifyNewGames, sendPush } from "../push/send";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +105,10 @@ export type ApplicantRow = {
   status: string;
   applied_at: string;
   responded_at: string | null;
+  /** Minutes the ref said they are running late, if they reported it. */
+  late_minutes: number | null;
+  /** True when a ref withdrew inside the free-withdrawal window. */
+  withdrew_late: boolean | null;
   profile: {
     first_name: string;
     last_initial: string;
@@ -129,6 +133,8 @@ export type RefereePublicView = {
   is_verified: boolean;
   certifications: Array<{ org_name: string; license_number: string | null }>;
   levels: Array<{ level_id: string }>;
+  /** Free-text leagues/organizations the referee has worked, or null. */
+  leagues_worked: string | null;
 };
 
 // ── Hirer profile ────────────────────────────────────────────────────────────
@@ -451,6 +457,8 @@ export async function createGame(
     .single();
 
   if (error) return { gameId: null, error: new Error(error.message) };
+  // Tell the referees this game suits. Best-effort; the backend decides who.
+  void notifyNewGames([data.id]);
   return { gameId: data.id, error: null };
 }
 
@@ -498,7 +506,7 @@ export async function fetchGameApplicants(
   const { data, error } = await supabase
     .from("job_assignments")
     .select(
-      "id, ref_id, status, applied_at, responded_at, public_profiles(first_name, last_initial, display_name, avatar_url, rating, city, state)"
+      "id, ref_id, status, applied_at, responded_at, late_minutes, withdrew_late, public_profiles(first_name, last_initial, display_name, avatar_url, rating, city, state)"
     )
     .eq("job_id", jobId)
     .order("applied_at", { ascending: true });
@@ -511,6 +519,8 @@ export async function fetchGameApplicants(
     status: row.status,
     applied_at: row.applied_at,
     responded_at: row.responded_at,
+    late_minutes: row.late_minutes ?? null,
+    withdrew_late: row.withdrew_late ?? null,
     profile: Array.isArray(row.public_profiles)
       ? (row.public_profiles[0] ?? null)
       : row.public_profiles,
@@ -646,7 +656,8 @@ export async function approveApplicant(
     [refId],
     "You're confirmed! ✓",
     `You've been accepted for ${job?.title ?? "a game"}.`,
-    { type: "accepted", jobId }
+    { type: "accepted", jobId },
+    "game_updates"
   );
   return { error: null };
 }
@@ -687,7 +698,7 @@ export async function declineApplicantForGame(
 export async function fetchRefereePublicView(
   refId: string
 ): Promise<{ ref: RefereePublicView | null; error: Error | null }> {
-  const [profileRes, certsRes, levelsRes] = await Promise.all([
+  const [profileRes, certsRes, levelsRes, sportsRes] = await Promise.all([
     supabase
       .from("public_profiles")
       .select("id, first_name, last_initial, display_name, avatar_url, city, state, rating, rating_count, is_verified")
@@ -698,6 +709,7 @@ export async function fetchRefereePublicView(
       .select("org_name, license_number")
       .eq("ref_id", refId),
     supabase.from("ref_levels").select("level_id").eq("ref_id", refId),
+    supabase.from("ref_sports").select("leagues_worked").eq("ref_id", refId),
   ]);
 
   if (profileRes.error) return { ref: null, error: new Error(profileRes.error.message) };
@@ -708,6 +720,9 @@ export async function fetchRefereePublicView(
       ...(profileRes.data as any),
       certifications: (certsRes.data ?? []) as any,
       levels: (levelsRes.data ?? []) as any,
+      leagues_worked:
+        ((sportsRes.data ?? []) as Array<{ leagues_worked: string | null }>).find((s) => s.leagues_worked)
+          ?.leagues_worked ?? null,
     },
     error: null,
   };
@@ -882,7 +897,8 @@ export async function updateGame(
       (flipped ?? []).map((f) => f.ref_id),
       "Game details changed ⚠",
       `"${args.homeTeam} vs ${args.awayTeam}" was updated — please re-confirm your spot.`,
-      { type: "reconfirm", jobId: gameId }
+      { type: "reconfirm", jobId: gameId },
+      "game_updates"
     );
   }
 
@@ -988,8 +1004,16 @@ export async function completeGame(
 ): Promise<{ error: Error | null }> {
   const { data, error } = await supabase.rpc("complete_game", { p_job_id: gameId });
   if (error) return { error: new Error(error.message) };
-  const result = data as { title?: string; amount_due?: number } | null;
+  const result = data as { title?: string; amount_due?: number; ref_ids?: string[] } | null;
   const fullPay = result?.amount_due ?? 0;
+
+  await sendPush(
+    result?.ref_ids ?? [],
+    "Game completed",
+    `"${result?.title ?? "Your game"}" is wrapped. $${fullPay} is locked in for you.`,
+    { type: "game_update", jobId: gameId },
+    "game_updates"
+  );
 
   await postCrewNote(
     gameId,
@@ -1013,9 +1037,20 @@ export async function cancelGame(
     title?: string;
     fee_paid?: boolean;
     fee_amount?: number;
+    ref_ids?: string[];
   } | null;
   const lateCancel = result?.fee_paid ?? false;
   const feeAmount = result?.fee_amount ?? 0;
+
+  await sendPush(
+    result?.ref_ids ?? [],
+    "Game cancelled",
+    lateCancel
+      ? `"${result?.title ?? "Your game"}" was cancelled. A $${feeAmount} cancellation fee is owed to you.`
+      : `"${result?.title ?? "Your game"}" was cancelled. No need to show up.`,
+    { type: "game_update", jobId: gameId },
+    "game_updates"
+  );
 
   await postCrewNote(
     gameId,
@@ -1026,6 +1061,27 @@ export async function cancelGame(
   );
 
   return { error: null, feePaid: lateCancel, feeAmount };
+}
+
+/**
+ * Records that a confirmed ref never showed (the game must have started). No pay
+ * is locked in for them when the game completes. The ref is told.
+ */
+export async function markNoShow(
+  gameId: string,
+  refId: string
+): Promise<{ error: Error | null }> {
+  const { data, error } = await supabase.rpc("mark_no_show", { p_job_id: gameId, p_ref_id: refId });
+  if (error) return { error: new Error(error.message) };
+  const result = data as { title?: string } | null;
+  await sendPush(
+    [refId],
+    "Marked as a no-show",
+    `You were marked as a no-show for "${result?.title ?? "a game"}". Contact the organizer if this is a mistake.`,
+    { type: "game_update", jobId: gameId },
+    "game_updates"
+  );
+  return { error: null };
 }
 
 /** Which refs has this hirer already rated for this game? */
@@ -1052,7 +1108,7 @@ export type NeedsCompletionRow = {
 
 /**
  * Games that have already ended but aren't completed/cancelled yet — the
- * window before the 24h auto-sweep. Prompts the director to close them out
+ * window before the 2h auto-sweep. Prompts the director to close them out
  * (and, with a card on file, auto-pay their crew).
  */
 export async function fetchGamesNeedingCompletion(

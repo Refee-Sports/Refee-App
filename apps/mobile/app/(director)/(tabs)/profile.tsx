@@ -14,6 +14,7 @@ import { fetchMyHirerProfile, type HirerRow } from "@/lib/director/queries";
 import { getCardSetupParams } from "@/lib/payments/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
+import { NotificationsRow } from "@/components/profile/NotificationsRow";
 
 const ORG_TYPE_LABELS: Record<string, string> = {
   tournament: "TOURNAMENT ORGANIZER",
@@ -217,6 +218,10 @@ export default function DirectorProfile() {
           <Feather name={cardSaved ? "check-circle" : "credit-card"} size={16} color={cardSaved ? "#00A85C" : "#C9F031"} />
         )}
       </Pressable>
+
+      <View className="px-5 mt-4">
+        <NotificationsRow />
+      </View>
 
       <View className="px-5 mt-6">
         <RoleSwitcher />

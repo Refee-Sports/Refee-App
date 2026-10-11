@@ -19,9 +19,9 @@ import { pickBackgroundCheckFile } from "@/lib/roster/files";
 
 const STATE_STYLE = {
   none: { bg: "bg-chalk", border: "border-ink-20", text: "text-ink-60", title: "NO BACKGROUND CHECK ON FILE" },
-  valid: { bg: "bg-court/10", border: "border-court", text: "text-court", title: "BACKGROUND CHECK CURRENT" },
+  valid: { bg: "bg-court/10", border: "border-court", text: "text-court", title: "BACKGROUND CHECK UPLOADED" },
   expiring: { bg: "bg-hivis", border: "border-ink", text: "text-ink", title: "EXPIRING SOON" },
-  expired: { bg: "bg-foul/10", border: "border-foul", text: "text-foul", title: "BACKGROUND CHECK EXPIRED" },
+  expired: { bg: "bg-foul/10", border: "border-foul", text: "text-foul", title: "UPLOAD EXPIRED" },
 } as const;
 
 /**
@@ -132,12 +132,12 @@ export default function BackgroundCheckScreen() {
       ) : (
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
           <Text className="text-ink font-display" style={{ fontSize: 34, lineHeight: 38, letterSpacing: -1.5 }}>
-            SHOW YOU&apos;RE{"\n"}
-            <Text className="text-signal">CLEARED.</Text>
+            UPLOAD YOUR{"\n"}
+            <Text className="text-signal">CHECK.</Text>
           </Text>
           <Text className="text-ink-80 mt-3 mb-5" style={{ fontSize: 14, lineHeight: 20 }}>
-            Upload your background check (a PDF or a photo). It&apos;s good for one year from the day you upload it — after that
-            you&apos;ll need to add a new one. Directors and assignors can see that you have a current check, but never the document.
+            Upload a background check you already have (a PDF or a photo). Refee doesn&apos;t review or verify it yet. Directors and
+            assignors can see that you uploaded one and when it expires, but never the document. It counts for one year from upload.
           </Text>
 
           <View className={`border px-4 py-4 ${style.bg} ${style.border}`}>
@@ -151,7 +151,8 @@ export default function BackgroundCheckScreen() {
                 </Text>
                 <Text className="font-mono text-[9px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 1 }} numberOfLines={1}>
                   {check.file_name ?? "Uploaded file"} · UPLOADED{" "}
-                  {new Date(check.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}
+                  {new Date(check.uploaded_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()} · COUNTS UNTIL{" "}
+                  {new Date(check.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}
                 </Text>
               </>
             ) : null}
@@ -160,7 +161,7 @@ export default function BackgroundCheckScreen() {
           {state === "expiring" || state === "expired" ? (
             <Text className="text-foul font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.2 }}>
               {state === "expired"
-                ? "Your check has expired. Upload a new one so assignors and directors see you as current."
+                ? "Your upload has expired. Upload a new one so it shows as on file."
                 : "Upload a new one before this expires so there's no gap."}
             </Text>
           ) : null}

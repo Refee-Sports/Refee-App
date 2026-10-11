@@ -11,6 +11,8 @@ type Props = {
   onAccept: () => void;
   onMessageCrew?: () => void;
   onWithdraw?: () => void;
+  /** Shown only around tip-off; reports a delay in minutes to the organizers. */
+  onRunningLate?: (minutes: number) => void;
 };
 
 export function JobDetailActionBar({
@@ -22,6 +24,7 @@ export function JobDetailActionBar({
   onAccept,
   onMessageCrew,
   onWithdraw,
+  onRunningLate,
 }: Props) {
   if (assignmentStatus === "accepted") {
     return (
@@ -49,6 +52,25 @@ export function JobDetailActionBar({
             </Pressable>
           )}
         </View>
+        {onRunningLate && (
+          <View className="mt-2 flex-row items-center gap-2">
+            <Text className="text-ink-60 font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+              RUNNING LATE?
+            </Text>
+            {[10, 15, 30].map((m) => (
+              <Pressable
+                key={m}
+                onPress={() => onRunningLate(m)}
+                disabled={actionLoading}
+                className="flex-1 border border-ink bg-chalk py-2 items-center active:opacity-70 disabled:opacity-40"
+              >
+                <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+                  {m} MIN
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
         {onWithdraw && (
           <Pressable onPress={onWithdraw} className="mt-2 py-2 items-center active:opacity-70">
             <Text

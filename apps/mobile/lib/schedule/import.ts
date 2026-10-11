@@ -3,6 +3,7 @@ import * as DocumentPicker from "expo-document-picker";
 import { File as LocalFile, Paths } from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { supabase } from "@/lib/supabase";
+import { notifyNewGames } from "@/lib/push/send";
 import { SCHEDULE_CSV_TEMPLATE, type ScheduleImportRow } from "./csv";
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
@@ -69,5 +70,8 @@ export async function importTournamentSchedule(tournamentId: string, rows: Sched
     p_games: games,
   });
   if (error) return { count: 0, error: new Error(error.message) };
-  return { count: Number((data as { count?: number } | null)?.count ?? rows.length), error: null };
+  const result = data as { count?: number; game_ids?: string[] } | null;
+  // Tell the referees these games suit. Best-effort; the backend decides who.
+  void notifyNewGames(result?.game_ids ?? []);
+  return { count: Number(result?.count ?? rows.length), error: null };
 }

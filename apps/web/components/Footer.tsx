@@ -25,7 +25,6 @@ const COLUMNS = [
     links: [
       { href: "/privacy", label: "Privacy" },
       { href: "/terms", label: "Terms" },
-      { href: "#", label: "Background check policy" },
     ],
   },
 ];
@@ -37,8 +36,8 @@ export function Footer() {
         <div>
           <Wordmark className="text-3xl !text-paper [&_.text-signal]:!text-signal-dark" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-paper/70">
-            The on-demand marketplace for sports officials. Vetted,
-            background-checked, and ready for game day.
+            Where officials find games and get paid, and where leagues and
+            assignors find officials. Every user is ID-verified.
           </p>
           <div className="mt-5 inline-flex items-center gap-2">
             <span className="dot dot-pulse bg-court-dark" />

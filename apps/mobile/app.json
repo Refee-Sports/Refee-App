@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "scheme": "refee",
     "userInterfaceStyle": "automatic",
+    "icon": "./assets/images/icon.png",
     "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
@@ -14,23 +15,47 @@
       "url": "https://u.expo.dev/fd10513b-047f-4df3-9169-80c377812980",
       "fallbackToCacheTimeout": 0
     },
-    "splash": {
-      "backgroundColor": "#08111C",
-      "resizeMode": "contain"
-    },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.refee.app",
       "usesAppleSignIn": true,
       "config": {
         "usesNonExemptEncryption": false
-      }
+      },
+      "icon": {
+        "light": "./assets/images/icon.png",
+        "dark": "./assets/images/icon-dark.png",
+        "tinted": "./assets/images/icon-tinted.png"
+      },
+      "associatedDomains": [
+        "applinks:refee.app",
+        "webcredentials:refee.app"
+      ]
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#08111C"
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "monochromeImage": "./assets/images/adaptive-icon-monochrome.png",
+        "backgroundColor": "#E5E1D6"
       },
-      "package": "com.refee.app"
+      "package": "com.refee.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "refee.app",
+              "pathPrefix": "/join/"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "bundler": "metro"
@@ -38,6 +63,26 @@
     "plugins": [
       "expo-router",
       "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#E5E1D6",
+          "dark": {
+            "image": "./assets/images/splash-icon-dark.png",
+            "backgroundColor": "#08111C"
+          }
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#1F4FCC"
+        }
+      ],
       "expo-secure-store",
       "expo-web-browser",
       "expo-apple-authentication",

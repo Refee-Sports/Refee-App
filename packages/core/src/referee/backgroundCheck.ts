@@ -46,7 +46,10 @@ export function backgroundCheckState(
   return "valid";
 }
 
-/** "Valid until Sep 28, 2027", "Expires in 12 days", "Expired Sep 1, 2026", "Not uploaded". */
+/**
+ * "Uploaded, not verified", "Uploaded, expires in 12 days", "Upload expired Sep 1, 2026", "Not uploaded".
+ * Refee does not verify uploads yet, so no label says "valid" or "current".
+ */
 export function backgroundCheckLabel(
   expiresAt: string | null | undefined,
   now: Date = new Date()
@@ -58,12 +61,12 @@ export function backgroundCheckLabel(
     day: "numeric",
     year: "numeric",
   });
-  if (state === "expired") return `Expired ${date}`;
+  if (state === "expired") return `Upload expired ${date}`;
   if (state === "expiring") {
     const days = daysUntilExpiry(expiresAt, now);
-    return `Expires in ${days} day${days === 1 ? "" : "s"}`;
+    return `Uploaded, expires in ${days} day${days === 1 ? "" : "s"}`;
   }
-  return `Valid until ${date}`;
+  return "Uploaded, not verified";
 }
 
 /** Why a file can't be uploaded as a background check, or null when it can. */

@@ -148,7 +148,7 @@ export default function AssignorRoster() {
         >
           <Feather name="radio" size={13} color="#08111C" />
           <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-            ANNOUNCE
+            MESSAGE BLAST
           </Text>
         </Pressable>
       </View>

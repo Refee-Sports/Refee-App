@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     template: "%s · Refee",
   },
   description:
-    "Refee connects vetted referees and umpires with the leagues that need them. Officials get booked and paid. Leagues staff every game. Download the app.",
+    "Refee connects referees and umpires with the leagues that need them. Officials find games and get paid. Leagues and assignors find officials. Every user is ID-verified. Download the app.",
   keywords: [
     "sports officials",
     "referees",
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Refee — The on-demand marketplace for sports officials",
     description:
-      "Officials get booked and paid. Leagues staff every game. Vetted, background-checked, on-demand.",
+      "Officials find games and get paid. Leagues and assignors find officials. Every user is ID-verified.",
     url: SITE_URL,
     siteName: "Refee",
     type: "website",
@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Refee — The on-demand marketplace for sports officials",
     description:
-      "Officials get booked and paid. Leagues staff every game. Vetted, background-checked, on-demand.",
+      "Officials find games and get paid. Leagues and assignors find officials. Every user is ID-verified.",
   },
   icons: {
     icon: "/favicon.svg",
