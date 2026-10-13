@@ -102,12 +102,12 @@ select pg_temp.mk_job('000000000013', 'Austin cancelled', pg_temp.next_local(4, 
 select is(pg_temp.who('000000000012'), '', 'a game that has already started is not announced');
 select is(pg_temp.who('000000000013'), '', 'a cancelled game is not announced');
 
--- No home coordinates: fall back to the same state, as the feed does.
+-- No home coordinates: fall back to the referee's own city (0066), as the feed does.
 update public.private_profiles set home_lat = null, home_lng = null where id = '11111111-1111-4111-8111-111111111100';
 select pg_temp.mk_job('000000000014', 'San Antonio Tue $100', pg_temp.next_local(2, 20), 100, 29.4241, -98.4936, 'TX');
 select pg_temp.mk_job('000000000015', 'Denver Tue late $100', pg_temp.next_local(2, 22), 100, 39.7392, -104.9903, 'CO');
-select is(pg_temp.who('000000000014'), 'Alex,Devon',
-  'with no home pin, Alex is matched by state, so a game two hours away in his state still reaches him');
+select is(pg_temp.who('000000000014'), 'Devon',
+  'with no home pin, Alex is not told about a game two hours away just because it is in his state');
 select is(pg_temp.who('000000000015'), 'Sam',
   'and a game in another state does not');
 update public.private_profiles set home_lat = 30.2672, home_lng = -97.7431 where id = '11111111-1111-4111-8111-111111111100';

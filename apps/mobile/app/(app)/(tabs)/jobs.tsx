@@ -58,6 +58,7 @@ export default function Jobs() {
     loading,
     error,
     usedMockForAvailable,
+    homeUnknown,
     locationMode,
     locating,
     toggleLocationMode,
@@ -228,6 +229,21 @@ export default function Jobs() {
           >
             {usedMockForAvailable ? `${error} — showing offline demo list.` : `Couldn't load jobs: ${error}`}
           </Text>
+        ) : null}
+
+        {!loading && !error && homeUnknown && locationMode === "home" && tab === "available" ? (
+          <Pressable
+            onPress={() => router.push("/edit-profile")}
+            className="border border-ink bg-chalk px-3 py-2.5 mb-3"
+            accessibilityRole="button"
+          >
+            <Text className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1 }}>
+              Showing games in your city only
+            </Text>
+            <Text className="font-body text-[12px] text-ink-80 mt-1">
+              We couldn't find your home city on the map, so your travel radius isn't applied. Check your city and state, or tap NEAR ME.
+            </Text>
+          </Pressable>
         ) : null}
 
         <View className="flex-row border border-ink mb-3">

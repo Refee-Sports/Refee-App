@@ -348,7 +348,12 @@ export async function fetchOpenJobs(
   userId?: string | null,
   /** When set (live "near me" location), used as the radius origin instead of the ref's home. */
   originOverride?: { lat: number; lng: number } | null
-): Promise<{ jobs: JobListRow[]; error: Error | null }> {
+): Promise<{
+  jobs: JobListRow[];
+  error: Error | null;
+  /** True when the ref has no home pin (and no live location), so the feed is limited to their city. */
+  homeUnknown?: boolean;
+}> {
   const { data, error } = await supabase
     .from("jobs")
     .select("*, hirers(org_name, is_verified)")
@@ -363,6 +368,7 @@ export async function fetchOpenJobs(
   let rows = (data ?? []) as JobDbRow[];
 
   const distanceByJob = new Map<string, number>();
+  let homeUnknown = false;
 
   if (userId) {
     const [{ data: mine }, { data: profile }, { data: home_ }, { data: prefs }] =
@@ -376,7 +382,7 @@ export async function fetchOpenJobs(
           .in("status", ["offered", "accepted", "pending", "declined", "needs_reconfirm"]),
         supabase
           .from("public_profiles")
-          .select("state")
+          .select("city, state")
           .eq("id", userId)
           .maybeSingle(),
         // Home coordinates are private (0047): own row only, never on the
@@ -397,14 +403,20 @@ export async function fetchOpenJobs(
     rows = rows.filter((r) => !taken.has(r.id));
 
     // Location: true mile-radius when the ref and the venue are both geocoded;
-    // otherwise fall back to same-state matching.
-    const refState = profile?.state?.toUpperCase();
+    // otherwise only games in the ref's own city. A whole-state fallback would
+    // offer a 25-mile ref games 500 miles away.
+    const sameCity = (city?: string | null, state?: string | null) =>
+      !!profile?.city &&
+      !!profile?.state &&
+      city?.trim().toLowerCase() === profile.city.trim().toLowerCase() &&
+      state?.trim().toUpperCase() === profile.state.trim().toUpperCase();
     const home =
       originOverride ??
       (home_?.home_lat != null && home_?.home_lng != null
         ? { lat: home_.home_lat as number, lng: home_.home_lng as number }
         : null);
     const radius = prefs?.travel_radius_miles ?? 25;
+    homeUnknown = home == null;
 
     rows = rows.filter((r) => {
       const j = r as any;
@@ -414,8 +426,7 @@ export async function fetchOpenJobs(
         distanceByJob.set(j.id, miles);
         return miles <= radius;
       }
-      // Fallback: same-state
-      return refState ? j.venue_state?.toUpperCase() === refState : true;
+      return sameCity(j.venue_city, j.venue_state);
     });
 
     // Pay floor: only show jobs at or above the ref's minimum
@@ -440,6 +451,7 @@ export async function fetchOpenJobs(
       return row;
     }),
     error: null,
+    homeUnknown,
   };
 }
 

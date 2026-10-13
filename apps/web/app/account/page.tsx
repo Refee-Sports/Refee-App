@@ -11,6 +11,7 @@ import {
   type LinkedAccountMethod,
 } from "@/lib/account/queries";
 import { linkOAuthIdentity } from "@/lib/oauth";
+import { ChangeEmail } from "@/components/account/ChangeEmail";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -71,6 +72,8 @@ export default function AccountPage() {
         <p className="mt-2 max-w-xl text-sm leading-6 text-ink-70">
           Link more than one sign-in method to the same Refee profile. Start linking while signed in here—using a new provider from the welcome screen can create a separate account.
         </p>
+
+        <ChangeEmail />
 
         <section className="mt-8 border border-ink bg-chalk p-5">
           <h2 className="font-mono-bold text-xs uppercase">Linked methods</h2>

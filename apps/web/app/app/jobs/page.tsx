@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { VerifyBanner } from "@/components/ui/VerifyBanner";
 import { Icon } from "@/components/ui/Icon";
@@ -22,6 +23,7 @@ export default function JobsFeedPage() {
     loading,
     error,
     usedMockForAvailable,
+    homeUnknown,
     locationMode,
     locating,
     toggleLocationMode,
@@ -168,6 +170,21 @@ export default function JobsFeedPage() {
               ? `${error} — showing offline demo list.`
               : `Couldn't load jobs: ${error}`}
           </p>
+        ) : null}
+
+        {!loading && !error && homeUnknown && locationMode === "home" && tab === "available" ? (
+          <Link
+            href="/app/edit-profile"
+            className="mb-3 block border border-ink bg-chalk px-3 py-2.5 lg:max-w-lg"
+          >
+            <span className="block font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1 }}>
+              Showing games in your city only
+            </span>
+            <span className="mt-1 block text-[12px] text-ink-80">
+              We couldn&apos;t find your home city on the map, so your travel radius isn&apos;t applied. Check
+              your city and state, or switch to Near me.
+            </span>
+          </Link>
         ) : null}
 
         {/* Tabs */}

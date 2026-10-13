@@ -20,6 +20,8 @@ type JobsFeedState = {
   loading: boolean;
   error: string | null;
   usedMockForAvailable: boolean;
+  /** No home pin on file, so the feed only shows games in the ref's city. */
+  homeUnknown?: boolean;
 };
 
 export function useJobsFeed() {
@@ -73,6 +75,7 @@ export function useJobsFeed() {
         loading: false,
         error: null,
         usedMockForAvailable: false,
+        homeUnknown: availableResult.homeUnknown ?? false,
       });
     },
     []

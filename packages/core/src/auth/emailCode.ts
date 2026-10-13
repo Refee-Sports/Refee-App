@@ -71,3 +71,40 @@ export async function verifyEmailCode(
   });
   return { error: error ? new Error(humanizeEmailAuthError(error.message)) : null };
 }
+
+/**
+ * Starts moving the account to a new email: Supabase emails a 6-digit code to
+ * the new address. Being signed in is the proof of ownership, so someone who has
+ * lost the old inbox can still move their account.
+ */
+export async function requestEmailChange(rawEmail: string): Promise<{ error: Error | null }> {
+  const email = normalizeEmail(rawEmail);
+  if (!isValidEmail(email)) return { error: new Error("Enter a valid email address.") };
+  const { data } = await supabase.auth.getUser();
+  if (data.user?.email && normalizeEmail(data.user.email) === email) {
+    return { error: new Error("That's already the email on your account.") };
+  }
+  const { error } = await supabase.auth.updateUser({ email });
+  if (!error) return { error: null };
+  if (/already (been )?registered|already exists|email_exists/i.test(error.message)) {
+    return { error: new Error("Another Refee account already uses that email.") };
+  }
+  return { error: new Error(humanizeEmailAuthError(error.message)) };
+}
+
+/** Confirms the code sent to the new address; on success the account's email changes. */
+export async function confirmEmailChange(
+  rawEmail: string,
+  rawCode: string
+): Promise<{ error: Error | null }> {
+  const token = cleanCode(rawCode);
+  if (token.length !== EMAIL_CODE_LENGTH) {
+    return { error: new Error(`Enter the ${EMAIL_CODE_LENGTH}-digit code.`) };
+  }
+  const { error } = await supabase.auth.verifyOtp({
+    email: normalizeEmail(rawEmail),
+    token,
+    type: "email_change",
+  });
+  return { error: error ? new Error(humanizeEmailAuthError(error.message)) : null };
+}
