@@ -34,7 +34,7 @@ export function Footer() {
     <footer className="relative z-10 border-t border-ink bg-ink text-paper">
       <div className="mx-auto grid max-w-wrap gap-10 px-6 py-14 md:grid-cols-[1.4fr_1fr_1fr_1fr] md:px-8">
         <div>
-          <Wordmark className="text-3xl !text-paper [&_.text-signal]:!text-signal-dark" />
+          <Wordmark className="text-3xl" tone="reverse" />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-paper/70">
             Where officials find games and get paid, and where leagues and
             assignors find officials. Every user is ID-verified.
