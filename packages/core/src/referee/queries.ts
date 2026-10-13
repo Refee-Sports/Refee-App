@@ -134,3 +134,36 @@ export async function fetchEarningsSummary(
 
   return { summary: { totalEarned, gamesWorked, pendingTotal, pendingGames }, error: null };
 }
+
+// ── Ratings received ─────────────────────────────────────────────────────────
+
+export type ReceivedRating = {
+  jobId: string | null;
+  jobTitle: string | null;
+  gameDate: string | null;
+  overall: number | null;
+  onTime: number | null;
+  professionalism: number | null;
+  gameManagement: number | null;
+  ratedAt: string;
+};
+
+/**
+ * The ratings this referee received, newest first: the game and the three
+ * scores. The director's comment is not shared with the referee.
+ */
+export async function fetchMyRatings(): Promise<{ ratings: ReceivedRating[]; error: Error | null }> {
+  const { data, error } = await supabase.rpc("my_ratings");
+  if (error) return { ratings: [], error: new Error(error.message) };
+  const ratings = ((data ?? []) as any[]).map((r) => ({
+    jobId: r.job_id ?? null,
+    jobTitle: r.job_title ?? null,
+    gameDate: r.game_date ?? null,
+    overall: r.rating ?? null,
+    onTime: r.on_time ?? null,
+    professionalism: r.professionalism ?? null,
+    gameManagement: r.game_management ?? null,
+    ratedAt: r.rated_at,
+  }));
+  return { ratings, error: null };
+}

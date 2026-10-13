@@ -19,7 +19,7 @@ import { useJobAssignment } from "@/hooks/useJobAssignment";
 import { useJobDetail } from "@/hooks/useJobsFeed";
 import { supabase } from "@/lib/supabase";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
-import { withdrawFromJob, isLateWithdrawal, reportRunningLate, canReportRunningLate } from "@/lib/jobs/queries";
+import { withdrawFromJob, isLateWithdrawal, reportRunningLate, canReportRunningLate, canWithdraw } from "@/lib/jobs/queries";
 import { jobAvailability } from "@refee/core/jobs/availability";
 
 const ACTION_BAR_HEIGHT = 88;
@@ -53,6 +53,13 @@ export default function JobDetailScreen() {
     const { error: acceptError } = await accept();
     if (acceptError) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      if (/verify your id/i.test(acceptError.message)) {
+        Alert.alert("Verify your ID first", acceptError.message, [
+          { text: "Not now", style: "cancel" },
+          { text: "Verify now", onPress: () => router.push("/verify") },
+        ]);
+        return;
+      }
       Alert.alert("Could not accept job", acceptError.message);
       return;
     }
@@ -116,6 +123,30 @@ export default function JobDetailScreen() {
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     Alert.alert("Organizer notified", `They know you're about ${minutes} minutes late.`);
+  };
+
+  const handleCancelApplication = () => {
+    Alert.alert(
+      "Cancel your application?",
+      "The organizer will no longer see you as an applicant for this game.",
+      [
+        { text: "Keep it", style: "cancel" },
+        {
+          text: "Cancel application",
+          style: "destructive",
+          onPress: async () => {
+            const { error: cancelError } = await decline();
+            if (cancelError) {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+              Alert.alert("Could not cancel", cancelError.message);
+              return;
+            }
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            router.back();
+          },
+        },
+      ]
+    );
   };
 
   const handleDecline = () => {
@@ -264,7 +295,8 @@ export default function JobDetailScreen() {
         onDecline={handleDecline}
         onAccept={() => void handleAccept()}
         onMessageCrew={() => void handleMessageCrew()}
-        onWithdraw={handleWithdraw}
+        onWithdraw={job?.startsAtIso && canWithdraw(job.startsAtIso) ? handleWithdraw : undefined}
+        onCancelApplication={handleCancelApplication}
         onRunningLate={
           job?.startsAtIso && canReportRunningLate(job.startsAtIso, job.durationMinutes)
             ? (m) => void handleRunningLate(m)

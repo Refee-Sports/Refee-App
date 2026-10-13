@@ -19,7 +19,7 @@ import {
   type AssignorGameRow,
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
-import { deleteGame } from "@/lib/director/queries";
+import { cancelGame, completeGame, deleteGame } from "@/lib/director/queries";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
@@ -113,6 +113,32 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
     const result = await removeRefFromGame(assignment.id);
     setBusyId(null);
     if (result.error) setError(`Could not remove: ${result.error.message}`);
+    else load();
+  };
+
+  // The event's assignor runs game day, so they can close a game out like the director.
+  const markCompleted = async () => {
+    if (busyId || !userId) return;
+    if (!window.confirm("Mark this game completed? Each confirmed referee's pay is locked in.")) return;
+    setBusyId("complete");
+    const result = await completeGame(id, userId);
+    setBusyId(null);
+    if (result.error) setError(`Not completed: ${result.error.message}`);
+    else load();
+  };
+
+  const cancel = async () => {
+    if (busyId || !userId) return;
+    if (
+      !window.confirm(
+        "Cancel this game?\n\nConfirmed referees and applicants are told. A late-cancel fee applies close to tip-off."
+      )
+    )
+      return;
+    setBusyId("cancel");
+    const result = await cancelGame(id, userId);
+    setBusyId(null);
+    if (result.error) setError(`Not cancelled: ${result.error.message}`);
     else load();
   };
 
@@ -290,6 +316,31 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
             ) : null}
           </div>
         </div>
+
+        {game.status !== "completed" && game.status !== "cancelled" ? (
+          <div className="mt-8 flex flex-col gap-2">
+            {new Date(game.starts_at).getTime() <= Date.now() ? (
+              <button
+                type="button"
+                onClick={() => void markCompleted()}
+                disabled={busyId !== null}
+                className="bg-court py-3.5 font-mono-bold text-[10px] uppercase text-paper hover:opacity-90 disabled:opacity-40"
+                style={{ letterSpacing: 1.5 }}
+              >
+                {busyId === "complete" ? <Spinner /> : "Mark game completed"}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void cancel()}
+              disabled={busyId !== null}
+              className="border-[1.5px] border-foul py-3.5 font-mono-bold text-[10px] uppercase text-foul hover:bg-foul/5 disabled:opacity-40"
+              style={{ letterSpacing: 1.5 }}
+            >
+              {busyId === "cancel" ? <Spinner /> : "Cancel game"}
+            </button>
+          </div>
+        ) : null}
 
         {!hasAcceptedRef ? (
           <div className="mt-8 border-t border-ink-20 pt-4">

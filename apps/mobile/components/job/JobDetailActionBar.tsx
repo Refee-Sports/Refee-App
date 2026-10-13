@@ -11,6 +11,8 @@ type Props = {
   onAccept: () => void;
   onMessageCrew?: () => void;
   onWithdraw?: () => void;
+  /** Withdraws a pending application. */
+  onCancelApplication?: () => void;
   /** Shown only around tip-off; reports a delay in minutes to the organizers. */
   onRunningLate?: (minutes: number) => void;
 };
@@ -24,6 +26,7 @@ export function JobDetailActionBar({
   onAccept,
   onMessageCrew,
   onWithdraw,
+  onCancelApplication,
   onRunningLate,
 }: Props) {
   if (assignmentStatus === "accepted") {
@@ -160,6 +163,20 @@ export function JobDetailActionBar({
             APPLICATION PENDING
           </Text>
         </View>
+        {onCancelApplication && (
+          <Pressable
+            onPress={onCancelApplication}
+            disabled={actionLoading || !canMutate}
+            className="mt-2 py-2 items-center active:opacity-70 disabled:opacity-40"
+          >
+            <Text
+              className="text-ink-40 font-mono-bold text-[9px] uppercase underline"
+              style={{ letterSpacing: 1.5 }}
+            >
+              CANCEL MY APPLICATION
+            </Text>
+          </Pressable>
+        )}
       </View>
     );
   }

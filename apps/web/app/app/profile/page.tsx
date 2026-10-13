@@ -25,7 +25,9 @@ import {
 import {
   fetchEarningsSummary,
   fetchUpcomingGames,
+  fetchMyRatings,
   type EarningsPeriod,
+  type ReceivedRating,
   type EarningsSummary,
   type UpcomingGameRow,
 } from "@/lib/referee/queries";
@@ -89,6 +91,7 @@ export default function RefereeProfilePage() {
   const [certs, setCerts] = useState<CertificationRow[]>([]);
   const [levels, setLevels] = useState<RefLevelRow[]>([]);
   const [upcomingGames, setUpcomingGames] = useState<UpcomingGameRow[]>([]);
+  const [ratings, setRatings] = useState<ReceivedRating[]>([]);
   const [earnings, setEarnings] = useState<EarningsSummary>({
     totalEarned: 0,
     gamesWorked: 0,
@@ -114,7 +117,7 @@ export default function RefereeProfilePage() {
       if (!session || cancelled) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, earningsRes] =
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, earningsRes, ratingsRes] =
         await Promise.all([
           fetchMyProfile(uid),
           fetchMyRefSports(uid),
@@ -123,6 +126,7 @@ export default function RefereeProfilePage() {
           fetchMyLevels(uid),
           fetchUpcomingGames(uid),
           fetchEarningsSummary(uid, "week"),
+          fetchMyRatings(),
         ]);
 
       if (cancelled) return;
@@ -133,6 +137,7 @@ export default function RefereeProfilePage() {
       setLevels((levelsRes.data ?? []) as RefLevelRow[]);
       setUpcomingGames(upcomingRes.games);
       setEarnings(earningsRes.summary);
+      setRatings(ratingsRes.ratings);
       setLoading(false);
     })();
     return () => {
@@ -419,6 +424,19 @@ export default function RefereeProfilePage() {
         </div>
       </div>
 
+      {/* Skipped or failed ID check: the way back in. Taking games needs it. */}
+      {!profile.is_verified && (
+        <Link
+          href="/verify"
+          className="mx-5 sm:mx-0 mb-4 flex items-center justify-between border-[1.5px] border-ink bg-hi-vis px-4 py-3 hover:opacity-80"
+        >
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-ink">
+            Verify your ID to take games
+          </span>
+          <span className="font-mono text-sm font-bold text-ink">→</span>
+        </Link>
+      )}
+
       {/* Stat strip */}
       <div className="mx-5 sm:mx-0 mb-4 flex border border-ink bg-chalk">
         <StatStrip
@@ -476,6 +494,30 @@ export default function RefereeProfilePage() {
           <div className="mx-5 sm:mx-0 mb-2 flex flex-col gap-1.5">
             {upcomingGames.map((g) => (
               <UpcomingGameCard key={g.assignmentId} game={g} />
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Ratings received (scores only; directors' comments stay private) */}
+      {ratings.length > 0 && (
+        <>
+          <PSectionHeader num={nextNum()} title="Ratings Received" />
+          <div className="mx-5 sm:mx-0 mb-2 border border-ink bg-chalk">
+            {ratings.slice(0, 10).map((r, i) => (
+              <div
+                key={`${r.jobId}-${r.ratedAt}`}
+                className={`flex items-center justify-between px-3.5 py-3 ${i > 0 ? "border-t border-ink-20" : ""}`}
+              >
+                <div className="min-w-0 flex-1 pr-3">
+                  <p className="truncate font-mono text-[11px] font-bold uppercase text-ink">{r.jobTitle ?? "Game"}</p>
+                  <p className="mt-0.5 font-mono text-[9px] uppercase tracking-[0.1em] text-ink-60">
+                    {new Date(r.gameDate ?? r.ratedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    {" · "}On time {r.onTime ?? "—"} · Pro {r.professionalism ?? "—"} · Game mgmt {r.gameManagement ?? "—"}
+                  </p>
+                </div>
+                <span className="font-display text-xl text-ink">{r.overall ?? "—"}</span>
+              </div>
             ))}
           </div>
         </>

@@ -24,6 +24,7 @@ import {
   fetchMyHirerId,
   setGameAutoAccept,
   submitRefereeRating,
+  credentialsLine,
   type ApplicantRow,
   type CategoryRatings,
   type DirectorGameRow,
@@ -1188,6 +1189,16 @@ function ApplicantCard({
               style={{ letterSpacing: 1 }}
             >
               {p.city.toUpperCase()}, {p.state} · ★ {p.rating.toFixed(2)}
+            </span>
+          )}
+          {credentialsLine(applicant.credentials) !== "" && (
+            <span className="block truncate font-mono text-[9px] uppercase text-ink" style={{ letterSpacing: 1 }}>
+              {credentialsLine(applicant.credentials)}
+            </span>
+          )}
+          {applicant.credentials?.leaguesWorked && (
+            <span className="block truncate font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+              Leagues: {applicant.credentials.leaguesWorked}
             </span>
           )}
           {applicant.late_minutes != null && applicant.status === "accepted" && (

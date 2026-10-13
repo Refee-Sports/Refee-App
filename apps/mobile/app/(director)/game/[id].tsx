@@ -29,6 +29,7 @@ import {
   cancelGame,
   fetchGameRatedRefIds,
   CANCEL_FEE_WINDOW_HOURS,
+  credentialsLine,
   type DirectorGameRow,
   type ApplicantRow,
   type CategoryRatings,
@@ -492,7 +493,7 @@ export default function GameDetail() {
 
           {/* Post-game rating prompt */}
           {isCompleted && unratedCount > 0 && (
-            <View className="mx-5 mb-4 border border-ink bg-hivis px-4 py-3.5">
+            <View className="mx-5 mb-4 border border-ink bg-hi-vis px-4 py-3.5">
               <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
                 ✓ GAME COMPLETED — RATE YOUR CREW
               </Text>
@@ -961,6 +962,16 @@ function ApplicantCard({
           {p && (
             <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
               {p.city.toUpperCase()}, {p.state} · ★ {p.rating.toFixed(2)}
+            </Text>
+          )}
+          {credentialsLine(applicant.credentials) !== "" && (
+            <Text className="font-mono text-[9px] text-ink uppercase mt-0.5" numberOfLines={1} style={{ letterSpacing: 1 }}>
+              {credentialsLine(applicant.credentials)}
+            </Text>
+          )}
+          {applicant.credentials?.leaguesWorked && (
+            <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" numberOfLines={1} style={{ letterSpacing: 1 }}>
+              LEAGUES: {applicant.credentials.leaguesWorked}
             </Text>
           )}
           {applicant.late_minutes != null && applicant.status === "accepted" && (

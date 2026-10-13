@@ -20,7 +20,7 @@ import { useJobAssignment } from "@/hooks/useJobAssignment";
 import { useJobDetail } from "@/hooks/useJobsFeed";
 import { supabase } from "@/lib/supabase";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
-import { canReportRunningLate, isLateWithdrawal, reportRunningLate, withdrawFromJob } from "@/lib/jobs/queries";
+import { canReportRunningLate, canWithdraw, isLateWithdrawal, reportRunningLate, withdrawFromJob } from "@/lib/jobs/queries";
 
 /** Port of refee-mobile/refee/app/(app)/job/[id].tsx. */
 export default function JobDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -216,7 +216,7 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
         onDecline={() => void handleDecline()}
         onAccept={() => void handleAccept()}
         onMessageCrew={() => void handleMessageCrew()}
-        onWithdraw={() => void handleWithdraw()}
+        onWithdraw={job?.startsAtIso && canWithdraw(job.startsAtIso) ? () => void handleWithdraw() : undefined}
         onRunningLate={
           job?.startsAtIso && canReportRunningLate(job.startsAtIso, job.durationMinutes)
             ? (m) => void handleRunningLate(m)

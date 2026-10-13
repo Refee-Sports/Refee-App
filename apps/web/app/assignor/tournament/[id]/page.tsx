@@ -19,6 +19,7 @@ import {
 } from "@/lib/assignor/queries";
 import { Icon } from "@/components/ui/Icon";
 import { deleteTournament } from "@/lib/director/queries";
+import { CancelTournamentButton } from "@/components/director/CancelTournamentButton";
 
 function formatWhen(value: string, timeZone: string) {
   return new Date(value)
@@ -289,6 +290,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
                 ))}
               </div>
             )}
+            <CancelTournamentButton tournamentId={id} status={tournament.status} onCancelled={load} />
             <div className="mt-8 border-t border-ink-20 pt-4">
               <button
                 type="button"

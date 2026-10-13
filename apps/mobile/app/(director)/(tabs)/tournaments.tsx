@@ -113,7 +113,7 @@ export default function TournamentsScreen() {
 
       {/* Completion nudge — games ended but not yet closed out */}
       {needsCompletion.length > 0 && (
-        <View className="mx-5 mb-4 border border-ink bg-hivis">
+        <View className="mx-5 mb-4 border border-ink bg-hi-vis">
           <View className="px-4 py-2.5 border-b border-ink/20 flex-row items-center gap-2">
             <Feather name="alert-circle" size={13} color="#08111C" />
             <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>

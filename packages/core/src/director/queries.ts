@@ -99,6 +99,21 @@ export type DirectorGameRow = {
   prepaid_at?: string | null;
 };
 
+export type ApplicantCredentials = {
+  /** Certifying bodies (e.g. "iaabo"), never license numbers. */
+  certs: string[];
+  levels: string[];
+  leaguesWorked: string | null;
+};
+
+/** "IAABO · NFHS · HIGH SCHOOL": certs then levels, for an applicant card. */
+export function credentialsLine(credentials: ApplicantCredentials | undefined): string {
+  if (!credentials) return "";
+  return [...credentials.certs, ...credentials.levels]
+    .map((id) => id.replace(/_/g, " ").toUpperCase())
+    .join(" · ");
+}
+
 export type ApplicantRow = {
   id: string;
   ref_id: string;
@@ -109,6 +124,8 @@ export type ApplicantRow = {
   late_minutes: number | null;
   /** True when a ref withdrew inside the free-withdrawal window. */
   withdrew_late: boolean | null;
+  /** What a director weighs before approving, without opening the full profile. */
+  credentials?: ApplicantCredentials;
   profile: {
     first_name: string;
     last_initial: string;
@@ -513,6 +530,22 @@ export async function fetchGameApplicants(
 
   if (error) return { applicants: [], error: new Error(error.message) };
 
+  const refIds = [...new Set((data ?? []).map((row: any) => row.ref_id as string).filter(Boolean))];
+  const [certsRes, levelsRes, sportsRes] = refIds.length
+    ? await Promise.all([
+        supabase.from("certifications").select("ref_id, org_name").in("ref_id", refIds),
+        supabase.from("ref_levels").select("ref_id, level_id").in("ref_id", refIds),
+        supabase.from("ref_sports").select("ref_id, leagues_worked").in("ref_id", refIds),
+      ])
+    : [{ data: [] }, { data: [] }, { data: [] }];
+
+  const credentialsFor = (refId: string): ApplicantCredentials => ({
+    certs: ((certsRes.data ?? []) as any[]).filter((c) => c.ref_id === refId).map((c) => c.org_name),
+    levels: ((levelsRes.data ?? []) as any[]).filter((l) => l.ref_id === refId).map((l) => l.level_id),
+    leaguesWorked:
+      ((sportsRes.data ?? []) as any[]).find((r) => r.ref_id === refId && r.leagues_worked)?.leagues_worked ?? null,
+  });
+
   const applicants: ApplicantRow[] = (data ?? []).map((row: any) => ({
     id: row.id,
     ref_id: row.ref_id,
@@ -521,6 +554,7 @@ export async function fetchGameApplicants(
     responded_at: row.responded_at,
     late_minutes: row.late_minutes ?? null,
     withdrew_late: row.withdrew_late ?? null,
+    credentials: credentialsFor(row.ref_id),
     profile: Array.isArray(row.public_profiles)
       ? (row.public_profiles[0] ?? null)
       : row.public_profiles,
@@ -1023,32 +1057,45 @@ export async function completeGame(
   return { error: null };
 }
 
-/**
- * Cancels the game. Confirmed refs get a 50% bust fee if cancelled within
- * CANCEL_FEE_WINDOW_HOURS of tip-off (or after it); otherwise no pay.
- */
-export async function cancelGame(
+type CancelGameResult = {
+  job_id?: string;
+  title?: string;
+  fee_paid?: boolean;
+  fee_amount?: number;
+  ref_ids?: string[];
+  pending_ref_ids?: string[];
+};
+
+/** Tells a cancelled game's confirmed refs, applicants and crew thread. */
+async function announceCancellation(
   gameId: string,
-  directorUserId: string
-): Promise<{ error: Error | null; feePaid: boolean; feeAmount: number }> {
-  const { data, error } = await supabase.rpc("cancel_game", { p_job_id: gameId });
-  if (error) return { error: new Error(error.message), feePaid: false, feeAmount: 0 };
-  const result = data as {
-    title?: string;
-    fee_paid?: boolean;
-    fee_amount?: number;
-    ref_ids?: string[];
-  } | null;
+  directorUserId: string,
+  result: CancelGameResult | null,
+  eventName?: string
+) {
   const lateCancel = result?.fee_paid ?? false;
   const feeAmount = result?.fee_amount ?? 0;
+  const what = eventName
+    ? `"${result?.title ?? "Your game"}" (${eventName})`
+    : `"${result?.title ?? "Your game"}"`;
+  const data = { type: "game_update", jobId: gameId };
 
   await sendPush(
     result?.ref_ids ?? [],
-    "Game cancelled",
+    eventName ? "Event cancelled" : "Game cancelled",
     lateCancel
-      ? `"${result?.title ?? "Your game"}" was cancelled. A $${feeAmount} cancellation fee is owed to you.`
-      : `"${result?.title ?? "Your game"}" was cancelled. No need to show up.`,
-    { type: "game_update", jobId: gameId },
+      ? `${what} was cancelled. A $${feeAmount} cancellation fee is owed to you.`
+      : `${what} was cancelled. No need to show up.`,
+    data,
+    "game_updates"
+  );
+
+  // Applicants and offered refs aren't owed anything, but shouldn't keep the date free.
+  await sendPush(
+    result?.pending_ref_ids ?? [],
+    eventName ? "Event cancelled" : "Game cancelled",
+    `${what}, which you applied for, was cancelled.`,
+    data,
     "game_updates"
   );
 
@@ -1059,8 +1106,40 @@ export async function cancelGame(
       ? `✕ GAME CANCELLED — "${result?.title ?? "Game"}" was cancelled inside ${CANCEL_FEE_WINDOW_HOURS}h of tip-off. A 50% fee ($${feeAmount}) is owed to each confirmed ref.`
       : `✕ GAME CANCELLED — "${result?.title ?? "Game"}" was cancelled. No fees apply.`
   );
+}
 
-  return { error: null, feePaid: lateCancel, feeAmount };
+/**
+ * Cancels the game. Confirmed refs get a 50% bust fee if cancelled within
+ * CANCEL_FEE_WINDOW_HOURS of tip-off (or after it); otherwise no pay.
+ * Confirmed refs and pending applicants are told.
+ */
+export async function cancelGame(
+  gameId: string,
+  directorUserId: string
+): Promise<{ error: Error | null; feePaid: boolean; feeAmount: number }> {
+  const { data, error } = await supabase.rpc("cancel_game", { p_job_id: gameId });
+  if (error) return { error: new Error(error.message), feePaid: false, feeAmount: 0 };
+  const result = data as CancelGameResult | null;
+  await announceCancellation(gameId, directorUserId, result);
+  return { error: null, feePaid: result?.fee_paid ?? false, feeAmount: result?.fee_amount ?? 0 };
+}
+
+/**
+ * Cancels every game still open in an event (rain-out, venue lost), then the
+ * event. Games already played stay completed. Each game's refs are told.
+ */
+export async function cancelTournament(
+  tournamentId: string,
+  directorUserId: string
+): Promise<{ error: Error | null; gamesCancelled: number }> {
+  const { data, error } = await supabase.rpc("cancel_tournament", { p_tournament_id: tournamentId });
+  if (error) return { error: new Error(error.message), gamesCancelled: 0 };
+  const result = data as { name?: string; games?: CancelGameResult[] } | null;
+  const games = result?.games ?? [];
+  for (const game of games) {
+    if (game.job_id) await announceCancellation(game.job_id, directorUserId, game, result?.name);
+  }
+  return { error: null, gamesCancelled: games.length };
 }
 
 /**

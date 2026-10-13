@@ -183,6 +183,11 @@ export const declineInvite = declineJob;
 /** Withdrawing inside this window flags the ref's reliability. */
 export const WITHDRAW_FREE_WINDOW_HOURS = 48;
 
+/** Withdrawing closes at tip-off; after that a missing ref is a no-show. */
+export function canWithdraw(startsAt: string): boolean {
+  return new Date(startsAt).getTime() > Date.now();
+}
+
 export function isLateWithdrawal(startsAt: string): boolean {
   return (
     new Date(startsAt).getTime() - Date.now() <
@@ -348,6 +353,8 @@ export async function fetchOpenJobs(
     .from("jobs")
     .select("*, hirers(org_name, is_verified)")
     .eq("status", "open")
+    // A game that has tipped off can't take applications any more.
+    .gt("starts_at", new Date().toISOString())
     .order("starts_at", { ascending: true });
 
   if (error) {

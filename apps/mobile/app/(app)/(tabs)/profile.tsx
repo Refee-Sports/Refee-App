@@ -22,7 +22,7 @@ import {
   CertificationRow,
   RefLevelRow,
 } from "@/lib/profile/queries";
-import { fetchUpcomingGames, fetchEarningsSummary, type UpcomingGameRow, type EarningsSummary, type EarningsPeriod } from "@/lib/referee/queries";
+import { fetchUpcomingGames, fetchEarningsSummary, fetchMyRatings, type UpcomingGameRow, type EarningsSummary, type EarningsPeriod, type ReceivedRating } from "@/lib/referee/queries";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { pickAndUploadAvatar } from "@/lib/profile/avatar";
 import { unregisterPushToken } from "@/lib/push/notifications";
@@ -98,6 +98,7 @@ export default function Profile() {
     pendingGames: 0,
   });
   const [earningsPeriod, setEarningsPeriod] = useState<EarningsPeriod>("week");
+  const [ratings, setRatings] = useState<ReceivedRating[]>([]);
   const [loading, setLoading] = useState(true);
   const [availToggling, setAvailToggling] = useState(false);
 
@@ -109,7 +110,7 @@ export default function Profile() {
       if (!session || cancelled) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes] =
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, ratingsRes] =
         await Promise.all([
           fetchMyProfile(uid),
           fetchMyRefSports(uid),
@@ -117,6 +118,7 @@ export default function Profile() {
           fetchMyCertifications(uid),
           fetchMyLevels(uid),
           fetchUpcomingGames(uid),
+          fetchMyRatings(),
         ]);
 
       if (cancelled) return;
@@ -126,6 +128,7 @@ export default function Profile() {
       setCerts((certsRes.data ?? []) as CertificationRow[]);
       setLevels((levelsRes.data ?? []) as RefLevelRow[]);
       setUpcomingGames(upcomingRes.games);
+      setRatings(ratingsRes.ratings);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -430,6 +433,19 @@ export default function Profile() {
         </View>
       </View>
 
+      {/* Skipped or failed ID check: the way back in. Taking games needs it. */}
+      {!profile.is_verified && (
+        <Pressable
+          onPress={() => router.push("/verify")}
+          className="mx-5 mb-4 border-[1.5px] border-ink bg-hi-vis px-4 py-3 flex-row items-center justify-between active:opacity-80"
+        >
+          <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+            VERIFY YOUR ID TO TAKE GAMES
+          </Text>
+          <Text className="text-ink font-mono-bold text-sm">→</Text>
+        </Pressable>
+      )}
+
       {/* ── Stat strip ───────────────────────────────────────────── */}
       <View className="mx-5 border border-ink bg-chalk flex-row mb-4">
         <StatStrip label="GAMES WORKED" value={String(earnings.gamesWorked || profile.games_called_total)} />
@@ -462,7 +478,7 @@ export default function Profile() {
 
       {/* ── Pending earnings ─────────────────────────────────────── */}
       {earnings.pendingTotal > 0 && (
-        <View className="mx-5 -mt-3 mb-4 border border-t-0 border-ink bg-hivis px-4 py-2.5 flex-row items-center justify-between">
+        <View className="mx-5 -mt-3 mb-4 border border-t-0 border-ink bg-hi-vis px-4 py-2.5 flex-row items-center justify-between">
           <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
             PENDING · {earnings.pendingGames} GAME{earnings.pendingGames !== 1 ? "S" : ""} SCHEDULED
           </Text>
@@ -479,6 +495,34 @@ export default function Profile() {
           <View className="mx-5 gap-1.5 mb-2">
             {upcomingGames.map((g) => (
               <UpcomingGameCard key={g.assignmentId} game={g} />
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* ── Ratings received ─────────────────────────────────────── */}
+      {ratings.length > 0 && (
+        <>
+          <PSectionHeader num="★" title="Ratings Received" />
+          <View className="mx-5 border border-ink bg-chalk mb-2">
+            {ratings.slice(0, 10).map((r, i) => (
+              <View
+                key={`${r.jobId}-${r.ratedAt}`}
+                className={`px-3.5 py-3 flex-row items-center justify-between ${i > 0 ? "border-t border-ink-20" : ""}`}
+              >
+                <View className="flex-1 pr-3">
+                  <Text className="text-ink font-mono-bold text-[11px] uppercase" numberOfLines={1} style={{ letterSpacing: 0.5 }}>
+                    {r.jobTitle ?? "GAME"}
+                  </Text>
+                  <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+                    {new Date(r.gameDate ?? r.ratedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                    {" · "}ON TIME {r.onTime ?? "—"} · PRO {r.professionalism ?? "—"} · GAME MGMT {r.gameManagement ?? "—"}
+                  </Text>
+                </View>
+                <Text className="text-ink font-display" style={{ fontSize: 20 }}>
+                  {r.overall ?? "—"}
+                </Text>
+              </View>
             ))}
           </View>
         </>

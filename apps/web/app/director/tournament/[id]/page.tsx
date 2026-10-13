@@ -7,6 +7,7 @@ import { use, useCallback, useEffect, useState } from "react";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
+import { CancelTournamentButton } from "@/components/director/CancelTournamentButton";
 import { LoadError } from "@/components/ui/LoadError";
 import { friendlyLoadError, withDeadline } from "@/lib/network";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
@@ -401,6 +402,11 @@ export default function TournamentDetailPage({
           ))}
         </div>
       )}
+
+      {/* Cancel the whole event */}
+      <div className="mx-5 sm:mx-0">
+        <CancelTournamentButton tournamentId={id} status={tournament.status} onCancelled={load} />
+      </div>
 
       {/* Delete */}
       <div className="mx-5 mt-8 border-t border-ink-20 pt-4 sm:mx-0">

@@ -2011,7 +2011,9 @@ export type Database = {
         Args: { p_conversation_id: string; p_sender_id: string }
         Returns: boolean
       }
+      can_view_ref_details: { Args: { p_ref_id: string }; Returns: boolean }
       cancel_game: { Args: { p_job_id: string }; Returns: Json }
+      cancel_tournament: { Args: { p_tournament_id: string }; Returns: Json }
       claim_new_game_alerts: {
         Args: { p_job_id: string }
         Returns: {
@@ -2063,6 +2065,10 @@ export type Database = {
         Args: { p_conversation_id: string; p_user_id: string }
         Returns: boolean
       }
+      is_game_organizer: {
+        Args: { p_job_id: string; p_user: string }
+        Returns: boolean
+      }
       is_identity_verified: { Args: { p_user: string }; Returns: boolean }
       is_referee: { Args: { p_user: string }; Returns: boolean }
       is_suspended: { Args: { p_user: string }; Returns: boolean }
@@ -2082,6 +2088,19 @@ export type Database = {
         Returns: {
           distance_miles: number
           user_id: string
+        }[]
+      }
+      my_ratings: {
+        Args: never
+        Returns: {
+          game_date: string
+          game_management: number
+          job_id: string
+          job_title: string
+          on_time: number
+          professionalism: number
+          rated_at: string
+          rating: number
         }[]
       }
       my_roster_invite_code: { Args: never; Returns: string }

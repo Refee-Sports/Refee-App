@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } 
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { CancelTournamentButton } from "@/components/director/CancelTournamentButton";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import {
@@ -168,6 +169,14 @@ export default function AssignorTournamentDetail() {
           </View>
         )}
         ListEmptyComponent={accepted ? <Text className="font-mono text-[9px] text-ink-40 uppercase text-center py-10">No games have been added yet.</Text> : null}
+        ListFooterComponent={accepted ? (
+          <CancelTournamentButton
+            tournamentId={id}
+            userId={userId}
+            status={tournament.status ?? "open"}
+            onCancelled={() => void load()}
+          />
+        ) : null}
         renderItem={({ item }) => (
           <Pressable onPress={() => router.push(`/(assignor)/game/${item.id}` as any)} className="border border-ink bg-chalk mb-2 px-4 py-3 active:opacity-75">
             <View className="flex-row justify-between items-start">

@@ -6,6 +6,8 @@ import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { DirectorTabBar } from "@/components/director/DirectorTabBar";
+import { CancelTournamentButton } from "@/components/director/CancelTournamentButton";
+import { supabase } from "@/lib/supabase";
 import {
   fetchTournamentById,
   fetchTournamentGames,
@@ -34,10 +36,13 @@ export default function TournamentDetail() {
   const [games, setGames] = useState<DirectorGameRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!id) return;
     setLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    setUserId(session?.user.id ?? null);
     const [{ tournament: t, error: tErr }, { games: g, error: gErr }] = await Promise.all([
       fetchTournamentById(id),
       fetchTournamentGames(id),
@@ -183,6 +188,16 @@ export default function TournamentDetail() {
               </View>
             )}
           </>
+        }
+        ListFooterComponent={
+          <View className="mx-5">
+            <CancelTournamentButton
+              tournamentId={id}
+              userId={userId}
+              status={tournament.status}
+              onCancelled={() => void load()}
+            />
+          </View>
         }
         renderItem={({ item }) => (
           <Pressable

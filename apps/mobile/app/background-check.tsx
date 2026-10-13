@@ -20,7 +20,7 @@ import { pickBackgroundCheckFile } from "@/lib/roster/files";
 const STATE_STYLE = {
   none: { bg: "bg-chalk", border: "border-ink-20", text: "text-ink-60", title: "NO BACKGROUND CHECK ON FILE" },
   valid: { bg: "bg-court/10", border: "border-court", text: "text-court", title: "BACKGROUND CHECK UPLOADED" },
-  expiring: { bg: "bg-hivis", border: "border-ink", text: "text-ink", title: "EXPIRING SOON" },
+  expiring: { bg: "bg-hi-vis", border: "border-ink", text: "text-ink", title: "EXPIRING SOON" },
   expired: { bg: "bg-foul/10", border: "border-foul", text: "text-foul", title: "UPLOAD EXPIRED" },
 } as const;
 

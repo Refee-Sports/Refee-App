@@ -18,6 +18,7 @@ import {
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
 import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
+import { cancelGame, completeGame } from "@/lib/director/queries";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
@@ -102,6 +103,52 @@ export default function AssignorGameDetail() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       await load();
     }
+  };
+
+  // The event's assignor runs game day, so they can close a game out like the director.
+  const markCompleted = () => {
+    if (!id || !userId || busyId) return;
+    Alert.alert("Mark game completed?", "Each confirmed referee's pay is locked in.", [
+      { text: "Not yet", style: "cancel" },
+      {
+        text: "Mark completed",
+        onPress: async () => {
+          setBusyId("complete");
+          const result = await completeGame(id, userId);
+          setBusyId(null);
+          if (result.error) Alert.alert("Not completed", result.error.message);
+          else {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            await load();
+          }
+        },
+      },
+    ]);
+  };
+
+  const cancel = () => {
+    if (!id || !userId || busyId) return;
+    Alert.alert(
+      "Cancel this game?",
+      "Confirmed referees and applicants are told. A late-cancel fee applies close to tip-off.",
+      [
+        { text: "Keep game", style: "cancel" },
+        {
+          text: "Cancel game",
+          style: "destructive",
+          onPress: async () => {
+            setBusyId("cancel");
+            const result = await cancelGame(id, userId);
+            setBusyId(null);
+            if (result.error) Alert.alert("Not cancelled", result.error.message);
+            else {
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              await load();
+            }
+          },
+        },
+      ]
+    );
   };
 
   /** One-way update to everyone confirmed on this game (they see it in their inbox). */
@@ -252,6 +299,30 @@ export default function AssignorGameDetail() {
         )}
         ListEmptyComponent={mode === "assignor_direct" ? (
           <Text className="font-mono text-[9px] text-ink-40 uppercase text-center py-8">No available accepted roster referees remain for this game.</Text>
+        ) : null}
+        ListFooterComponent={game.status !== "completed" && game.status !== "cancelled" ? (
+          <View className="mt-6 gap-2">
+            {new Date(game.starts_at).getTime() <= Date.now() && (
+              <Pressable
+                onPress={markCompleted}
+                disabled={busyId !== null}
+                className="bg-court py-3.5 items-center active:opacity-80 disabled:opacity-40"
+              >
+                {busyId === "complete" ? <ActivityIndicator color="#E5E1D6" /> : (
+                  <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>MARK GAME COMPLETED</Text>
+                )}
+              </Pressable>
+            )}
+            <Pressable
+              onPress={cancel}
+              disabled={busyId !== null}
+              className="border-[1.5px] border-foul py-3.5 items-center active:opacity-80 disabled:opacity-40"
+            >
+              {busyId === "cancel" ? <ActivityIndicator color="#E63946" /> : (
+                <Text className="font-mono-bold text-[10px] text-foul uppercase" style={{ letterSpacing: 1.5 }}>CANCEL GAME</Text>
+              )}
+            </Pressable>
+          </View>
         ) : null}
         renderItem={({ item }) => (
           <View className="border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">

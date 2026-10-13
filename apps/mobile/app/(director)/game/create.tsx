@@ -639,7 +639,7 @@ export default function CreateGame() {
 
       <View
         className={`border border-ink flex-row items-center justify-between px-4 py-4 ${
-          form.autoAccept ? "bg-hivis" : "bg-chalk"
+          form.autoAccept ? "bg-hi-vis" : "bg-chalk"
         }`}
       >
         <View className="flex-1 pr-4">

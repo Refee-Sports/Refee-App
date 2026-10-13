@@ -56,6 +56,8 @@ export type TournamentInviteRow = {
   total_games: number | null;
   pay_per_game: number | null;
   assignor_status: string;
+  /** The event's own status (open / staffed / completed / cancelled). */
+  status?: string;
   assignor_fee: number | null;
   assignor_fee_type: "flat" | "percentage";
   assignor_fee_pct: number | null;
@@ -455,7 +457,7 @@ export async function fetchAssignorTournament(
   const { data, error } = await supabase
     .from("tournaments")
     .select(
-      "id, name, venue_city, venue_state, timezone, starts_on, ends_on, total_games, pay_per_game, assignor_status, assignor_fee, assignor_fee_type, assignor_fee_pct, hirer:hirers(org_name)"
+      "id, name, status, venue_city, venue_state, timezone, starts_on, ends_on, total_games, pay_per_game, assignor_status, assignor_fee, assignor_fee_type, assignor_fee_pct, hirer:hirers(org_name)"
     )
     .eq("id", tournamentId)
     .eq("assignor_id", assignorId)
