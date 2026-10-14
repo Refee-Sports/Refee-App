@@ -84,10 +84,15 @@ export default function AssignorProfilePage() {
       <div className="split-grid px-5 sm:px-0">
         <div className="min-w-0">
           <div className="mb-6 flex items-center gap-4">
-            <span className="flex h-16 w-16 items-center justify-center bg-ink">
-              <span className="font-display text-paper" style={{ fontSize: 22 }}>
-                {initials}
-              </span>
+            <span className="flex h-16 w-16 items-center justify-center overflow-hidden bg-ink">
+              {profile.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- user upload from storage
+                <img src={profile.avatar_url} alt="Your photo" className="h-16 w-16 object-cover" />
+              ) : (
+                <span className="font-display text-paper" style={{ fontSize: 22 }}>
+                  {initials}
+                </span>
+              )}
             </span>
             <span>
               <span
@@ -124,6 +129,9 @@ export default function AssignorProfilePage() {
           <RoleSwitcher />
         </div>
         <div className="min-w-0">
+          <Link href="/assignor/edit-profile" className="mb-4 flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+            Edit profile
+          </Link>
           <Link href="/account" className="mb-4 flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
             Account &amp; sign-in
           </Link>

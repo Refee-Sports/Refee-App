@@ -10,6 +10,7 @@ import { Spinner } from "@/components/ui/AppButton";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 import { supabase } from "@/lib/supabase";
 import { fetchMyHirerProfile, type HirerRow } from "@/lib/director/queries";
+import { fetchMyProfile } from "@/lib/profile/queries";
 import { getCardSetupParams } from "@/lib/payments/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
@@ -24,6 +25,7 @@ const ORG_TYPE_LABELS: Record<string, string> = {
 /** Port of refee-mobile/refee/app/(director)/(tabs)/profile.tsx. */
 export default function DirectorProfilePage() {
   const [hirer, setHirer] = useState<HirerRow | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingCard, setSavingCard] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
@@ -39,8 +41,12 @@ export default function DirectorProfilePage() {
         setLoading(false);
         return;
       }
-      const { data } = await fetchMyHirerProfile(session.user.id);
+      const [{ data }, { data: profile }] = await Promise.all([
+        fetchMyHirerProfile(session.user.id),
+        fetchMyProfile(session.user.id),
+      ]);
       setHirer(data as HirerRow | null);
+      setAvatarUrl(profile?.avatar_url ?? null);
       setLoading(false);
     })();
   }, []);
@@ -132,10 +138,15 @@ export default function DirectorProfilePage() {
 
       {/* Avatar pill */}
       <div className="mb-5 flex items-center gap-4 px-5">
-        <span className="flex h-16 w-16 items-center justify-center border border-ink bg-ink">
-          <span className="font-display text-paper" style={{ fontSize: 22, letterSpacing: -1 }}>
-            {initials}
-          </span>
+        <span className="flex h-16 w-16 items-center justify-center overflow-hidden border border-ink bg-ink">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- user upload from storage
+            <img src={avatarUrl} alt="Your photo" className="h-16 w-16 object-cover" />
+          ) : (
+            <span className="font-display text-paper" style={{ fontSize: 22, letterSpacing: -1 }}>
+              {initials}
+            </span>
+          )}
         </span>
         <div className="flex-1">
           <span className="block font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
@@ -232,6 +243,12 @@ export default function DirectorProfilePage() {
 
       <div className="mx-5 sm:mx-0 mt-6">
         <RoleSwitcher />
+      </div>
+
+      <div className="mx-5 sm:mx-0 mt-4">
+        <Link href="/director/edit-profile" className="flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+          Edit profile
+        </Link>
       </div>
 
       <div className="mx-5 sm:mx-0 mt-4">

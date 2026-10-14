@@ -1,9 +1,9 @@
 import { verificationLabel } from "@/lib/identity/queries";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { ScrollScreen } from "@/components/layout/ScrollScreen";
 import { Wordmark } from "@/components/ui/Wordmark";
@@ -22,19 +22,22 @@ export default function AssignorProfile() {
   const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    void (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoading(false); return; }
-      const [profileResult, rolesResult] = await Promise.all([
-        fetchMyProfile(session.user.id),
-        fetchMyRoles(session.user.id),
-      ]);
-      setProfile(profileResult.data as ProfileRow | null);
-      setRoles(rolesResult.roles);
-      setLoading(false);
-    })();
-  }, []);
+  // Reload on focus so edits made on the edit screen show straight away.
+  useFocusEffect(
+    useCallback(() => {
+      void (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setLoading(false); return; }
+        const [profileResult, rolesResult] = await Promise.all([
+          fetchMyProfile(session.user.id),
+          fetchMyRoles(session.user.id),
+        ]);
+        setProfile(profileResult.data as ProfileRow | null);
+        setRoles(rolesResult.roles);
+        setLoading(false);
+      })();
+    }, [])
+  );
 
   const signOut = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -68,8 +71,12 @@ export default function AssignorProfile() {
       <View className="px-5 mb-5"><ZebraRule variant="signal" thin /></View>
 
       <View className="px-5 flex-row items-center gap-4 mb-6">
-        <View className="w-16 h-16 bg-ink items-center justify-center">
-          <Text className="text-paper font-display" style={{ fontSize: 22 }}>{initials}</Text>
+        <View className="w-16 h-16 bg-ink items-center justify-center overflow-hidden">
+          {profile.avatar_url ? (
+            <Image source={{ uri: profile.avatar_url }} style={{ width: 64, height: 64 }} accessibilityLabel="Your photo" />
+          ) : (
+            <Text className="text-paper font-display" style={{ fontSize: 22 }}>{initials}</Text>
+          )}
         </View>
         <View className="flex-1">
           <Text className="font-display text-ink uppercase" style={{ fontSize: 28, lineHeight: 29, letterSpacing: -1 }}>
@@ -100,6 +107,14 @@ export default function AssignorProfile() {
           <RoleSwitcher />
         </View>
 
+        <Pressable
+          onPress={() => router.push({ pathname: "/edit-details", params: { role: "assignor" } } as any)}
+          className="mb-4 border border-ink py-4 active:bg-chalk"
+        >
+          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
+            EDIT PROFILE
+          </Text>
+        </Pressable>
         <Pressable onPress={() => router.push("/account" as any)} className="mb-4 border border-ink py-4 active:bg-chalk">
           <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
             ACCOUNT &amp; SIGN-IN

@@ -1,8 +1,8 @@
 import { verificationLabel } from "@/lib/identity/queries";
-import { useEffect, useState } from "react";
-import { Text, View, Pressable, ActivityIndicator, Alert } from "react-native";
+import { useCallback, useState } from "react";
+import { Text, View, Pressable, ActivityIndicator, Alert, Image } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { Feather } from "@expo/vector-icons";
 import { useStripe } from "@/lib/payments/stripe";
@@ -11,6 +11,7 @@ import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { supabase } from "@/lib/supabase";
 import { fetchMyHirerProfile, type HirerRow } from "@/lib/director/queries";
+import { fetchMyProfile } from "@/lib/profile/queries";
 import { getCardSetupParams } from "@/lib/payments/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
@@ -27,17 +28,25 @@ export default function DirectorProfile() {
   const router = useRouter();
   const tabBarHeight = useBottomTabBarHeight();
   const [hirer, setHirer] = useState<HirerRow | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    (async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setLoading(false); return; }
-      const { data } = await fetchMyHirerProfile(session.user.id);
-      setHirer(data as HirerRow | null);
-      setLoading(false);
-    })();
-  }, []);
+  // Reload on focus so edits made on the edit screen show straight away.
+  useFocusEffect(
+    useCallback(() => {
+      void (async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) { setLoading(false); return; }
+        const [{ data }, { data: profile }] = await Promise.all([
+          fetchMyHirerProfile(session.user.id),
+          fetchMyProfile(session.user.id),
+        ]);
+        setHirer(data as HirerRow | null);
+        setAvatarUrl(profile?.avatar_url ?? null);
+        setLoading(false);
+      })();
+    }, [])
+  );
 
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [savingCard, setSavingCard] = useState(false);
@@ -138,10 +147,14 @@ export default function DirectorProfile() {
 
       {/* Avatar pill */}
       <View className="px-5 flex-row items-center gap-4 mb-5">
-        <View className="w-16 h-16 bg-ink border border-ink items-center justify-center">
-          <Text className="text-paper font-display" style={{ fontSize: 22, letterSpacing: -1 }}>
-            {initials}
-          </Text>
+        <View className="w-16 h-16 bg-ink border border-ink items-center justify-center overflow-hidden">
+          {avatarUrl ? (
+            <Image source={{ uri: avatarUrl }} style={{ width: 64, height: 64 }} accessibilityLabel="Your photo" />
+          ) : (
+            <Text className="text-paper font-display" style={{ fontSize: 22, letterSpacing: -1 }}>
+              {initials}
+            </Text>
+          )}
         </View>
         <View className="flex-1">
           <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
@@ -225,6 +238,17 @@ export default function DirectorProfile() {
 
       <View className="px-5 mt-6">
         <RoleSwitcher />
+      </View>
+
+      <View className="mx-5 mt-4">
+        <Pressable
+          onPress={() => router.push({ pathname: "/edit-details", params: { role: "director" } } as any)}
+          className="border border-ink py-4 active:bg-chalk"
+        >
+          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
+            EDIT PROFILE
+          </Text>
+        </Pressable>
       </View>
 
       <View className="mx-5 mt-4">

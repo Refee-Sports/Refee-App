@@ -12,6 +12,8 @@ import {
 } from "@/lib/account/queries";
 import { linkOAuthIdentity } from "@/lib/oauth";
 import { ChangeEmail } from "@/components/account/ChangeEmail";
+import { LegalIdentity } from "@/components/account/LegalIdentity";
+import { NotificationSettings } from "@/components/account/NotificationSettings";
 
 export default function AccountPage() {
   const router = useRouter();
@@ -74,6 +76,8 @@ export default function AccountPage() {
         </p>
 
         <ChangeEmail />
+        <LegalIdentity />
+        <NotificationSettings />
 
         <section className="mt-8 border border-ink bg-chalk p-5">
           <h2 className="font-mono-bold text-xs uppercase">Linked methods</h2>

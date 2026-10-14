@@ -28,6 +28,9 @@ select ok(not public.is_adult((current_date - interval '18 years' + interval '1 
 select ok(not public.is_adult(null), 'and an unknown date of birth is not "old enough"');
 
 -- ── Signing up ───────────────────────────────────────────────────────────────
+-- Someone signing up has no ID check yet; once it's under way the birthday is
+-- locked (0067), so this runs as a fresh account.
+update public.private_profiles set identity_status = 'unstarted' where id = '22222222-2222-4222-8222-222222222202';
 
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);

@@ -13,6 +13,7 @@ import {
 } from "@/lib/account/queries";
 import { linkOAuthIdentity } from "@/lib/oauth";
 import { ChangeEmail } from "@/components/account/ChangeEmail";
+import { LegalIdentity } from "@/components/account/LegalIdentity";
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -96,6 +97,7 @@ export default function AccountScreen() {
           </Text>
 
           <ChangeEmail />
+          <LegalIdentity />
 
           <View className="mt-8 border border-ink bg-chalk p-5">
             <Text className="font-mono-bold text-[11px] uppercase">Linked methods</Text>

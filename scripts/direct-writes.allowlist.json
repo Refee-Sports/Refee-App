@@ -35,5 +35,8 @@
   "packages/core/src/roles/queries.ts::public_profiles.update": "A user selects the default landing role on their own profile.",
   "packages/core/src/roles/queries.ts::hirers.insert": "Taking on the director role creates the user's own organizer record.",
   "packages/core/src/roles/queries.ts::user_roles.upsert": "A user adds a role to their own account.",
-  "packages/core/src/push/preferences.ts::notification_preferences.upsert": "A user saves their own notification switches; RLS limits insert and update to their own row."
+  "packages/core/src/push/preferences.ts::notification_preferences.upsert": "A user saves their own notification switches; RLS limits insert and update to their own row.",
+  "packages/core/src/profile/account.ts::hirers.update": "A director edits their own organization's name, type, city and contact; is_verified is guarded by trigger (0041).",
+  "packages/core/src/profile/account.ts::public_profiles.update": "A director or assignor edits their own name and city; backend columns are guarded by trigger (0041).",
+  "packages/core/src/profile/account.ts::private_profiles.update": "A user fixes their own legal name/birthday before the ID check (locked after, 0067) and re-pins home; backend columns are guarded (0041)."
 }
