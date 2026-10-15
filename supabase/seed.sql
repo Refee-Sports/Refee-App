@@ -731,3 +731,22 @@ begin
     on conflict (provider_id, provider) do nothing;
   end loop;
 end $$;
+
+-- Every game needs its full venue address before anyone can be booked on it
+-- (0071). Seed games are written without one, so give them a placeholder street
+-- and the city's ZIP. Triggers off: a new address would otherwise send the
+-- seeded crews back to re-confirm.
+set session_replication_role = replica;
+update public.jobs
+   set venue_address = coalesce(nullif(btrim(venue_address), ''), '100 Main St'),
+       venue_zip = case
+         when coalesce(venue_zip, '') ~ '^[0-9]{5}$' then venue_zip
+         else case upper(venue_state) when 'TX' then '78701' when 'CO' then '80202' when 'IL' then '60601'
+                                      when 'NY' then '10001' when 'CA' then '90012' else '78701' end
+       end
+ where not public.venue_is_complete(venue_address, venue_zip, venue_city, venue_state);
+update public.tournaments
+   set venue_address = coalesce(nullif(btrim(venue_address), ''), '100 Main St'),
+       venue_zip = case when coalesce(venue_zip, '') ~ '^[0-9]{5}$' then venue_zip else '78701' end
+ where not public.venue_is_complete(venue_address, venue_zip, venue_city, venue_state);
+set session_replication_role = origin;

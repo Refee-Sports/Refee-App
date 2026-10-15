@@ -36,10 +36,10 @@ create function pg_temp.mk_job(
   p_status text default 'open', p_tournament uuid default null, p_mode text default null
 ) returns void language sql as $$
   insert into public.jobs (id, hirer_id, sport_id, title, level, crew_size, pay_per_game, starts_at, duration_minutes,
-                           venue_name, venue_city, venue_state, venue_lat, venue_lng, timezone,
+                           venue_name, venue_address, venue_zip, venue_city, venue_state, venue_lat, venue_lng, timezone,
                            job_type, status, num_games, tournament_id, assignor_staffing_mode)
   select ('98300000-0000-4000-8000-' || p_id)::uuid, h.id, 'basketball', p_title, 'high_school', 2, p_pay, p_starts, 60,
-         'Alert Gym', 'Somewhere', p_state, p_lat, p_lng, 'America/Chicago',
+         'Alert Gym', '100 Test St', '78701', 'Somewhere', p_state, p_lat, p_lng, 'America/Chicago',
          'single', p_status, 1, p_tournament, p_mode
   from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101'
 $$;

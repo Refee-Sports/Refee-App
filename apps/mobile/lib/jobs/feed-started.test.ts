@@ -19,6 +19,8 @@ function job(id: string, startsInHours: number) {
     venue_name: "Gym",
     venue_city: "Austin",
     venue_state: "TX",
+    venue_address: "100 Main St",
+    venue_zip: "78701",
     pay_per_game: 70,
     num_games: 1,
     crew_size: 2,

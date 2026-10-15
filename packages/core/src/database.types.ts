@@ -669,6 +669,7 @@ export type Database = {
       job_assignments: {
         Row: {
           amount_due: number | null
+          application_outcome: string | null
           applied_at: string | null
           id: string
           job_id: string | null
@@ -688,6 +689,7 @@ export type Database = {
         }
         Insert: {
           amount_due?: number | null
+          application_outcome?: string | null
           applied_at?: string | null
           id?: string
           job_id?: string | null
@@ -707,6 +709,7 @@ export type Database = {
         }
         Update: {
           amount_due?: number | null
+          application_outcome?: string | null
           applied_at?: string | null
           id?: string
           job_id?: string | null
@@ -764,6 +767,7 @@ export type Database = {
           duration_minutes: number | null
           ends_at: string | null
           featured_until: string | null
+          filled_at: string | null
           game_format: string | null
           gender: string | null
           hirer_id: string | null
@@ -828,6 +832,7 @@ export type Database = {
           duration_minutes?: number | null
           ends_at?: string | null
           featured_until?: string | null
+          filled_at?: string | null
           game_format?: string | null
           gender?: string | null
           hirer_id?: string | null
@@ -892,6 +897,7 @@ export type Database = {
           duration_minutes?: number | null
           ends_at?: string | null
           featured_until?: string | null
+          filled_at?: string | null
           game_format?: string | null
           gender?: string | null
           hirer_id?: string | null
@@ -1161,6 +1167,7 @@ export type Database = {
           email: string | null
           home_lat: number | null
           home_lng: number | null
+          home_zip: string | null
           id: string
           identity_decision_at: string | null
           identity_last_reason: string | null
@@ -1196,6 +1203,7 @@ export type Database = {
           email?: string | null
           home_lat?: number | null
           home_lng?: number | null
+          home_zip?: string | null
           id: string
           identity_decision_at?: string | null
           identity_last_reason?: string | null
@@ -1231,6 +1239,7 @@ export type Database = {
           email?: string | null
           home_lat?: number | null
           home_lng?: number | null
+          home_zip?: string | null
           id?: string
           identity_decision_at?: string | null
           identity_last_reason?: string | null
@@ -2228,6 +2237,15 @@ export type Database = {
       }
       sweep_game_lifecycle: { Args: never; Returns: undefined }
       tz_for_region: { Args: { p_state: string }; Returns: string }
+      venue_is_complete: {
+        Args: {
+          p_address: string
+          p_city: string
+          p_state: string
+          p_zip: string
+        }
+        Returns: boolean
+      }
       withdraw_assignor_proposal: {
         Args: { p_tournament_id: string }
         Returns: string

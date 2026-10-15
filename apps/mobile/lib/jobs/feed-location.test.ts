@@ -19,6 +19,8 @@ function job(id: string, city: string, state: string, at: { lat: number; lng: nu
     starts_at: new Date(Date.now() + 48 * 3_600_000).toISOString(),
     duration_minutes: 120,
     venue_name: "Gym",
+    venue_address: "100 Main St",
+    venue_zip: "78701",
     venue_city: city,
     venue_state: state,
     venue_lat: at?.lat ?? null,
@@ -127,5 +129,21 @@ describe("roster-only games in the feed", () => {
   it("shows it to the assignor themselves", async () => {
     const { jobs } = await fetchOpenJobs(client([]), "assignor1");
     expect(jobs.map((j) => j.id)).toContain("roster-only");
+  });
+});
+
+describe("games without a full venue address", () => {
+  it("never appear, since nobody can be booked on them", async () => {
+    const noZip = { ...job("no-zip", "Round Rock", "TX", ROUND_ROCK), venue_zip: null };
+    const noStreet = { ...job("no-street", "Round Rock", "TX", ROUND_ROCK), venue_address: " " };
+    const client = fakeClient({
+      jobs: [noZip, noStreet, job("complete", "Round Rock", "TX", ROUND_ROCK)],
+      job_assignments: [],
+      public_profiles: { city: "Austin", state: "TX" },
+      private_profiles: { home_lat: AUSTIN.lat, home_lng: AUSTIN.lng },
+      availability_prefs: { travel_radius_miles: 25, min_pay_per_game: 0, available_days: 0 },
+    });
+    const { jobs } = await fetchOpenJobs(client, "u1");
+    expect(jobs.map((j) => j.id)).toEqual(["complete"]);
   });
 });

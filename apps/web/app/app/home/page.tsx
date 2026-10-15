@@ -8,13 +8,9 @@ import { Spinner } from "@/components/ui/AppButton";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
 import { supabase } from "@/lib/supabase";
 import { fetchMyProfile, type ProfileRow } from "@/lib/profile/queries";
-import {
-  fetchEarningsSummary,
-  fetchMyAssignments,
-  fetchPendingApplications,
-  type AssignmentRow,
-  type EarningsSummary,
-} from "@/lib/home/queries";
+import { fetchMyAssignments, fetchPendingApplications, type AssignmentRow } from "@/lib/home/queries";
+import { loadRefereeDashboard, type RefereeDashboardData } from "@refee/core/referee/dashboard";
+import { NextGamePanel, StatsPanels } from "@/components/home/RefereeDashboard";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
 /** "SAT SEP 20" in the venue's zone. */
@@ -42,11 +38,7 @@ export default function RefereeHomePage() {
   const [todayGames, setTodayGames] = useState<AssignmentRow[]>([]);
   const [upcomingGames, setUpcomingGames] = useState<AssignmentRow[]>([]);
   const [pendingApps, setPendingApps] = useState<AssignmentRow[]>([]);
-  const [earnings, setEarnings] = useState<EarningsSummary>({
-    paidThisMonth: 0,
-    pendingTotal: 0,
-    gamesThisMonth: 0,
-  });
+  const [dashboard, setDashboard] = useState<RefereeDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -60,10 +52,10 @@ export default function RefereeHomePage() {
         if (!session || cancelled) return;
         const uid = session.user.id;
 
-        const [profileRes, assignRes, earningsRes, pendingRes] = await Promise.all([
+        const [profileRes, assignRes, dashboardRes, pendingRes] = await Promise.all([
           fetchMyProfile(uid),
           fetchMyAssignments(uid),
-          fetchEarningsSummary(uid),
+          loadRefereeDashboard(uid),
           fetchPendingApplications(uid),
         ]);
 
@@ -72,7 +64,7 @@ export default function RefereeHomePage() {
         setTodayGames(assignRes.today);
         setUpcomingGames(assignRes.upcoming);
         setPendingApps(pendingRes.pending);
-        setEarnings(earningsRes.summary);
+        setDashboard(dashboardRes);
         setLoading(false);
       })();
       return () => {
@@ -80,8 +72,6 @@ export default function RefereeHomePage() {
       };
     }, [])
   );
-
-  const monthName = new Date().toLocaleDateString("en-US", { month: "long" }).toUpperCase();
 
   if (loading) {
     return (
@@ -133,6 +123,8 @@ export default function RefereeHomePage() {
       {/* Schedule on the left, money and shortcuts alongside it on desktop. */}
       <div className="split-grid lg:mt-2">
         <div className="min-w-0">
+          {dashboard ? <NextGamePanel data={dashboard} /> : null}
+
           {/* Today */}
           <SectionHeader>Today</SectionHeader>
           <div className="mx-5 flex flex-col gap-3 sm:mx-0">
@@ -169,22 +161,7 @@ export default function RefereeHomePage() {
         </div>
 
         <div className="min-w-0">
-          {/* Earnings */}
-          <SectionHeader>{`Earnings · ${monthName}`}</SectionHeader>
-          <div className="mx-5 border border-ink-20 bg-chalk sm:mx-0">
-            <div className="flex border-b border-ink-20">
-              <EarningsCell label="Paid" value={earnings.paidThisMonth} bordered />
-              <EarningsCell label="Pending" value={earnings.pendingTotal} />
-            </div>
-            <div className="px-4 py-3">
-              <span
-                className="font-mono text-[9px] uppercase text-ink-40"
-                style={{ letterSpacing: 1.5 }}
-              >
-                {earnings.gamesThisMonth} GAME{earnings.gamesThisMonth !== 1 ? "S" : ""} THIS MONTH
-              </span>
-            </div>
-          </div>
+          {dashboard ? <StatsPanels data={dashboard} /> : null}
 
           {/* Quick actions */}
           <SectionHeader>Quick actions</SectionHeader>
@@ -292,30 +269,6 @@ function CardCell({
         style={{ letterSpacing: 0.5 }}
       >
         {secondary}
-      </span>
-    </div>
-  );
-}
-
-function EarningsCell({
-  label,
-  value,
-  bordered,
-}: {
-  label: string;
-  value: number;
-  bordered?: boolean;
-}) {
-  return (
-    <div className={`flex-1 px-4 py-4 ${bordered ? "border-r border-ink-20" : ""}`}>
-      <span
-        className="mb-1 block font-mono-bold text-[9px] uppercase text-ink-60"
-        style={{ letterSpacing: 1.5 }}
-      >
-        {label}
-      </span>
-      <span className="font-display text-ink" style={{ fontSize: 28, letterSpacing: -1 }}>
-        ${value.toLocaleString()}
       </span>
     </div>
   );

@@ -1,5 +1,5 @@
 import { supabase } from "../client";
-import { geocodeAddress } from "../geo/geocode";
+import { geocodeFirst, homeQueries } from "../geo/geocode";
 import { isServiceRegion, REGION_CODE_ERROR } from "../geo/regions";
 import { ORG_TYPES } from "../roles/queries";
 import { invokeErrorMessage } from "../payments/queries";
@@ -111,7 +111,9 @@ async function savePublicDetails(
   const { error } = await supabase.from("public_profiles").update(values).eq("id", userId);
   if (error) return { error: new Error(error.message) };
 
-  const home = await geocodeAddress(`${values.city}, ${values.state}, USA`);
+  // Keep a referee's ZIP-precise pin when they edit another role's details.
+  const { data: priv } = await supabase.from("private_profiles").select("home_zip").eq("id", userId).maybeSingle();
+  const home = await geocodeFirst(homeQueries({ city: values.city, state: values.state, zip: priv?.home_zip ?? null }));
   const { error: homeError } = await supabase
     .from("private_profiles")
     .update({ home_lat: home?.lat ?? null, home_lng: home?.lng ?? null })

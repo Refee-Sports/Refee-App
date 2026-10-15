@@ -1,7 +1,7 @@
 import { supabase } from "../client";
 import { paymentIssues, type PaymentIssue } from "./payment-issues";
 import { fetchReliability, type ReliabilityCounts } from "../referee/reliability";
-import { geocodeAddress } from "../geo/geocode";
+import { geocodeFirst, venueQueries } from "../geo/geocode";
 import { notifyNewGames, sendPush } from "../push/send";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -297,7 +297,7 @@ export async function createTournament(
   }
 ): Promise<{ tournamentId: string | null; error: Error | null }> {
   const coords = args.venueAddress?.trim()
-    ? await geocodeAddress(venueQuery({ ...args, venueCity: args.venueCity, venueState: args.venueState }))
+    ? await geocodeFirst(venueQueries({ ...args, venueCity: args.venueCity, venueState: args.venueState }))
     : null;
   const { data, error } = await supabase
     .from("tournaments")
@@ -413,15 +413,6 @@ export type CreateGameArgs = {
   rulesetModifications?: string;
 };
 
-/** What the geocoder gets: the full street address when there is one, else the city. */
-function venueQuery(v: { venueAddress?: string; venueZip?: string; venueCity: string; venueState: string }): string {
-  const street = v.venueAddress?.trim();
-  const zip = v.venueZip?.trim();
-  return street
-    ? `${street}, ${v.venueCity}, ${v.venueState}${zip ? ` ${zip}` : ""}, USA`
-    : `${v.venueCity}, ${v.venueState}, USA`;
-}
-
 /**
  * Creates a game. Pass tournamentId = null for a standalone single game.
  * `startsAt` is the wall-clock time at the venue ("2026-09-20T13:30:00"); the
@@ -433,7 +424,7 @@ export async function createGame(
   args: CreateGameArgs
 ): Promise<{ gameId: string | null; error: Error | null }> {
   // Geocode the venue for distance-based feed filtering (best-effort).
-  const coords = await geocodeAddress(venueQuery(args));
+  const coords = await geocodeFirst(venueQueries(args));
 
   const { data, error } = await supabase
     .from("jobs")
@@ -872,7 +863,7 @@ export async function updateGame(
     (args.venueAddress !== undefined && (before.venue_address ?? "") !== args.venueAddress.trim()) ||
     (args.venueZip !== undefined && (before.venue_zip ?? "") !== args.venueZip.trim());
   const coords = locationChanged
-    ? await geocodeAddress(venueQuery(args))
+    ? await geocodeFirst(venueQueries(args))
     : null;
 
   const { error } = await supabase
@@ -983,7 +974,7 @@ export async function updateTournament(
   }
 ): Promise<{ error: Error | null }> {
   const coords = args.venueAddress?.trim()
-    ? await geocodeAddress(venueQuery({ ...args, venueCity: args.venueCity, venueState: args.venueState }))
+    ? await geocodeFirst(venueQueries({ ...args, venueCity: args.venueCity, venueState: args.venueState }))
     : null;
   const { error } = await supabase
     .from("tournaments")

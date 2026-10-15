@@ -44,7 +44,7 @@ const STEP_LABELS = ["NAME", "LOCATION", "SPORT", "RATE", "CERTIFICATIONS", "LEV
 const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08", "09"];
 const LAST_STEP = STEP_LABELS.length - 1;
 
-type StringFormKey = "firstName" | "lastName" | "city" | "state" | "sportId" | "yearsExperience" | "leaguesWorked" | "minPay" | "travelRadius" | "dobDigits";
+type StringFormKey = "firstName" | "lastName" | "city" | "state" | "homeZip" | "sportId" | "yearsExperience" | "leaguesWorked" | "minPay" | "travelRadius" | "dobDigits";
 type StringSetter = (k: StringFormKey) => (v: string) => void;
 
 type FormData = {
@@ -52,6 +52,7 @@ type FormData = {
   lastName: string;
   city: string;
   state: string;
+  homeZip: string;
   sportId: string;
   yearsExperience: string;
   leaguesWorked: string;
@@ -79,6 +80,7 @@ export default function Onboarding() {
     lastName: "",
     city: "",
     state: "",
+    homeZip: "",
     sportId: "basketball",
     yearsExperience: "",
     leaguesWorked: "",
@@ -122,7 +124,8 @@ export default function Onboarding() {
     form.firstName.trim().length >= 1 &&
       form.lastName.trim().length >= 1 &&
       isAdult(usDateInput(form.dobDigits).iso),
-    form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
+    form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()) &&
+      (form.homeZip === "" || /^[0-9]{5}$/.test(form.homeZip)),
     !!form.sportId,
     parseInt(form.minPay, 10) >= 1 && parseInt(form.travelRadius, 10) >= 1,
     true, // certs are optional
@@ -204,6 +207,7 @@ export default function Onboarding() {
         lastInitial,
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
+        homeZip: form.homeZip,
         sportId: form.sportId,
         yearsExperience: parseInt(form.yearsExperience || "0", 10),
         leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
@@ -446,6 +450,18 @@ function LocationStep({ form, set }: { form: FormData; set: StringSetter }) {
         maxLength={2}
         error={form.state.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined}
       />
+
+      <Label style={{ marginTop: 16 }}>HOME ZIP (OPTIONAL)</Label>
+      <StyledInput
+        value={form.homeZip}
+        onChangeText={(v) => set("homeZip")(v.replace(/\D/g, "").slice(0, 5))}
+        placeholder="78701"
+        keyboardType="number-pad"
+        maxLength={5}
+      />
+      <Text className="text-ink-60 mt-2" style={{ fontSize: 12, lineHeight: 17 }}>
+        Private. Measures your travel radius from near home instead of the middle of your city.
+      </Text>
     </View>
   );
 }

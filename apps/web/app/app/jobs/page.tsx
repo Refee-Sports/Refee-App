@@ -24,6 +24,7 @@ export default function JobsFeedPage() {
     error,
     usedMockForAvailable,
     homeUnknown,
+    liveFallback,
     locationMode,
     locating,
     toggleLocationMode,
@@ -181,8 +182,22 @@ export default function JobsFeedPage() {
               Showing games in your city only
             </span>
             <span className="mt-1 block text-[12px] text-ink-80">
-              We couldn&apos;t find your home city on the map, so your travel radius isn&apos;t applied. Check
-              your city and state, or switch to Near me.
+              We couldn&apos;t place your home on the map, so your travel radius isn&apos;t applied. Add your
+              home ZIP, or switch to Near me.
+            </span>
+          </Link>
+        ) : null}
+
+        {!loading && !error && liveFallback && locationMode === "home" && tab === "available" ? (
+          <Link
+            href="/app/edit-profile"
+            className="mb-3 block border border-ink bg-chalk px-3 py-2.5 lg:max-w-lg"
+          >
+            <span className="block font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1 }}>
+              Measuring from where you are now
+            </span>
+            <span className="mt-1 block text-[12px] text-ink-80">
+              We couldn&apos;t place your home on the map. Add your home ZIP so your travel radius starts from home.
             </span>
           </Link>
         ) : null}

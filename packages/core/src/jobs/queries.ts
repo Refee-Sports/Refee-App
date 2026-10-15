@@ -378,7 +378,17 @@ export async function fetchOpenJobs(
   if (error) {
     return { jobs: [], error: new Error(error.message) };
   }
-  let rows = (data ?? []) as JobDbRow[];
+  // Nobody can be booked on a game without its full address (0071), so it
+  // doesn't belong in the feed.
+  let rows = ((data ?? []) as JobDbRow[]).filter((r) => {
+    const j = r as any;
+    return (
+      !!j.venue_address?.trim() &&
+      /^[0-9]{5}$/.test(j.venue_zip ?? "") &&
+      !!j.venue_city?.trim() &&
+      /^[A-Z]{2}$/.test((j.venue_state ?? "").trim().toUpperCase())
+    );
+  });
 
   const distanceByJob = new Map<string, number>();
   let homeUnknown = false;

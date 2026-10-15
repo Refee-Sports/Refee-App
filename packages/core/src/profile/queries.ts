@@ -1,5 +1,5 @@
 import { supabase } from "../client";
-import { geocodeAddress } from "../geo/geocode";
+import { geocodeFirst, homeQueries } from "../geo/geocode";
 
 export type ProfileRow = {
   id: string;
@@ -64,6 +64,20 @@ export async function fetchMyAvailability(userId: string) {
     .maybeSingle();
 }
 
+/** The referee's own home ZIP (private), or null. */
+export async function fetchMyHomeZip(userId: string): Promise<string | null> {
+  const { data } = await supabase.from("private_profiles").select("home_zip").eq("id", userId).maybeSingle();
+  return (data as { home_zip?: string | null } | null)?.home_zip ?? null;
+}
+
+/** Home ZIP is optional; when given it must be 5 digits (0070). */
+export function cleanHomeZip(raw: string | null | undefined): { zip: string | null } | { error: string } {
+  const zip = (raw ?? "").trim();
+  if (!zip) return { zip: null };
+  if (!/^[0-9]{5}$/.test(zip)) return { error: "Enter a 5-digit ZIP code, or leave it blank." };
+  return { zip };
+}
+
 export type CertEntry = { bodyId: string; licenseNumber: string };
 
 export async function saveFullProfile(
@@ -73,6 +87,8 @@ export async function saveFullProfile(
     lastInitial: string;
     city: string;
     state: string;
+    /** Optional; places the home pin more precisely than the city (0070). */
+    homeZip?: string | null;
     sportId: string;
     yearsExperience: number;
     /** Optional note of leagues worked (run through cleanLeaguesWorked). */
@@ -104,7 +120,9 @@ export async function saveFullProfile(
   // The coordinates live on private_profiles (0047): they are only ever read
   // back for this person's own distance sorting, and a home address has no
   // business sitting on the profile every signed-in user can read.
-  const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
+  const zipCheck = cleanHomeZip(args.homeZip);
+  if ("error" in zipCheck) return { error: new Error(zipCheck.error) };
+  const home = await geocodeFirst(homeQueries({ city: args.city, state: args.state, zip: zipCheck.zip }));
 
   const { error: profileError } = await supabase.from("public_profiles").upsert({
     id: userId,
@@ -126,7 +144,11 @@ export async function saveFullProfile(
 
   const { error: homeError } = await supabase
     .from("private_profiles")
-    .update({ home_lat: home?.lat ?? null, home_lng: home?.lng ?? null })
+    .update({
+      home_lat: home?.lat ?? null,
+      home_lng: home?.lng ?? null,
+      ...(args.homeZip !== undefined ? { home_zip: zipCheck.zip } : {}),
+    })
     .eq("id", userId);
   if (homeError) return { error: homeError };
 
@@ -215,6 +237,8 @@ export async function updateFullProfile(
     lastInitial: string;
     city: string;
     state: string;
+    /** Optional; places the home pin more precisely than the city (0070). */
+    homeZip?: string | null;
     sportId: string;
     yearsExperience: number;
     /** Optional note of leagues worked (run through cleanLeaguesWorked). */
@@ -230,7 +254,9 @@ export async function updateFullProfile(
   // The coordinates live on private_profiles (0047): they are only ever read
   // back for this person's own distance sorting, and a home address has no
   // business sitting on the profile every signed-in user can read.
-  const home = await geocodeAddress(`${args.city}, ${args.state}, USA`);
+  const zipCheck = cleanHomeZip(args.homeZip);
+  if ("error" in zipCheck) return { error: new Error(zipCheck.error) };
+  const home = await geocodeFirst(homeQueries({ city: args.city, state: args.state, zip: zipCheck.zip }));
 
   const { error: profileError } = await supabase.from("public_profiles").upsert({
     id: userId,
@@ -243,7 +269,11 @@ export async function updateFullProfile(
 
   const { error: homeError } = await supabase
     .from("private_profiles")
-    .update({ home_lat: home?.lat ?? null, home_lng: home?.lng ?? null })
+    .update({
+      home_lat: home?.lat ?? null,
+      home_lng: home?.lng ?? null,
+      ...(args.homeZip !== undefined ? { home_zip: zipCheck.zip } : {}),
+    })
     .eq("id", userId);
   if (homeError) return { error: homeError };
 

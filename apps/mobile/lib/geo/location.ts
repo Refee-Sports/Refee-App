@@ -23,3 +23,21 @@ export async function getCurrentCoords(): Promise<LocationResult> {
     return { ok: false, reason: "unavailable" };
   }
 }
+
+/**
+ * The device's location only if the person already allowed it, never asking.
+ * Used when a referee has no home pin: rather than shrinking their feed to
+ * their city, measure from where they are.
+ */
+export async function getCoordsIfAlreadyAllowed(): Promise<LocationResult> {
+  try {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status !== "granted") return { ok: false, reason: "denied" };
+    const pos =
+      (await Location.getLastKnownPositionAsync({ maxAge: 30 * 60_000 })) ??
+      (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+    return { ok: true, coords: { lat: pos.coords.latitude, lng: pos.coords.longitude } };
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
+}

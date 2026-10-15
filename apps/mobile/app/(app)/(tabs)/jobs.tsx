@@ -59,6 +59,7 @@ export default function Jobs() {
     error,
     usedMockForAvailable,
     homeUnknown,
+    liveFallback,
     locationMode,
     locating,
     toggleLocationMode,
@@ -241,7 +242,22 @@ export default function Jobs() {
               Showing games in your city only
             </Text>
             <Text className="font-body text-[12px] text-ink-80 mt-1">
-              We couldn't find your home city on the map, so your travel radius isn't applied. Check your city and state, or tap NEAR ME.
+              We couldn't place your home on the map, so your travel radius isn't applied. Add your home ZIP, or tap NEAR ME.
+            </Text>
+          </Pressable>
+        ) : null}
+
+        {!loading && !error && liveFallback && locationMode === "home" && tab === "available" ? (
+          <Pressable
+            onPress={() => router.push("/edit-profile")}
+            className="border border-ink bg-chalk px-3 py-2.5 mb-3"
+            accessibilityRole="button"
+          >
+            <Text className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1 }}>
+              Measuring from where you are now
+            </Text>
+            <Text className="font-body text-[12px] text-ink-80 mt-1">
+              We couldn't place your home on the map. Add your home ZIP so your travel radius starts from home.
             </Text>
           </Pressable>
         ) : null}

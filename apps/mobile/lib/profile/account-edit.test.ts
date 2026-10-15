@@ -40,9 +40,13 @@ vi.mock("@/lib/supabase", () => ({
 }));
 
 // City changes move the home pin the referee feed measures from.
-vi.mock("@refee/core/geo/geocode", () => ({
-  geocodeAddress: vi.fn(async (address: string) => (address.startsWith("Austin") ? { lat: 30.27, lng: -97.74 } : null)),
-}));
+vi.mock("@refee/core/geo/geocode", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@refee/core/geo/geocode")>();
+  const geocodeAddress = vi.fn(async (address: string) =>
+    address.startsWith("Austin") ? { lat: 30.27, lng: -97.74, timezone: null } : null
+  );
+  return { ...real, geocodeAddress, geocodeFirst: (queries: string[]) => real.geocodeFirst(queries, geocodeAddress) };
+});
 
 import {
   fetchMyLegalIdentity,
@@ -204,6 +208,14 @@ describe("assignor details", () => {
         match: { id: "u1" },
       },
     ]);
+  });
+
+  it("keeps measuring from the referee's ZIP when they have one", async () => {
+    db.rows.private_profiles = { home_zip: "78701" };
+    const { geocodeAddress } = await import("@refee/core/geo/geocode");
+    vi.mocked(geocodeAddress).mockClear();
+    await updateAssignorDetails("u1", { firstName: "Morgan", city: "Round Rock", state: "TX" });
+    expect(vi.mocked(geocodeAddress).mock.calls[0][0]).toBe("78701, TX, USA");
   });
 
   it("refuses a missing city", async () => {

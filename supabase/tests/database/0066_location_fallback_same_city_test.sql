@@ -20,9 +20,9 @@ $$;
 create function pg_temp.mk_job(p_id text, p_city text, p_state text, p_lat numeric, p_lng numeric) returns void
 language sql as $$
   insert into public.jobs (id, hirer_id, sport_id, title, level, crew_size, pay_per_game, starts_at, duration_minutes,
-                           venue_name, venue_city, venue_state, venue_lat, venue_lng, timezone, job_type, status, num_games)
+                           venue_name, venue_address, venue_zip, venue_city, venue_state, venue_lat, venue_lng, timezone, job_type, status, num_games)
   select ('98660000-0000-4000-8000-' || p_id)::uuid, h.id, 'basketball', p_city, 'high_school', 2, 100, pg_temp.next_tue(), 60,
-         'Gym', p_city, p_state, p_lat, p_lng, 'America/Chicago', 'single', 'open', 1
+         'Gym', '100 Test St', '78701', p_city, p_state, p_lat, p_lng, 'America/Chicago', 'single', 'open', 1
   from public.hirers h where h.user_id = '11111111-1111-4111-8111-111111111101'
 $$;
 

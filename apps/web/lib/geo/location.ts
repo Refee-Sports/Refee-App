@@ -29,3 +29,19 @@ export async function getCurrentCoords(): Promise<LocationResult> {
     );
   });
 }
+
+/**
+ * The browser's location only if the person already allowed it, never
+ * prompting. Used when a referee has no home pin: rather than shrinking their
+ * feed to their city, measure from where they are.
+ */
+export async function getCoordsIfAlreadyAllowed(): Promise<LocationResult> {
+  try {
+    if (typeof navigator === "undefined" || !navigator.permissions) return { ok: false, reason: "unavailable" };
+    const status = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+    if (status.state !== "granted") return { ok: false, reason: "denied" };
+    return getCurrentCoords();
+  } catch {
+    return { ok: false, reason: "unavailable" };
+  }
+}

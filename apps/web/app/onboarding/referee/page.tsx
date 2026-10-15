@@ -42,6 +42,7 @@ type FormData = {
   lastName: string;
   city: string;
   state: string;
+  homeZip: string;
   sportId: string;
   yearsExperience: string;
   leaguesWorked: string;
@@ -69,6 +70,7 @@ export default function RefereeOnboardingPage() {
     lastName: "",
     city: "",
     state: "",
+    homeZip: "",
     sportId: "basketball",
     yearsExperience: "",
     leaguesWorked: "",
@@ -111,7 +113,8 @@ export default function RefereeOnboardingPage() {
     form.firstName.trim().length >= 1 &&
       form.lastName.trim().length >= 1 &&
       isAdult(form.dateOfBirth),
-    form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()),
+    form.city.trim().length >= 1 && US_STATES.includes(form.state.toUpperCase()) &&
+      (form.homeZip === "" || /^[0-9]{5}$/.test(form.homeZip)),
     !!form.sportId,
     parseInt(form.minPay, 10) >= 1 && parseInt(form.travelRadius, 10) >= 1,
     true, // certs are optional
@@ -169,6 +172,7 @@ export default function RefereeOnboardingPage() {
         lastInitial,
         city: form.city.trim(),
         state: form.state.trim().toUpperCase(),
+        homeZip: form.homeZip,
         sportId: form.sportId,
         yearsExperience: parseInt(form.yearsExperience || "0", 10),
         leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
@@ -386,6 +390,16 @@ function LocationStep({ form, set }: { form: FormData; set: SetFn }) {
         error={
           form.state.length === 2 && !stateValid ? REGION_CODE_ERROR : undefined
         }
+      />
+      <Label className="mt-4">Home ZIP (optional)</Label>
+      <TextField
+        value={form.homeZip}
+        onChange={(e) => set("homeZip")(e.target.value.replace(/\D/g, "").slice(0, 5))}
+        placeholder="78701"
+        inputMode="numeric"
+        maxLength={5}
+        autoComplete="postal-code"
+        hint="Private. Measures your travel radius from near home instead of the middle of your city."
       />
     </div>
   );

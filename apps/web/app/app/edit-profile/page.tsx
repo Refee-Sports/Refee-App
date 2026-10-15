@@ -13,6 +13,7 @@ import {
   fetchMyProfile,
   fetchMyRefSports,
   updateFullProfile,
+  fetchMyHomeZip,
   type CertEntry,
 } from "@/lib/profile/queries";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
@@ -51,6 +52,7 @@ type FormData = {
   lastInitial: string;
   city: string;
   state: string;
+  homeZip: string;
   sportId: string;
   yearsExperience: string;
   leaguesWorked: string;
@@ -72,6 +74,7 @@ export default function EditProfilePage() {
     lastInitial: "",
     city: "",
     state: "",
+    homeZip: "",
     sportId: "basketball",
     yearsExperience: "",
     leaguesWorked: "",
@@ -90,12 +93,13 @@ export default function EditProfilePage() {
       if (!session) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes] = await Promise.all([
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, homeZip] = await Promise.all([
         fetchMyProfile(uid),
         fetchMyRefSports(uid),
         fetchMyAvailability(uid),
         fetchMyCertifications(uid),
         fetchMyLevels(uid),
+        fetchMyHomeZip(uid),
       ]);
 
       const p = profileRes.data as { first_name?: string; last_initial?: string; city?: string; state?: string } | null;
@@ -113,6 +117,7 @@ export default function EditProfilePage() {
         lastInitial: p?.last_initial ?? "",
         city: p?.city ?? "",
         state: p?.state ?? "",
+        homeZip: homeZip ?? "",
         sportId: sport?.sport_id ?? "basketball",
         yearsExperience: sport?.years_experience ? String(sport.years_experience) : "",
         leaguesWorked: sport?.leagues_worked ?? "",
@@ -163,6 +168,7 @@ export default function EditProfilePage() {
     form.firstName.trim().length >= 1 &&
     form.lastInitial.trim().length >= 1 &&
     form.city.trim().length >= 1 &&
+    (form.homeZip === "" || /^[0-9]{5}$/.test(form.homeZip)) &&
     stateValid &&
     !!form.sportId &&
     parseInt(form.minPay, 10) >= 1 &&
@@ -188,6 +194,7 @@ export default function EditProfilePage() {
       lastInitial: form.lastInitial.trim()[0].toUpperCase(),
       city: form.city.trim(),
       state: form.state.trim().toUpperCase(),
+      homeZip: form.homeZip,
       sportId: form.sportId,
       yearsExperience: parseInt(form.yearsExperience || "0", 10),
       leaguesWorked: cleanLeaguesWorked(form.leaguesWorked),
@@ -265,6 +272,15 @@ export default function EditProfilePage() {
                 ? REGION_CODE_ERROR
                 : undefined
             }
+          />
+          <Label className="mt-4">Home ZIP (optional)</Label>
+          <TextField
+            value={form.homeZip}
+            onChange={(e) => set("homeZip")(e.target.value.replace(/\D/g, "").slice(0, 5))}
+            placeholder="78701"
+            inputMode="numeric"
+            maxLength={5}
+            hint="Private. Measures your travel radius from near home instead of the middle of your city."
           />
         </FormSection>
 

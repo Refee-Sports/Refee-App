@@ -9,12 +9,8 @@ import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { supabase } from "@/lib/supabase";
 import { fetchMyProfile, type ProfileRow } from "@/lib/profile/queries";
-import {
-  fetchMyAssignments,
-  fetchEarningsSummary,
-  type AssignmentRow,
-  type EarningsSummary,
-} from "@/lib/home/queries";
+import { fetchMyAssignments, type AssignmentRow } from "@/lib/home/queries";
+import { RefereeDashboard } from "@/components/home/RefereeDashboard";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import {
   fetchMyRosterInvites,
@@ -139,11 +135,7 @@ export default function Home() {
   const [upcomingGames, setUpcomingGames] = useState<AssignmentRow[]>([]);
   const [rosterInvites, setRosterInvites] = useState<RosterInviteRow[]>([]);
   const [rosterBusyId, setRosterBusyId] = useState<string | null>(null);
-  const [earnings, setEarnings] = useState<EarningsSummary>({
-    paidThisMonth: 0,
-    pendingTotal: 0,
-    gamesThisMonth: 0,
-  });
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -157,10 +149,10 @@ export default function Home() {
         if (!session || cancelled) return;
         const uid = session.user.id;
 
-        const [profileRes, assignRes, earningsRes, rosterRes] = await Promise.all([
+        setUserId(uid);
+        const [profileRes, assignRes, rosterRes] = await Promise.all([
           fetchMyProfile(uid),
           fetchMyAssignments(uid),
-          fetchEarningsSummary(uid),
           fetchMyRosterInvites(uid),
         ]);
 
@@ -168,7 +160,6 @@ export default function Home() {
         setProfile(profileRes.data as ProfileRow | null);
         setTodayGames(assignRes.today);
         setUpcomingGames(assignRes.upcoming);
-        setEarnings(earningsRes.summary);
         setRosterInvites(rosterRes.invites);
         setLoading(false);
       })();
@@ -179,8 +170,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [profileVersion])
   );
-
-  const monthName = new Date().toLocaleDateString("en-US", { month: "long" }).toUpperCase();
 
   if (loading) {
     return (
@@ -275,6 +264,8 @@ export default function Home() {
         </>
       )}
 
+      {userId ? <RefereeDashboard userId={userId} /> : null}
+
       {/* ── Today ────────────────────────────────────────────────── */}
       <SectionHeader>TODAY</SectionHeader>
       <View className="mx-5 gap-3">
@@ -296,43 +287,6 @@ export default function Home() {
           </View>
         </>
       )}
-
-      {/* ── Earnings ─────────────────────────────────────────────── */}
-      <SectionHeader>{`EARNINGS · ${monthName}`}</SectionHeader>
-      <View className="mx-5 border border-ink-20 bg-chalk">
-        <View className="flex-row border-b border-ink-20">
-          <View className="flex-1 px-4 py-4 border-r border-ink-20">
-            <Text
-              className="text-ink-60 font-mono-bold text-[9px] uppercase mb-1"
-              style={{ letterSpacing: 1.5 }}
-            >
-              PAID
-            </Text>
-            <Text className="text-ink font-display" style={{ fontSize: 28, letterSpacing: -1 }}>
-              ${earnings.paidThisMonth.toLocaleString()}
-            </Text>
-          </View>
-          <View className="flex-1 px-4 py-4">
-            <Text
-              className="text-ink-60 font-mono-bold text-[9px] uppercase mb-1"
-              style={{ letterSpacing: 1.5 }}
-            >
-              PENDING
-            </Text>
-            <Text className="text-ink font-display" style={{ fontSize: 28, letterSpacing: -1 }}>
-              ${earnings.pendingTotal.toLocaleString()}
-            </Text>
-          </View>
-        </View>
-        <View className="px-4 py-3">
-          <Text
-            className="text-ink-40 font-mono text-[9px] uppercase"
-            style={{ letterSpacing: 1.5 }}
-          >
-            {earnings.gamesThisMonth} GAME{earnings.gamesThisMonth !== 1 ? "S" : ""} THIS MONTH
-          </Text>
-        </View>
-      </View>
 
       {/* ── Quick actions ────────────────────────────────────────── */}
       <SectionHeader>QUICK ACTIONS</SectionHeader>

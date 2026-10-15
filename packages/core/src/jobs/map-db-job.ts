@@ -5,6 +5,8 @@ type HirerJoin = { org_name: string; is_verified: boolean } | null;
 
 export type JobDbRow = {
   id: string;
+  /** When the game was posted. */
+  created_at?: string | null;
   hirer_id: string;
   sport_id: string;
   title: string;
@@ -143,6 +145,7 @@ export function mapDbJobToListRow(row: JobDbRow): JobListRow {
     footerCta: "VIEW →",
     footerCtaTone: row.is_featured ? "signal" : "muted",
     startsAtIso: row.starts_at,
+    postedAtIso: row.created_at ?? null,
     timeZone: row.timezone ?? null,
     payPerGame: row.pay_per_game,
     crewSize: row.crew_size,

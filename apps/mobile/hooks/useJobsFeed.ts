@@ -4,7 +4,7 @@ import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getMockJobDetail, getMockJobs } from "@/lib/jobs/mock-data";
 import { resolveCounts, resolveTabRows } from "@/lib/jobs/feed-source";
 import { fetchActionableAssignments, fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
-import { getCurrentCoords } from "@/lib/geo/location";
+import { getCoordsIfAlreadyAllowed, getCurrentCoords } from "@/lib/geo/location";
 import type { Coords } from "@/lib/geo/geocode";
 import type { FeedTab, JobDetail, JobListRow } from "@/lib/jobs/types";
 
@@ -19,6 +19,8 @@ type JobsFeedState = {
   usedMockForAvailable: boolean;
   /** No home pin on file, so the feed only shows games in the ref's city. */
   homeUnknown?: boolean;
+  /** No home pin, so the radius is measured from the device's current location instead. */
+  liveFallback?: boolean;
 };
 
 export function useJobsFeed() {
@@ -47,12 +49,23 @@ export function useJobsFeed() {
       }
       setState((s) => ({ ...s, loading: true, error: null }));
       const { data: { session } } = await supabase.auth.getSession();
-      const [availableResult, invitedResult] = await Promise.all([
+      let liveFallback = false;
+      const [firstAvailable, invitedResult] = await Promise.all([
         fetchOpenJobs(supabase, session?.user.id ?? null, origin ?? undefined),
         session?.user.id
           ? fetchActionableAssignments(supabase, session.user.id)
           : Promise.resolve({ jobs: [], error: null }),
       ]);
+      let availableResult = firstAvailable;
+      // No home pin: measure from where they are, if they've already allowed
+      // location, before shrinking the feed to their city.
+      if (!origin && firstAvailable.homeUnknown && !firstAvailable.error && session?.user.id) {
+        const live = await getCoordsIfAlreadyAllowed();
+        if (live.ok) {
+          availableResult = await fetchOpenJobs(supabase, session.user.id, live.coords);
+          liveFallback = !availableResult.error;
+        }
+      }
       const error = availableResult.error ?? invitedResult.error;
       if (error) {
         // Configured but the fetch failed — surface the error and show an empty
@@ -73,6 +86,7 @@ export function useJobsFeed() {
         error: null,
         usedMockForAvailable: false,
         homeUnknown: availableResult.homeUnknown ?? false,
+        liveFallback,
       });
     },
     []

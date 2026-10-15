@@ -15,6 +15,7 @@ import {
   type DirectorGameRow,
 } from "@/lib/director/queries";
 import type { PaymentIssue } from "@refee/core/director/payment-issues";
+import { DirectorDashboard } from "@/components/director/DirectorDashboard";
 import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
@@ -39,6 +40,7 @@ export default function TournamentsScreen() {
   const [singleGames, setSingleGames] = useState<DirectorGameRow[]>([]);
   const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
   const [paymentIssues, setPaymentIssues] = useState<PaymentIssue[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,6 +52,7 @@ export default function TournamentsScreen() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); setRefreshing(false); return; }
+    setUserId(session.user.id);
 
     // Games auto-complete on the hourly sweep-game-lifecycle job; this only
     // pays games from before charge-at-booking that finished since last visit.
@@ -199,6 +202,14 @@ export default function TournamentsScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />
+          }
+          ListHeaderComponent={
+            // The list pads its sides; the dashboard sets its own.
+            userId ? (
+              <View style={{ marginHorizontal: -20 }} className="mb-4">
+                <DirectorDashboard userId={userId} />
+              </View>
+            ) : null
           }
           ItemSeparatorComponent={() => <View className="h-2" />}
           ListEmptyComponent={

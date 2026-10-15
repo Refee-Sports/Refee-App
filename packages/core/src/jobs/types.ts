@@ -22,6 +22,8 @@ export type JobListRow = {
   footerCtaTone: "ink" | "signal" | "muted";
   /** ISO start — used for date filters */
   startsAtIso: string;
+  /** When the game was posted, for "new since yesterday". */
+  postedAtIso?: string | null;
   /** IANA zone of the venue; the date and time above are in it. */
   timeZone?: string | null;
   payPerGame: number;

@@ -27,6 +27,8 @@ import {
 } from "@/lib/director/queries";
 import { runAutoPay } from "@/lib/payments/queries";
 import type { PaymentIssue } from "@refee/core/director/payment-issues";
+import { loadDirectorDashboard, type DirectorDashboard as DashboardData } from "@refee/core/director/dashboard";
+import { DirectorDashboard } from "@/components/director/DirectorDashboard";
 import { gameStatusDisplay, isClosedGame, payoutDisplay, type PayoutTone } from "@/lib/director/game-status";
 import { formatDateOnly, formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
@@ -106,6 +108,7 @@ function DirectorHome() {
   const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [paymentIssues, setPaymentIssues] = useState<PaymentIssue[]>([]);
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoPayNote, setAutoPayNote] = useState<string | null>(null);
@@ -146,7 +149,7 @@ function DirectorHome() {
             /* best-effort; the page works without it */
           });
 
-        const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }, issues] =
+        const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }, issues, board] =
           await withDeadline(
             Promise.all([
               fetchMyTournaments(session.user.id),
@@ -154,6 +157,7 @@ function DirectorHome() {
               fetchStandaloneGames(session.user.id),
               fetchPendingApprovals(session.user.id),
               fetchMyPaymentIssues(session.user.id),
+              loadDirectorDashboard(session.user.id),
             ])
           );
 
@@ -163,6 +167,7 @@ function DirectorHome() {
         setSingleGames(solo);
         setApprovals(pending);
         setPaymentIssues(issues);
+        setDashboard(board);
         // With no tab in the URL, open where the work is: approvals if refs are
         // waiting, otherwise whichever list has something in it. Only decided
         // once, so a reload of the data never yanks the view out from under you.
@@ -346,6 +351,8 @@ function DirectorHome() {
           </p>
         </div>
       )}
+
+      {dashboard ? <DirectorDashboard data={dashboard} /> : null}
 
       {/* Tabs */}
       <div className="mb-4 px-5 sm:px-0">

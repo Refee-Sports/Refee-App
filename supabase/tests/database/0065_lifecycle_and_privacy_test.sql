@@ -85,6 +85,15 @@ values ('22222222-2222-4222-8222-222222222200', 'iaabo', 'LIC-PRIVATE-1');
 insert into storage.objects (bucket_id, name, owner)
 values ('avatars', '22222222-2222-4222-8222-222222222200/avatar.jpg', '22222222-2222-4222-8222-222222222200');
 
+-- Games are only staffed with a full venue address (0071). Filled in quietly:
+-- with triggers on, a new address would send confirmed refs to re-confirm.
+set local session_replication_role = replica;
+update public.jobs
+   set venue_address = coalesce(nullif(btrim(venue_address), ''), '100 Test St'),
+       venue_zip = case when coalesce(venue_zip, '') ~ '^[0-9]{5}$' then venue_zip else '78701' end
+ where not public.venue_is_complete(venue_address, venue_zip, venue_city, venue_state);
+set local session_replication_role = origin;
+
 set local role authenticated;
 select set_config('request.jwt.claim.role', 'authenticated', true);
 

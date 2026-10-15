@@ -18,12 +18,6 @@ export type AssignmentRow = {
   };
 };
 
-export type EarningsSummary = {
-  paidThisMonth: number;
-  pendingTotal: number;
-  gamesThisMonth: number;
-};
-
 /**
  * Applications waiting on the organizer.
  *
@@ -96,70 +90,4 @@ export async function fetchMyAssignments(userId: string): Promise<{
   }
 
   return { today, upcoming, error: null };
-}
-
-export async function fetchEarningsSummary(userId: string): Promise<{
-  summary: EarningsSummary;
-  error: Error | null;
-}> {
-  const monthStart = new Date();
-  monthStart.setDate(1);
-  monthStart.setHours(0, 0, 0, 0);
-
-  const { data, error } = await supabase
-    .from("job_assignments")
-    .select("status, payout_status, amount_due, job:jobs(starts_at, num_games, pay_per_game)")
-    .eq("ref_id", userId)
-    .in("status", ["accepted", "completed", "cancelled"]);
-
-  if (error) {
-    return {
-      summary: { paidThisMonth: 0, pendingTotal: 0, gamesThisMonth: 0 },
-      error: new Error(error.message),
-    };
-  }
-
-  let paidThisMonth = 0;
-  let pendingTotal = 0;
-  let gamesThisMonth = 0;
-
-  for (const row of data ?? []) {
-    const r = row as {
-      status?: string;
-      payout_status?: string;
-      amount_due?: number | null;
-      job?: { starts_at?: string; num_games?: number; pay_per_game?: number };
-    };
-    const startsAt = r.job?.starts_at;
-    const isThisMonth = startsAt ? new Date(startsAt) >= monthStart : false;
-    const games = r.job?.num_games ?? 1;
-    const amt =
-      r.amount_due ??
-      (r.job?.pay_per_game != null ? r.job.pay_per_game * games : 0);
-
-    if (r.status === "cancelled") {
-      // late-cancellation bust fee: counts toward money, not games
-      const fee = r.amount_due ?? 0;
-      if (fee > 0) {
-        if (r.payout_status === "paid") {
-          if (isThisMonth) paidThisMonth += fee;
-        } else {
-          pendingTotal += fee;
-        }
-      }
-    } else if (r.payout_status === "paid") {
-      if (isThisMonth) {
-        paidThisMonth += amt;
-        gamesThisMonth += games;
-      }
-    } else if (r.status === "accepted" || r.status === "completed") {
-      pendingTotal += amt;
-      if (isThisMonth) gamesThisMonth += games;
-    }
-  }
-
-  return {
-    summary: { paidThisMonth, pendingTotal, gamesThisMonth },
-    error: null,
-  };
 }
