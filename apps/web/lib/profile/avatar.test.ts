@@ -3,15 +3,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   upload: vi.fn(),
   getPublicUrl: vi.fn(),
+  invoke: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase", () => ({
   supabase: {
     storage: { from: () => ({ upload: mocks.upload, getPublicUrl: mocks.getPublicUrl }) },
+    functions: { invoke: mocks.invoke },
   },
 }));
 
-import { headshotFileError, uploadSignupHeadshot } from "./avatar";
+import { headshotFileError, uploadAvatarFile, uploadSignupHeadshot } from "./avatar";
 
 const file = (type: string, size = 100) =>
   ({ type, size, arrayBuffer: async () => new ArrayBuffer(size) }) as unknown as File;
@@ -58,5 +60,40 @@ describe("uploadSignupHeadshot", () => {
     const out = await uploadSignupHeadshot("u1", file("image/png"));
     expect(out.avatarUrl).toBeNull();
     expect(out.error?.message).toBe("bucket missing");
+  });
+});
+
+describe("uploadAvatarFile — a changed photo goes through the face check", () => {
+  beforeEach(() => {
+    mocks.upload.mockReset().mockResolvedValue({ error: null });
+    mocks.invoke.mockReset().mockResolvedValue({ data: { avatarUrl: "https://cdn/avatars/u1/avatar.jpg?v=1" }, error: null });
+  });
+
+  it("stages the photo as pending.jpg and lets set-headshot decide", async () => {
+    const { avatarUrl, error } = await uploadAvatarFile("u1", file("image/png"));
+    expect(error).toBeNull();
+    expect(mocks.upload).toHaveBeenCalledWith("u1/pending.jpg", expect.any(ArrayBuffer), {
+      contentType: "image/png",
+      upsert: true,
+    });
+    expect(mocks.invoke).toHaveBeenCalledWith("set-headshot", { body: {} });
+    expect(avatarUrl).toBe("https://cdn/avatars/u1/avatar.jpg?v=1");
+  });
+
+  it("shows the reason when the face doesn't match", async () => {
+    mocks.invoke.mockResolvedValue({
+      data: null,
+      error: { message: "non-2xx", context: { json: async () => ({ error: "This photo doesn't look like the person on your verified ID." }) } },
+    });
+    const { avatarUrl, error } = await uploadAvatarFile("u1", file("image/jpeg"));
+    expect(avatarUrl).toBeNull();
+    expect(error?.message).toMatch(/doesn't look like/);
+  });
+
+  it("stops if the upload fails", async () => {
+    mocks.upload.mockResolvedValue({ error: { message: "storage down" } });
+    const { error } = await uploadAvatarFile("u1", file("image/jpeg"));
+    expect(error?.message).toBe("storage down");
+    expect(mocks.invoke).not.toHaveBeenCalled();
   });
 });

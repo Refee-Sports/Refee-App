@@ -73,13 +73,12 @@ export function EditDetailsForm({ role }: { role: "director" | "assignor" }) {
     const result = isDirector
       ? await updateDirectorDetails(userId, {
           contactFirstName: form.firstName,
-          contactLastInitial: form.lastInitial,
           orgName: form.orgName,
           orgType: form.orgType,
           city: form.city,
           state: form.state,
         })
-      : await updateAssignorDetails(userId, form);
+      : await updateAssignorDetails(userId, { firstName: form.firstName, city: form.city, state: form.state });
     setSaving(false);
     if (result.error) setError(result.error.message);
     else router.push(backHref);
@@ -148,15 +147,12 @@ export function EditDetailsForm({ role }: { role: "director" | "assignor" }) {
           {isDirector ? "Contact first name" : "First name"}
           <input value={form.firstName} onChange={(e) => set("firstName")(e.target.value)} autoComplete="given-name" className={input} />
         </label>
-        <label className={label}>
+        <div className={label}>
           Last initial
-          <input
-            value={form.lastInitial}
-            onChange={(e) => set("lastInitial")(e.target.value.replace(/[^a-zA-Z]/g, "").slice(0, 1).toUpperCase())}
-            maxLength={1}
-            className={`${input} w-20`}
-          />
-        </label>
+          <p className={`${input} w-20 bg-paper text-ink-60`} aria-readonly="true">
+            {form.lastInitial || "—"}
+          </p>
+        </div>
         <label className={label}>
           City
           <input value={form.city} onChange={(e) => set("city")(e.target.value)} autoComplete="address-level2" className={input} />
@@ -172,6 +168,11 @@ export function EditDetailsForm({ role }: { role: "director" | "assignor" }) {
           />
         </label>
       </div>
+
+      <p className="mt-2 text-xs leading-5 text-ink-60">
+        Your last initial comes from your legal name. Once your ID is verified, you can change your name once every 60
+        days.
+      </p>
 
       {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul">{error}</p> : null}
 

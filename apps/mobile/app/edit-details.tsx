@@ -81,13 +81,12 @@ export default function EditDetailsScreen() {
     const result = isDirector
       ? await updateDirectorDetails(userId, {
           contactFirstName: form.firstName,
-          contactLastInitial: form.lastInitial,
           orgName: form.orgName,
           orgType: form.orgType,
           city: form.city,
           state: form.state,
         })
-      : await updateAssignorDetails(userId, form);
+      : await updateAssignorDetails(userId, { firstName: form.firstName, city: form.city, state: form.state });
     setSaving(false);
     if (result.error) {
       setError(result.error.message);
@@ -162,13 +161,10 @@ export default function EditDetailsScreen() {
 
           <Label top={isDirector}>{isDirector ? "Contact first name" : "First name"}</Label>
           <Input value={form.firstName} onChangeText={set("firstName")} autoCapitalize="words" />
-          <Label top>Last initial</Label>
-          <Input
-            value={form.lastInitial}
-            onChangeText={(v) => set("lastInitial")(v.replace(/[^a-zA-Z]/g, "").slice(0, 1).toUpperCase())}
-            autoCapitalize="characters"
-            maxLength={1}
-          />
+          <Text className="mt-2 text-ink-60 text-[12px] leading-[18px]">
+            Shown as {form.firstName.trim() || "your name"} {form.lastInitial}. Your last initial comes from your legal
+            name. Once your ID is verified, you can change your name once every 60 days.
+          </Text>
           <Label top>City</Label>
           <Input value={form.city} onChangeText={set("city")} autoCapitalize="words" />
           <Label top>State</Label>

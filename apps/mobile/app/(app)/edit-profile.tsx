@@ -286,11 +286,8 @@ export default function EditProfile() {
           <FieldLabel top>LAST INITIAL</FieldLabel>
           <FieldInput
             value={form.lastInitial}
-            onChangeText={(v) => set("lastInitial")(v.replace(/[^a-zA-Z]/g, "").slice(0, 1).toUpperCase())}
-            placeholder="T"
-            autoCapitalize="characters"
-            maxLength={1}
-            hint="Only your initial is stored and shown to organizers"
+            editable={false}
+            hint="From your legal last name. Once your ID is verified, you can change your name once every 60 days"
           />
         </FormSection>
 

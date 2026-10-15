@@ -33,14 +33,15 @@ select is((select date_of_birth from public.private_profiles where id = '2222222
 
 -- Verified: the app can't move them.
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111100', true);
-select throws_ok(
-  $$update public.private_profiles set legal_last_name = 'Someone Else' where id = '11111111-1111-4111-8111-111111111100'$$,
-  '42501', null, 'after the ID is approved, the legal name is locked');
+-- (0068 relaxes this: a verified name can change, at most once every 60 days.)
+select lives_ok(
+  $$update public.private_profiles set legal_last_name = 'Rivera-Lopez' where id = '11111111-1111-4111-8111-111111111100'$$,
+  'after the ID is approved, the legal name can still be corrected (rate-limited, 0068)');
 select throws_ok(
   $$update public.private_profiles set date_of_birth = '1980-01-01' where id = '11111111-1111-4111-8111-111111111100'$$,
   '42501', null, 'and so is the date of birth');
 select lives_ok(
-  $$update public.private_profiles set legal_first_name = 'Alex', legal_last_name = 'Rivera', date_of_birth = '1990-04-02'
+  $$update public.private_profiles set legal_first_name = 'Alex', legal_last_name = 'Rivera-Lopez', date_of_birth = '1990-04-02'
      where id = '11111111-1111-4111-8111-111111111100'$$,
   'writing back the same values (sign-up for a second role) is fine');
 

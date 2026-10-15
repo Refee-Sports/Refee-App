@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { activateStagedHeadshot, STAGED_HEADSHOT } from "@/lib/profile/account";
 
 /** Why a file can't be a headshot, or null when it can. */
 export function headshotFileError(file: File | null): string | null {
@@ -31,13 +32,9 @@ export async function uploadSignupHeadshot(
 }
 
 /**
- * Uploads a headshot chosen from a file input to the avatars bucket at
- * `<userId>/avatar.jpg` and saves the public URL on the profile.
- *
- * Same storage path and same `public_profiles.avatar_url` write as the mobile
- * app's pickAndUploadAvatar — a photo set on the web shows up in the app.
- * The only difference is where the image comes from: `<input type="file">`
- * here, the native photo library there.
+ * Changes the profile photo to one chosen from a file input. Same path as the
+ * mobile app's pickAndUploadAvatar: stage it, then set-headshot accepts it
+ * (face-matched once the person is verified) and saves it on the profile.
  */
 export async function uploadAvatarFile(
   userId: string,
@@ -50,32 +47,17 @@ export async function uploadAvatarFile(
     return { avatarUrl: null, error: new Error("Image must be under 10 MB") };
   }
 
-  const arrayBuffer = await file.arrayBuffer();
-  const path = `${userId}/avatar.jpg`;
-
+  // Staged, then accepted by set-headshot — which face-matches it against the
+  // ID selfie once the person is verified (0068).
   const { error: uploadError } = await supabase.storage
     .from("avatars")
-    .upload(path, arrayBuffer, {
+    .upload(`${userId}/${STAGED_HEADSHOT}`, await file.arrayBuffer(), {
       contentType: file.type || "image/jpeg",
       upsert: true,
     });
-
   if (uploadError) {
     return { avatarUrl: null, error: new Error(uploadError.message) };
   }
 
-  const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-  // cache-bust so the new photo shows immediately after re-upload
-  const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
-
-  const { error: profileError } = await supabase
-    .from("public_profiles")
-    .update({ avatar_url: avatarUrl })
-    .eq("id", userId);
-
-  if (profileError) {
-    return { avatarUrl: null, error: new Error(profileError.message) };
-  }
-
-  return { avatarUrl, error: null };
+  return activateStagedHeadshot();
 }

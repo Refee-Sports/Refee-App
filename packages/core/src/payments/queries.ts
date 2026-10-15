@@ -8,7 +8,7 @@ import { supabase } from "../client";
  * error; the real message lives in the response body (error.context). Pull it
  * out so the UI shows what actually went wrong.
  */
-async function invokeErrorMessage(error: any): Promise<string> {
+export async function invokeErrorMessage(error: any): Promise<string> {
   try {
     const ctx = error?.context;
     if (ctx && typeof ctx.json === "function") {

@@ -47,6 +47,7 @@ vi.mock("@refee/core/geo/geocode", () => ({
 import {
   fetchMyLegalIdentity,
   isIdentityLocked,
+  nextNameChange,
   updateAssignorDetails,
   updateDirectorDetails,
   updateLegalIdentity,
@@ -72,14 +73,35 @@ describe("legal identity", () => {
       legal_last_name: "Okafor",
       date_of_birth: "1992-01-02",
       identity_status: "approved",
+      name_changed_at: null,
     };
     const { identity } = await fetchMyLegalIdentity("u1");
     expect(identity).toEqual({
       legalFirstName: "Sam",
       legalLastName: "Okafor",
       dateOfBirth: "1992-01-02",
-      locked: true,
+      namesLocked: false,
+      dobLocked: true,
+      verified: true,
+      nextNameChangeAt: null,
     });
+  });
+
+  it("locks names only while the ID is in review", async () => {
+    db.rows.private_profiles = { legal_first_name: "S", legal_last_name: "O", date_of_birth: "1992-01-02", identity_status: "in_review" };
+    const { identity } = await fetchMyLegalIdentity("u1");
+    expect(identity?.namesLocked).toBe(true);
+    expect(identity?.dobLocked).toBe(true);
+  });
+
+  it("works out when a verified person can rename again", () => {
+    const now = new Date("2026-10-14T12:00:00Z");
+    expect(nextNameChange(null, now)).toBeNull();
+    // Within the hour: still the same sitting.
+    expect(nextNameChange("2026-10-14T11:30:00Z", now)).toBeNull();
+    expect(nextNameChange("2026-10-01T12:00:00Z", now)).toBe("2026-11-30T12:00:00.000Z");
+    // Past the 60 days: free again.
+    expect(nextNameChange("2026-08-01T12:00:00Z", now)).toBeNull();
   });
 
   it("saves a corrected name and birthday, trimmed", async () => {
@@ -113,7 +135,6 @@ describe("legal identity", () => {
 describe("director details", () => {
   const args = {
     contactFirstName: " Jordan ",
-    contactLastInitial: "t",
     orgName: " Austin Hoops ",
     orgType: "league",
     city: " Austin ",
@@ -127,20 +148,13 @@ describe("director details", () => {
       {
         table: "hirers",
         op: "update",
-        values: {
-          org_name: "Austin Hoops",
-          org_type: "league",
-          city: "Austin",
-          state: "TX",
-          contact_first_name: "Jordan",
-          contact_last_initial: "T",
-        },
+        values: { org_name: "Austin Hoops", org_type: "league", city: "Austin", state: "TX" },
         match: { user_id: "u1" },
       },
       {
         table: "public_profiles",
         op: "update",
-        values: { first_name: "Jordan", last_initial: "T", city: "Austin", state: "TX" },
+        values: { first_name: "Jordan", city: "Austin", state: "TX" },
         match: { id: "u1" },
       },
       {
@@ -172,7 +186,6 @@ describe("assignor details", () => {
   it("updates the public profile", async () => {
     const { error } = await updateAssignorDetails("u1", {
       firstName: "Morgan",
-      lastInitial: "e",
       city: "Round Rock",
       state: "TX",
     });
@@ -181,7 +194,7 @@ describe("assignor details", () => {
       {
         table: "public_profiles",
         op: "update",
-        values: { first_name: "Morgan", last_initial: "E", city: "Round Rock", state: "TX" },
+        values: { first_name: "Morgan", city: "Round Rock", state: "TX" },
         match: { id: "u1" },
       },
       {
@@ -194,7 +207,7 @@ describe("assignor details", () => {
   });
 
   it("refuses a missing city", async () => {
-    const { error } = await updateAssignorDetails("u1", { firstName: "M", lastInitial: "E", city: "", state: "TX" });
+    const { error } = await updateAssignorDetails("u1", { firstName: "M", city: "", state: "TX" });
     expect(error?.message).toMatch(/city/i);
   });
 });

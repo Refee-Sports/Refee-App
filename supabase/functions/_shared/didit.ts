@@ -382,3 +382,30 @@ export function vendorUserId(body: Record<string, unknown>): string | null {
   const trimmed = raw.trim();
   return UUID.test(trimmed) ? trimmed : null;
 }
+
+// ── Headshot face match ──────────────────────────────────────────────────────
+// A verified person's new photo is compared with the live selfie from their ID
+// check, so the face on the roster stays the face that was verified.
+
+/**
+ * The signed URL of the liveness selfie in a session decision, or null. The
+ * decision endpoint returns it at the top level; a webhook wraps it in
+ * `decision`. URLs expire (four hours by default), so fetch a fresh decision.
+ */
+export function livenessReferenceImage(body: Record<string, unknown>): string | null {
+  const decision = record(body.decision) ?? body;
+  const checks = decision.liveness_checks;
+  if (!Array.isArray(checks)) return null;
+  for (const check of checks) {
+    const url = record(check)?.reference_image;
+    if (typeof url === "string" && url.trim()) return url.trim();
+  }
+  return null;
+}
+
+/** Didit's face-match verdict. Only an exact "Approved" counts. */
+export function faceMatchOutcome(payload: unknown): { matched: boolean; score: number | null } {
+  const match = record(record(payload)?.face_match);
+  const score = typeof match?.score === "number" ? match.score : null;
+  return { matched: match?.status === "Approved", score };
+}

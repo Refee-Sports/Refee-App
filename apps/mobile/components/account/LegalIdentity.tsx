@@ -9,8 +9,9 @@ import { dateOfBirthError, usDateInput } from "@refee/core/identity/age";
 const isoToDigits = (iso: string) => (iso ? `${iso.slice(5, 7)}${iso.slice(8, 10)}${iso.slice(0, 4)}` : "");
 
 /**
- * The legal name and birthday the ID check matches against. Editable until the
- * check is under way, so a typo can be fixed; read-only after (0067).
+ * The legal name and birthday the ID check matches against. Both are open until
+ * the check starts. Once verified, the name can still change once every 60 days
+ * (a badly scanned ID, a nickname, a marriage) and the birthday is fixed (0068).
  */
 export function LegalIdentity() {
   const [userId, setUserId] = useState<string | null>(null);
@@ -38,7 +39,18 @@ export function LegalIdentity() {
   if (!identity) return null;
 
   const dob = usDateInput(dobDigits);
-  const dobError = dob.iso ? dateOfBirthError(dob.iso) : null;
+  const dobError = !identity.dobLocked && dob.iso ? dateOfBirthError(dob.iso) : null;
+  const namesEditable = !identity.namesLocked && !identity.nextNameChangeAt;
+  const nextChange = identity.nextNameChangeAt
+    ? new Date(identity.nextNameChangeAt).toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })
+    : null;
+  const note = identity.namesLocked
+    ? "Your ID is being reviewed, so these can't change until it's decided."
+    : nextChange
+      ? `Your ID is verified. You can change your name again on ${nextChange}. Your date of birth can only be changed by support.`
+      : identity.verified
+        ? "Your ID is verified. You can change your name once every 60 days. Your date of birth can only be changed by support."
+        : "Private. Your ID check is matched against these, so they must match your ID exactly.";
 
   const save = async () => {
     if (!userId || saving) return;
@@ -47,7 +59,7 @@ export function LegalIdentity() {
     const { error } = await updateLegalIdentity(userId, {
       legalFirstName: first,
       legalLastName: last,
-      dateOfBirth: dob.iso,
+      dateOfBirth: identity.dobLocked ? identity.dateOfBirth : dob.iso,
     });
     setSaving(false);
     if (error) {
@@ -56,53 +68,48 @@ export function LegalIdentity() {
     }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setMessage({ ok: true, text: "Saved." });
+    // A verified rename starts the 60-day wait; show it.
+    const { identity: fresh } = await fetchMyLegalIdentity(userId);
+    if (fresh) setIdentity(fresh);
   };
 
   return (
     <View className="mt-8 border border-ink bg-chalk p-5">
       <Text className="font-mono-bold text-[11px] uppercase">Legal name &amp; date of birth</Text>
-      <Text className="mt-2 text-ink-60 text-[12px] leading-[18px]">
-        {identity.locked
-          ? "These match your verified ID, so they can't be changed here. Contact support if something is wrong."
-          : "Private. Your ID check is matched against these, so they must match your ID exactly."}
-      </Text>
+      <Text className="mt-2 text-ink-60 text-[12px] leading-[18px]">{note}</Text>
 
-      {identity.locked ? (
-        <View className="mt-4">
-          <Text className="font-mono text-[13px]">
-            {identity.legalFirstName} {identity.legalLastName}
-          </Text>
-          <Text className="font-mono text-[13px] mt-1">{usDateInput(isoToDigits(identity.dateOfBirth)).display}</Text>
-        </View>
-      ) : (
-        <View className="mt-4">
-          <Text className="font-mono-bold text-[10px] uppercase">Legal first name</Text>
-          <TextInput
-            value={first}
-            onChangeText={setFirst}
-            autoCapitalize="words"
-            autoComplete="name-given"
-            className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[14px]"
-          />
-          <Text className="mt-4 font-mono-bold text-[10px] uppercase">Legal last name</Text>
-          <TextInput
-            value={last}
-            onChangeText={setLast}
-            autoCapitalize="words"
-            autoComplete="name-family"
-            className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[14px]"
-          />
-          <Text className="mt-4 font-mono-bold text-[10px] uppercase">Date of birth</Text>
-          <TextInput
-            value={dob.display}
-            onChangeText={setDobDigits}
-            keyboardType="number-pad"
-            placeholder="MM/DD/YYYY"
-            className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[14px]"
-          />
-          {dobError ? <Text className="mt-2 text-foul text-[12px]">{dobError}</Text> : null}
+      <View className="mt-4">
+        <Text className="font-mono-bold text-[10px] uppercase">Legal first name</Text>
+        <TextInput
+          value={first}
+          onChangeText={setFirst}
+          editable={namesEditable}
+          autoCapitalize="words"
+          autoComplete="name-given"
+          className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${namesEditable ? "bg-paper" : "bg-chalk text-ink-60"}`}
+        />
+        <Text className="mt-4 font-mono-bold text-[10px] uppercase">Legal last name</Text>
+        <TextInput
+          value={last}
+          onChangeText={setLast}
+          editable={namesEditable}
+          autoCapitalize="words"
+          autoComplete="name-family"
+          className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${namesEditable ? "bg-paper" : "bg-chalk text-ink-60"}`}
+        />
+        <Text className="mt-4 font-mono-bold text-[10px] uppercase">Date of birth</Text>
+        <TextInput
+          value={dob.display}
+          onChangeText={setDobDigits}
+          editable={!identity.dobLocked}
+          keyboardType="number-pad"
+          placeholder="MM/DD/YYYY"
+          className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${identity.dobLocked ? "bg-chalk text-ink-60" : "bg-paper"}`}
+        />
+        {dobError ? <Text className="mt-2 text-foul text-[12px]">{dobError}</Text> : null}
+        {namesEditable || !identity.dobLocked ? (
           <Pressable
-            disabled={saving || !dob.iso || !!dobError}
+            disabled={saving || (!identity.dobLocked && (!dob.iso || !!dobError))}
             onPress={() => void save()}
             className="mt-4 bg-ink px-4 py-4 disabled:opacity-40"
           >
@@ -110,8 +117,8 @@ export function LegalIdentity() {
               {saving ? "Saving…" : "Save"}
             </Text>
           </Pressable>
-        </View>
-      )}
+        ) : null}
+      </View>
 
       {message ? (
         <Text className={`mt-3 text-[13px] ${message.ok ? "text-court" : "text-foul"}`}>{message.text}</Text>
