@@ -242,7 +242,7 @@ export default function Jobs() {
               Showing games in your city only
             </Text>
             <Text className="font-body text-[12px] text-ink-80 mt-1">
-              We couldn't place your home on the map, so your travel radius isn't applied. Add your home ZIP, or tap NEAR ME.
+              We couldn&apos;t place your home on the map, so your travel radius isn&apos;t applied. Add your home ZIP, or tap NEAR ME.
             </Text>
           </Pressable>
         ) : null}
@@ -257,7 +257,7 @@ export default function Jobs() {
               Measuring from where you are now
             </Text>
             <Text className="font-body text-[12px] text-ink-80 mt-1">
-              We couldn't place your home on the map. Add your home ZIP so your travel radius starts from home.
+              We couldn&apos;t place your home on the map. Add your home ZIP so your travel radius starts from home.
             </Text>
           </Pressable>
         ) : null}

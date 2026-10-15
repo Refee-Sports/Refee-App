@@ -542,3 +542,26 @@ export async function fetchJobById(
   }
   return { job: mapDbJobToDetail(data as JobDbRow), error: null };
 }
+
+type FeedResult = { jobs: JobListRow[]; error: Error | null; homeUnknown?: boolean };
+
+/**
+ * The feed, falling back to the device's location when the referee has no home
+ * pin, if they've already allowed location. Never overrides a location they
+ * chose (Near me), and keeps the city-only result if the reload fails.
+ */
+export async function loadOpenJobsWithFallback(args: {
+  fetchJobs: (origin?: { lat: number; lng: number }) => Promise<FeedResult>;
+  getLiveCoords: () => Promise<{ ok: true; coords: { lat: number; lng: number } } | { ok: false }>;
+  userId: string | null;
+  origin?: { lat: number; lng: number } | null;
+}): Promise<{ result: FeedResult; liveFallback: boolean }> {
+  const first = await args.fetchJobs(args.origin ?? undefined);
+  if (args.origin || !args.userId || first.error || !first.homeUnknown) {
+    return { result: first, liveFallback: false };
+  }
+  const live = await args.getLiveCoords();
+  if (!live.ok) return { result: first, liveFallback: false };
+  const second = await args.fetchJobs(live.coords);
+  return second.error ? { result: first, liveFallback: false } : { result: second, liveFallback: true };
+}

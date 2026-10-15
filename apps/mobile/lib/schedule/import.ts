@@ -53,6 +53,8 @@ export async function importTournamentSchedule(tournamentId: string, rows: Sched
     venue_name: row.venueName,
     venue_city: row.venueCity,
     venue_state: row.venueState,
+    venue_address: row.venueAddress,
+    venue_zip: row.venueZip,
     level: row.level,
     crew_size: row.crewSize,
     pay_per_game: row.payPerGame,

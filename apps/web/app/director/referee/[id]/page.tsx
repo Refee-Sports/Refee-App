@@ -7,6 +7,7 @@ import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
 import { Spinner } from "@/components/ui/AppButton";
 import { fetchRefereePublicView, type RefereePublicView } from "@/lib/director/queries";
+import { showRate } from "@refee/core/referee/reliability";
 
 const CERT_LABELS: Record<string, string> = {
   iaabo: "IAABO",
@@ -183,6 +184,12 @@ export default function RefereePublicProfilePage({
             sub={`${ref.rating_count} RATINGS`}
           />
         )}
+        <span className="w-px bg-ink" />
+        <StatCell
+          label="Show rate"
+          value={showRate(ref.reliability).rate != null ? `${showRate(ref.reliability).rate}%` : "New"}
+          sub={showRate(ref.reliability).detail}
+        />
         <span className="w-px bg-ink" />
         <StatCell
           label="Location"

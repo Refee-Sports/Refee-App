@@ -156,6 +156,8 @@ export type RefereePublicView = {
   levels: Array<{ level_id: string }>;
   /** Free-text leagues/organizations the referee has worked, or null. */
   leagues_worked: string | null;
+  /** Games kept vs late drop-outs and no-shows over the last year (0069). */
+  reliability: ReliabilityCounts | null;
 };
 
 // ── Hirer profile ────────────────────────────────────────────────────────────
@@ -731,7 +733,7 @@ export async function declineApplicantForGame(
 export async function fetchRefereePublicView(
   refId: string
 ): Promise<{ ref: RefereePublicView | null; error: Error | null }> {
-  const [profileRes, certsRes, levelsRes, sportsRes] = await Promise.all([
+  const [profileRes, certsRes, levelsRes, sportsRes, reliability] = await Promise.all([
     supabase
       .from("public_profiles")
       .select("id, first_name, last_initial, display_name, avatar_url, city, state, rating, rating_count, is_verified")
@@ -743,6 +745,7 @@ export async function fetchRefereePublicView(
       .eq("ref_id", refId),
     supabase.from("ref_levels").select("level_id").eq("ref_id", refId),
     supabase.from("ref_sports").select("leagues_worked").eq("ref_id", refId),
+    fetchReliability([refId]),
   ]);
 
   if (profileRes.error) return { ref: null, error: new Error(profileRes.error.message) };
@@ -756,6 +759,7 @@ export async function fetchRefereePublicView(
       leagues_worked:
         ((sportsRes.data ?? []) as Array<{ leagues_worked: string | null }>).find((s) => s.leagues_worked)
           ?.leagues_worked ?? null,
+      reliability: reliability.get(refId) ?? null,
     },
     error: null,
   };

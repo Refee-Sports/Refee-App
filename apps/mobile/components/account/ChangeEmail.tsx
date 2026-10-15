@@ -80,7 +80,7 @@ export function ChangeEmail() {
             className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[14px]"
           />
           <Text className="mt-2 text-ink-60 text-[12px] leading-[18px]">
-            We'll send a code to the new address. Your old address gets a notice once the change goes through.
+            We&apos;ll send a code to the new address. Your old address gets a notice once the change goes through.
           </Text>
           <Pressable
             disabled={busy || !email}

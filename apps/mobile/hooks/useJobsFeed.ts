@@ -3,7 +3,7 @@ import { useFocusEffect } from "expo-router";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 import { getMockJobDetail, getMockJobs } from "@/lib/jobs/mock-data";
 import { resolveCounts, resolveTabRows } from "@/lib/jobs/feed-source";
-import { fetchActionableAssignments, fetchJobById, fetchOpenJobs } from "@/lib/jobs/queries";
+import { fetchActionableAssignments, fetchJobById, fetchOpenJobs, loadOpenJobsWithFallback } from "@/lib/jobs/queries";
 import { getCoordsIfAlreadyAllowed, getCurrentCoords } from "@/lib/geo/location";
 import type { Coords } from "@/lib/geo/geocode";
 import type { FeedTab, JobDetail, JobListRow } from "@/lib/jobs/types";
@@ -49,23 +49,20 @@ export function useJobsFeed() {
       }
       setState((s) => ({ ...s, loading: true, error: null }));
       const { data: { session } } = await supabase.auth.getSession();
-      let liveFallback = false;
-      const [firstAvailable, invitedResult] = await Promise.all([
-        fetchOpenJobs(supabase, session?.user.id ?? null, origin ?? undefined),
-        session?.user.id
-          ? fetchActionableAssignments(supabase, session.user.id)
+      const userId = session?.user.id ?? null;
+      const [{ result: availableResult, liveFallback }, invitedResult] = await Promise.all([
+        // No home pin: measure from where they are, if they've already allowed
+        // location, before shrinking the feed to their city.
+        loadOpenJobsWithFallback({
+          fetchJobs: (at) => fetchOpenJobs(supabase, userId, at),
+          getLiveCoords: getCoordsIfAlreadyAllowed,
+          userId,
+          origin,
+        }),
+        userId
+          ? fetchActionableAssignments(supabase, userId)
           : Promise.resolve({ jobs: [], error: null }),
       ]);
-      let availableResult = firstAvailable;
-      // No home pin: measure from where they are, if they've already allowed
-      // location, before shrinking the feed to their city.
-      if (!origin && firstAvailable.homeUnknown && !firstAvailable.error && session?.user.id) {
-        const live = await getCoordsIfAlreadyAllowed();
-        if (live.ok) {
-          availableResult = await fetchOpenJobs(supabase, session.user.id, live.coords);
-          liveFallback = !availableResult.error;
-        }
-      }
       const error = availableResult.error ?? invitedResult.error;
       if (error) {
         // Configured but the fetch failed — surface the error and show an empty

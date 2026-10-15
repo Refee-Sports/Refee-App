@@ -1,15 +1,16 @@
 import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-// Unit tests for the web app's own logic in lib/ (shared logic is tested in
-// apps/mobile, next to the rest of @refee/core's tests).
+// This app's own logic (lib/), plus the shared @refee/core suite
+// (packages/core/test), which both apps run so shared code is proven under
+// each. Shared tests register a fake backend with configureSupabase.
 export default defineConfig({
   resolve: {
     alias: { "@": path.resolve(__dirname, ".") },
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "../../packages/core/test/**/*.test.ts"],
     globals: false,
   },
 });

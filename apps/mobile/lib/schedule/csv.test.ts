@@ -61,3 +61,39 @@ describe("schedule CSV parsing", () => {
     expect(localDateTimeToIso("2026-09-20", "09:00", "Central",).error).toContain("valid IANA");
   });
 });
+
+describe("games away from the tournament's venue", () => {
+  const header =
+    "home_team,away_team,date,time,timezone,venue_name,venue_city,venue_state,level,crew_size,pay_per_game,duration_minutes,age_group,gender,ruleset";
+  const row = (city: string, extra = "") =>
+    `Lions,Tigers,2026-09-20,09:00,America/Chicago,Eastside Rec,${city},TX,youth,2,55,60,U14,girls,NFHS${extra}`;
+
+  it("asks for a street and ZIP when a game is in another city", () => {
+    const result = parseScheduleCsv(`${header}\n${row("Dallas")}\n`, defaults);
+    expect(result.canImport).toBe(false);
+    expect(result.rows[0].errors).toContain(
+      "venue_address and venue_zip are required for a game outside the tournament's city"
+    );
+  });
+
+  it("imports it with its own street and ZIP", () => {
+    const result = parseScheduleCsv(`${header},venue_address,venue_zip\n${row("Dallas", ",500 Elm St,75201")}\n`, defaults);
+    expect(result.canImport).toBe(true);
+    expect(result.validRows[0]).toMatchObject({ venueAddress: "500 Elm St", venueZip: "75201" });
+  });
+
+  it("lets a court at the tournament's building inherit its address", () => {
+    const result = parseScheduleCsv(`${header}\n${row("austin")}\n`, defaults);
+    expect(result.canImport).toBe(true);
+    expect(result.validRows[0]).toMatchObject({ venueAddress: null, venueZip: null });
+  });
+
+  it("checks the ZIP", () => {
+    const result = parseScheduleCsv(`${header},venue_address,venue_zip\n${row("Dallas", ",500 Elm St,7520")}\n`, defaults);
+    expect(result.rows[0].errors).toContain("venue_zip must be 5 digits");
+  });
+
+  it("puts the optional columns in the template", () => {
+    expect(SCHEDULE_CSV_TEMPLATE.split("\n")[0]).toMatch(/,venue_address,venue_zip$/);
+  });
+});

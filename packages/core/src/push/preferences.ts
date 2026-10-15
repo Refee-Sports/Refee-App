@@ -29,7 +29,7 @@ export const NOTIFICATION_SWITCHES: { kind: NotificationKind; label: string; des
   {
     kind: "game_updates",
     label: "Game updates",
-    description: "Changes to a game you're on, confirmations, and announcements from the director or assignor.",
+    description: "Changes to a game you're on, confirmations, new applicants, payments sent, and announcements from the director or assignor.",
   },
 ];
 

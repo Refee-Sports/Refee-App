@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { fetchRefereePublicView, type RefereePublicView } from "@/lib/director/queries";
+import { showRate } from "@refee/core/referee/reliability";
 
 const CERT_LABELS: Record<string, string> = {
   iaabo: "IAABO",
@@ -156,6 +157,12 @@ export default function RefereePublicProfile() {
           ) : (
             <StatCell label="RATING" value={ref.rating.toFixed(2)} sub={`${ref.rating_count} RATINGS`} />
           )}
+          <View className="w-px bg-ink" />
+          <StatCell
+            label="SHOW RATE"
+            value={showRate(ref.reliability).rate != null ? `${showRate(ref.reliability).rate}%` : "NEW"}
+            sub={showRate(ref.reliability).detail.toUpperCase()}
+          />
           <View className="w-px bg-ink" />
           <StatCell label="LOCATION" value={`${ref.city.toUpperCase()}, ${ref.state}`} sub="BASE CITY" />
         </View>

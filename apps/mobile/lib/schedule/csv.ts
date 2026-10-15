@@ -18,8 +18,11 @@ export const SCHEDULE_COLUMNS = [
   "ruleset",
 ] as const;
 
-export const SCHEDULE_CSV_TEMPLATE = `${SCHEDULE_COLUMNS.join(",")}\n` +
-  `Lions,Tigers,2026-09-20,09:00,America/Chicago,Main Gym,Austin,TX,high_school,3,75,60,U18,boys,NFHS\n`;
+/** Only needed for a game outside the tournament's city; others use the tournament's address. */
+export const OPTIONAL_SCHEDULE_COLUMNS = ["venue_address", "venue_zip"] as const;
+
+export const SCHEDULE_CSV_TEMPLATE = `${[...SCHEDULE_COLUMNS, ...OPTIONAL_SCHEDULE_COLUMNS].join(",")}\n` +
+  `Lions,Tigers,2026-09-20,09:00,America/Chicago,Main Gym,Austin,TX,high_school,3,75,60,U18,boys,NFHS,,\n`;
 
 export type ScheduleImportDefaults = {
   startsOn: string;
@@ -43,6 +46,9 @@ export type ScheduleImportRow = {
   venueName: string;
   venueCity: string;
   venueState: string;
+  /** Own street and ZIP, for a game outside the tournament's city; null inherits the tournament's. */
+  venueAddress: string | null;
+  venueZip: string | null;
   level: string;
   crewSize: number;
   payPerGame: number;
@@ -156,7 +162,8 @@ export function parseScheduleCsv(csv: string, defaults: ScheduleImportDefaults):
   const seen = new Set<string>();
   const rows = nonBlank.slice(1).map((record, dataIndex): ScheduleRowPreview => {
     const rowNumber = dataIndex + 2;
-    const get = (name: typeof SCHEDULE_COLUMNS[number]) => (record[index[name]] ?? "").trim();
+    const get = (name: typeof SCHEDULE_COLUMNS[number] | typeof OPTIONAL_SCHEDULE_COLUMNS[number]) =>
+      index[name] === undefined ? "" : (record[index[name]] ?? "").trim();
     const errors: string[] = [];
     const homeTeam = get("home_team");
     const awayTeam = get("away_team");
@@ -176,6 +183,15 @@ export function parseScheduleCsv(csv: string, defaults: ScheduleImportDefaults):
     if (!venueName) errors.push("venue_name is required when the tournament has no default");
     if (!venueCity) errors.push("venue_city is required when the tournament has no default");
     if (!/^[A-Z]{2}$/.test(venueState)) errors.push("venue_state must be a 2-letter code");
+    const venueAddress = get("venue_address") || null;
+    const venueZip = get("venue_zip") || null;
+    const awayFromTournament =
+      venueCity.toLowerCase() !== (defaults.venueCity?.trim() ?? "").toLowerCase() ||
+      venueState !== (defaults.venueState?.trim() ?? "").toUpperCase();
+    if (awayFromTournament && (!venueAddress || !venueZip)) {
+      errors.push("venue_address and venue_zip are required for a game outside the tournament's city");
+    }
+    if (venueZip && !/^[0-9]{5}$/.test(venueZip)) errors.push("venue_zip must be 5 digits");
     if (!date) errors.push("date is required");
     else if (date < defaults.startsOn || date > defaults.endsOn) errors.push(`date must be between ${defaults.startsOn} and ${defaults.endsOn}`);
 
@@ -197,6 +213,8 @@ export function parseScheduleCsv(csv: string, defaults: ScheduleImportDefaults):
       venueName,
       venueCity,
       venueState,
+      venueAddress,
+      venueZip,
       level,
       crewSize,
       payPerGame,
