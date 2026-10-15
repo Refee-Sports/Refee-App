@@ -37,6 +37,7 @@ import { unregisterPushToken } from "@/lib/push/notifications";
 import { fetchPayoutStatus, getPayoutOnboardingLink, type PayoutStatus } from "@/lib/payments/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
+import { fetchReliability, showRate, type ReliabilityCounts } from "@refee/core/referee/reliability";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const CERT_LABELS: Record<string, string> = {
@@ -99,6 +100,7 @@ export default function RefereeProfilePage() {
     pendingGames: 0,
   });
   const [earningsPeriod, setEarningsPeriod] = useState<EarningsPeriod>("week");
+  const [reliability, setReliability] = useState<ReliabilityCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [availToggling, setAvailToggling] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -117,7 +119,7 @@ export default function RefereeProfilePage() {
       if (!session || cancelled) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, earningsRes, ratingsRes] =
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, earningsRes, ratingsRes, reliabilityRes] =
         await Promise.all([
           fetchMyProfile(uid),
           fetchMyRefSports(uid),
@@ -127,6 +129,7 @@ export default function RefereeProfilePage() {
           fetchUpcomingGames(uid),
           fetchEarningsSummary(uid, "week"),
           fetchMyRatings(),
+          fetchReliability([uid]),
         ]);
 
       if (cancelled) return;
@@ -138,6 +141,7 @@ export default function RefereeProfilePage() {
       setUpcomingGames(upcomingRes.games);
       setEarnings(earningsRes.summary);
       setRatings(ratingsRes.ratings);
+      setReliability(reliabilityRes.get(uid) ?? null);
       setLoading(false);
     })();
     return () => {
@@ -487,6 +491,16 @@ export default function RefereeProfilePage() {
         </div>
       )}
 
+      {/* Show rate */}
+      <div className="mx-5 mb-4 border border-ink bg-chalk px-4 py-3 sm:mx-0">
+        <p className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
+          {showRate(reliability).label}
+        </p>
+        <p className="mt-1 text-[12px] leading-[17px] text-ink-60">
+          {showRate(reliability).detail}. Dropping out within 48 hours of a game, or not showing up, lowers it. Directors see it when you apply.
+        </p>
+      </div>
+
       {/* Upcoming games */}
       {upcomingGames.length > 0 && (
         <>
@@ -731,6 +745,16 @@ export default function RefereeProfilePage() {
       )}
 
       <div className="mx-5 mt-6 grid gap-2 sm:mx-0">
+        <Link
+          href="/app/earnings"
+          className="flex items-center justify-between border border-ink bg-chalk px-4 py-3.5 hover:bg-ink hover:text-paper"
+        >
+          <span>
+            <span className="block font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>Earnings statement</span>
+            <span className="mt-0.5 block font-mono text-[9px] uppercase opacity-60" style={{ letterSpacing: 1 }}>Every game and where its pay stands</span>
+          </span>
+          <Icon name="chevron-right" size={16} />
+        </Link>
         <Link
           href="/app/organizations"
           className="flex items-center justify-between border border-ink bg-chalk px-4 py-3.5 hover:bg-ink hover:text-paper"

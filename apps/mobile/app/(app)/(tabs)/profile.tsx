@@ -36,6 +36,7 @@ import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
+import { fetchReliability, showRate, type ReliabilityCounts } from "@refee/core/referee/reliability";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -99,6 +100,7 @@ export default function Profile() {
   });
   const [earningsPeriod, setEarningsPeriod] = useState<EarningsPeriod>("week");
   const [ratings, setRatings] = useState<ReceivedRating[]>([]);
+  const [reliability, setReliability] = useState<ReliabilityCounts | null>(null);
   const [loading, setLoading] = useState(true);
   const [availToggling, setAvailToggling] = useState(false);
 
@@ -110,7 +112,7 @@ export default function Profile() {
       if (!session || cancelled) return;
       const uid = session.user.id;
 
-      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, ratingsRes] =
+      const [profileRes, sportsRes, availRes, certsRes, levelsRes, upcomingRes, ratingsRes, reliabilityRes] =
         await Promise.all([
           fetchMyProfile(uid),
           fetchMyRefSports(uid),
@@ -119,6 +121,7 @@ export default function Profile() {
           fetchMyLevels(uid),
           fetchUpcomingGames(uid),
           fetchMyRatings(),
+          fetchReliability([uid]),
         ]);
 
       if (cancelled) return;
@@ -129,6 +132,7 @@ export default function Profile() {
       setLevels((levelsRes.data ?? []) as RefLevelRow[]);
       setUpcomingGames(upcomingRes.games);
       setRatings(ratingsRes.ratings);
+      setReliability(reliabilityRes.get(uid) ?? null);
       setLoading(false);
     })();
     return () => { cancelled = true; };
@@ -488,6 +492,16 @@ export default function Profile() {
         </View>
       )}
 
+      {/* ── Show rate ────────────────────────────────────────────── */}
+      <View className="mx-5 mb-4 border border-ink bg-chalk px-4 py-3">
+        <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
+          {showRate(reliability).label}
+        </Text>
+        <Text className="text-ink-60 text-[12px] leading-[17px] mt-1">
+          {showRate(reliability).detail}. Dropping out within 48 hours of a game, or not showing up, lowers it. Directors see it when you apply.
+        </Text>
+      </View>
+
       {/* ── Upcoming games ───────────────────────────────────────── */}
       {upcomingGames.length > 0 && (
         <>
@@ -719,6 +733,16 @@ export default function Profile() {
       )}
 
       <View className="mx-5 mt-6 gap-2">
+        <Pressable
+          onPress={() => { Haptics.selectionAsync(); router.push("/earnings" as any); }}
+          className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
+        >
+          <View>
+            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>EARNINGS STATEMENT</Text>
+            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>EVERY GAME AND WHERE ITS PAY STANDS</Text>
+          </View>
+          <Feather name="chevron-right" size={16} color="#08111C" />
+        </Pressable>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.push("/my-organizations" as any); }}
           className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"

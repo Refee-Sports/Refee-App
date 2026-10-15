@@ -87,3 +87,30 @@ export function formatDateOnly(ymd: string, opts: Intl.DateTimeFormatOptions): s
     timeZone: "UTC",
   });
 }
+
+/**
+ * A game's date and time as the venue's clock shows them ("2026-09-20",
+ * "13:30"), for prefilling edit forms. Never the device's clock: a director
+ * editing an Eastern game from Pacific time must see the Eastern time, or
+ * saving moves the game.
+ */
+export function venueWallClock(game: {
+  starts_at: string;
+  starts_local?: string | null;
+  timezone?: string | null;
+}): { date: string; time: string } {
+  if (game.starts_local) {
+    return { date: game.starts_local.slice(0, 10), time: game.starts_local.slice(11, 16) };
+  }
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: zone(game.timezone),
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(game.starts_at));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return { date: `${get("year")}-${get("month")}-${get("day")}`, time: `${get("hour")}:${get("minute")}` };
+}

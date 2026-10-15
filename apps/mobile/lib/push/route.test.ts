@@ -29,6 +29,18 @@ describe("where tapping a notification goes", () => {
     expect(routeForNotification({ type: "new_games" }, "assignor")).toBeNull();
   });
 
+  it("opens a game update on the screen each role runs the game from", () => {
+    expect(routeForNotification({ type: "game_update", jobId: JOB }, "director")).toBe(`/(director)/game/${JOB}`);
+    expect(routeForNotification({ type: "game_update", jobId: JOB }, "assignor")).toBe(`/(assignor)/game/${JOB}`);
+    expect(routeForNotification({ type: "game_update", jobId: JOB }, "referee")).toBe(`/job/${JOB}`);
+    expect(routeForNotification({ type: "game_update", jobId: "nope" }, "director")).toBeNull();
+  });
+
+  it("opens the earnings statement when a referee is paid", () => {
+    expect(routeForNotification({ type: "payout", jobId: JOB }, "referee")).toBe("/earnings");
+    expect(routeForNotification({ type: "payout", jobId: JOB }, "director")).toBeNull();
+  });
+
   it("goes nowhere before we know who is signed in", () => {
     expect(routeForNotification({ type: "new_game", jobId: JOB }, null)).toBeNull();
   });

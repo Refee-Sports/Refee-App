@@ -94,3 +94,38 @@ describe("feed location matching", () => {
     expect(homeUnknown).toBe(false);
   });
 });
+
+describe("roster-only games in the feed", () => {
+  const rosterGame = {
+    ...job("roster-only", "Round Rock", "TX", ROUND_ROCK),
+    tournaments: { assignor_id: "assignor1", assignor_status: "accepted" },
+  };
+  const pendingAssignor = {
+    ...job("assignor-not-hired", "Round Rock", "TX", ROUND_ROCK),
+    tournaments: { assignor_id: "assignor1", assignor_status: "pending" },
+  };
+  const client = (rosters: unknown[]) =>
+    fakeClient({
+      jobs: [rosterGame, pendingAssignor, job("public", "Round Rock", "TX", ROUND_ROCK)],
+      job_assignments: [],
+      assignor_rosters: rosters,
+      public_profiles: { city: "Austin", state: "TX" },
+      private_profiles: AUSTIN && { home_lat: AUSTIN.lat, home_lng: AUSTIN.lng },
+      availability_prefs: { travel_radius_miles: 25, min_pay_per_game: 0, available_days: 0 },
+    });
+
+  it("hides a game an assignor runs from referees who aren't on their roster", async () => {
+    const { jobs } = await fetchOpenJobs(client([]), "u1");
+    expect(jobs.map((j) => j.id).sort()).toEqual(["assignor-not-hired", "public"]);
+  });
+
+  it("shows it to the assignor's roster", async () => {
+    const { jobs } = await fetchOpenJobs(client([{ assignor_id: "assignor1" }]), "u1");
+    expect(jobs.map((j) => j.id)).toContain("roster-only");
+  });
+
+  it("shows it to the assignor themselves", async () => {
+    const { jobs } = await fetchOpenJobs(client([]), "assignor1");
+    expect(jobs.map((j) => j.id)).toContain("roster-only");
+  });
+});

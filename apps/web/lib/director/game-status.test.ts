@@ -96,12 +96,12 @@ describe("payoutDisplay", () => {
   });
 
   it("without completed_at, counts from when the lifecycle sweep would have completed the game", () => {
-    // Starts 17:00 UTC Sep 20, 60 min, +2h auto-complete → 20:00 Sep 20; +48h → 20:00 Sep 22.
+    // Starts 17:00 UTC Sep 20, 60 min, +1h auto-complete → 19:00 Sep 20; +48h → 19:00 Sep 22.
     const g = game({ completed_at: null });
-    expect(payoutDisplay(g, Date.parse("2026-09-22T19:59:00Z")).tone).toBe("due");
-    expect(payoutDisplay(g, Date.parse("2026-09-22T20:01:00Z")).tone).toBe("overdue");
+    expect(payoutDisplay(g, Date.parse("2026-09-22T18:59:00Z")).tone).toBe("due");
+    expect(payoutDisplay(g, Date.parse("2026-09-22T19:01:00Z")).tone).toBe("overdue");
     // No duration on file: assumes 120 minutes, so the deadline moves an hour later.
     const noLength = game({ completed_at: null, duration_minutes: null });
-    expect(payoutDisplay(noLength, Date.parse("2026-09-22T20:30:00Z")).tone).toBe("due");
+    expect(payoutDisplay(noLength, Date.parse("2026-09-22T19:30:00Z")).tone).toBe("due");
   });
 });

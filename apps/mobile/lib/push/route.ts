@@ -22,6 +22,16 @@ export function routeForNotification(data: unknown, role: Role | null): string |
       const id = idOf(jobId);
       return role === "referee" && id ? `/job/${id}` : null;
     }
+    // Applications, withdrawals and late reports, sent to whoever runs the game.
+    case "game_update": {
+      const id = idOf(jobId);
+      if (!id) return null;
+      if (role === "director") return `/(director)/game/${id}`;
+      if (role === "assignor") return `/(assignor)/game/${id}`;
+      return `/job/${id}`;
+    }
+    case "payout":
+      return role === "referee" ? "/earnings" : null;
     case "new_games":
       return role === "referee" ? "/(app)/(tabs)/jobs" : null;
     case "message": {

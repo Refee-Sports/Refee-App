@@ -1071,6 +1071,33 @@ export type Database = {
           },
         ]
       }
+      name_changes: {
+        Row: {
+          changed_at: string
+          field: string
+          id: number
+          new_value: string | null
+          old_value: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          field: string
+          id?: never
+          new_value?: string | null
+          old_value?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          field?: string
+          id?: never
+          new_value?: string | null
+          old_value?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       new_game_alerts: {
         Row: {
           job_id: string
@@ -1144,6 +1171,7 @@ export type Database = {
           identity_verified_at: string | null
           legal_first_name: string | null
           legal_last_name: string | null
+          name_changed_at: string | null
           persona_inquiry_id: string | null
           phone: string | null
           postal_code: string | null
@@ -1178,6 +1206,7 @@ export type Database = {
           identity_verified_at?: string | null
           legal_first_name?: string | null
           legal_last_name?: string | null
+          name_changed_at?: string | null
           persona_inquiry_id?: string | null
           phone?: string | null
           postal_code?: string | null
@@ -1212,6 +1241,7 @@ export type Database = {
           identity_verified_at?: string | null
           legal_first_name?: string | null
           legal_last_name?: string | null
+          name_changed_at?: string | null
           persona_inquiry_id?: string | null
           phone?: string | null
           postal_code?: string | null
@@ -1995,6 +2025,10 @@ export type Database = {
           user_id: string
         }[]
       }
+      assert_name_change_allowed: {
+        Args: { p_last: string }
+        Returns: undefined
+      }
       can_alert_for_job: {
         Args: { p_caller: string; p_job_id: string }
         Returns: boolean
@@ -2079,6 +2113,10 @@ export type Database = {
         Returns: undefined
       }
       leave_roster: { Args: { p_roster_id: string }; Returns: undefined }
+      log_name_change: {
+        Args: { p_field: string; p_new: string; p_old: string }
+        Returns: undefined
+      }
       mark_no_show: {
         Args: { p_job_id: string; p_ref_id: string }
         Returns: Json
@@ -2104,6 +2142,8 @@ export type Database = {
         }[]
       }
       my_roster_invite_code: { Args: never; Returns: string }
+      name_change_cooldown: { Args: never; Returns: string }
+      name_change_stamp: { Args: { p_last: string }; Returns: string }
       new_roster_code: { Args: never; Returns: string }
       notifiable_user_ids: {
         Args: { p_caller: string; p_targets: string[] }
@@ -2136,6 +2176,15 @@ export type Database = {
           state: string
         }[]
       }
+      referee_reliability: {
+        Args: { p_ref_ids: string[] }
+        Returns: {
+          kept: number
+          late_withdrawals: number
+          no_shows: number
+          ref_id: string
+        }[]
+      }
       remove_ref_from_assignor_game: {
         Args: { p_assignment_id: string }
         Returns: undefined
@@ -2166,6 +2215,7 @@ export type Database = {
         Args: { p_job_id: string; p_mode: string }
         Returns: string
       }
+      stamp_name_change: { Args: never; Returns: undefined }
       submit_assignor_proposal: {
         Args: {
           p_fee_amount?: number

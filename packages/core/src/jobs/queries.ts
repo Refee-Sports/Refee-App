@@ -123,6 +123,19 @@ export async function acceptJob(
     p_job_id: jobId,
     p_accept: true,
   });
+  // The director (and assignor) hear straight away: an applicant waiting on
+  // them, or a crew that just got closer to full.
+  if (!error && data === "pending") {
+    await notifyOrganizers(supabase, jobId, (title) => ({
+      title: "New applicant",
+      body: `A referee applied to "${title}". Review them before the crew fills.`,
+    }));
+  } else if (!error && data === "accepted") {
+    await notifyOrganizers(supabase, jobId, (title) => ({
+      title: "Referee confirmed",
+      body: `A referee joined the crew for "${title}".`,
+    }));
+  }
   return {
     status: error ? null : ((data as AssignmentStatus) ?? null),
     error: error ? new Error(error.message) : null,
@@ -356,7 +369,7 @@ export async function fetchOpenJobs(
 }> {
   const { data, error } = await supabase
     .from("jobs")
-    .select("*, hirers(org_name, is_verified)")
+    .select("*, hirers(org_name, is_verified), tournaments(assignor_id, assignor_status)")
     .eq("status", "open")
     // A game that has tipped off can't take applications any more.
     .gt("starts_at", new Date().toISOString())
@@ -371,7 +384,7 @@ export async function fetchOpenJobs(
   let homeUnknown = false;
 
   if (userId) {
-    const [{ data: mine }, { data: profile }, { data: home_ }, { data: prefs }] =
+    const [{ data: mine }, { data: profile }, { data: home_ }, { data: prefs }, { data: rosters }] =
       await Promise.all([
         // Hide jobs the ref has interacted with: accepted/pending live under
         // upcoming games; declined jobs stay hidden for good.
@@ -397,10 +410,26 @@ export async function fetchOpenJobs(
           .select("min_pay_per_game, travel_radius_miles, available_days")
           .eq("ref_id", userId)
           .maybeSingle(),
+        // Assignors whose roster this ref is on.
+        supabase
+          .from("assignor_rosters")
+          .select("assignor_id")
+          .eq("ref_id", userId)
+          .eq("status", "accepted"),
       ]);
 
     const taken = new Set((mine ?? []).map((a) => a.job_id));
     rows = rows.filter((r) => !taken.has(r.id));
+
+    // A game an assignor runs is for their roster only. respond_to_job refuses
+    // anyone else (0064); hiding it here saves them a dead end.
+    const myAssignors = new Set(((rosters ?? []) as { assignor_id: string }[]).map((r) => r.assignor_id));
+    rows = rows.filter((r) => {
+      const raw = (r as any).tournaments;
+      const t = Array.isArray(raw) ? raw[0] : raw;
+      if (!t?.assignor_id || t.assignor_status !== "accepted") return true;
+      return t.assignor_id === userId || myAssignors.has(t.assignor_id);
+    });
 
     // Location: true mile-radius when the ref and the venue are both geocoded;
     // otherwise only games in the ref's own city. A whole-state fallback would

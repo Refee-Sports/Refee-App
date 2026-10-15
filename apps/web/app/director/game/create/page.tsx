@@ -37,7 +37,7 @@ import {
 import { getCardSetupParams, prepayGame } from "@/lib/payments/queries";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
-import { zoneName } from "@refee/core/time";
+import { venueWallClock, zoneName } from "@refee/core/time";
 import { extractSchedule, readUpload, type ExtractedSchedule } from "@refee/core/schedule/ai-import";
 import { carrySchedule } from "@/lib/schedule/rows";
 
@@ -158,8 +158,7 @@ function CreateGameInner() {
     (async () => {
       const { game } = await fetchGameForEdit(sourceId);
       if (!game) return;
-      const d = new Date(game.starts_at);
-      const pad = (n: number) => String(n).padStart(2, "0");
+      const venue = venueWallClock(game as { starts_at: string });
       setForm((f) => ({
         ...f,
         homeTeam: game.home_team ?? "",
@@ -167,10 +166,8 @@ function CreateGameInner() {
         level: game.level ?? "",
         crewSize: (game.crew_size === 3 ? 3 : 2) as 2 | 3,
         payPerGame: String(game.pay_per_game ?? ""),
-        gameDate: isEdit || keepDate
-          ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-          : "",
-        gameTime: isEdit ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : "",
+        gameDate: isEdit || keepDate ? venue.date : "",
+        gameTime: isEdit ? venue.time : "",
         gameFormat: (game.game_format ?? "") as "" | "quarters" | "halves",
         periodMinutes: game.period_minutes ? String(game.period_minutes) : "",
         venueName: game.venue_name ?? "",

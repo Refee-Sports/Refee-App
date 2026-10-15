@@ -29,8 +29,14 @@ function fakeSupabase(
     error: null,
   }
 ) {
-  const rpc = vi.fn().mockResolvedValue(rpcResult);
+  const rpc = vi.fn(async (name: string) =>
+    name === "job_notify_targets"
+      ? { data: { title: "Lions vs Tigers", user_ids: ["director1"] }, error: null }
+      : rpcResult
+  );
+  const invoke = vi.fn().mockResolvedValue({ data: null, error: null });
   return {
+    functions: { invoke },
     from(table: string) {
       const result =
         table === "jobs"
@@ -154,6 +160,46 @@ describe("server-authoritative job responses", () => {
 
     expect(result.status).toBeNull();
     expect(result.error?.message).toBe("This game is limited to the assignor roster");
+  });
+});
+
+describe("organizers hear about applications", () => {
+  it("tells the director a referee applied when the game needs approval", async () => {
+    const client = fakeSupabase(target, [], { data: "pending", error: null });
+
+    await acceptJob(client, "ref1", "job1");
+
+    expect(client.rpc).toHaveBeenCalledWith("job_notify_targets", { p_job_id: "job1" });
+    expect(client.functions.invoke).toHaveBeenCalledWith("send-push", {
+      body: {
+        userIds: ["director1"],
+        title: "New applicant",
+        body: 'A referee applied to "Lions vs Tigers". Review them before the crew fills.',
+        data: { type: "game_update", jobId: "job1" },
+        kind: "game_updates",
+      },
+    });
+  });
+
+  it("tells the director a referee joined a game that auto-accepts", async () => {
+    const client = fakeSupabase(target, [], { data: "accepted", error: null });
+
+    await acceptJob(client, "ref1", "job1");
+
+    expect(client.functions.invoke).toHaveBeenCalledWith(
+      "send-push",
+      expect.objectContaining({
+        body: expect.objectContaining({ title: "Referee confirmed", body: 'A referee joined the crew for "Lions vs Tigers".' }),
+      })
+    );
+  });
+
+  it("sends nothing when the application fails", async () => {
+    const client = fakeSupabase(target, [], { data: null, error: { message: "Game is full" } });
+
+    await acceptJob(client, "ref1", "job1");
+
+    expect(client.functions.invoke).not.toHaveBeenCalled();
   });
 });
 

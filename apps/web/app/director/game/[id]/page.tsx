@@ -45,6 +45,7 @@ import {
   type PayCrewQuote,
 } from "@/lib/payments/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { showRate } from "@refee/core/referee/reliability";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -451,6 +452,15 @@ export default function DirectorGameDetailPage({
         >
           Game detail
         </span>
+        <Link
+          href={`/director/game/create?copyFromId=${id}${game.tournament_id ? `&tournamentId=${game.tournament_id}` : ""}`}
+          className="mr-2 flex h-9 shrink-0 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
+        >
+          <Icon name="copy" size={12} />
+          <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+            Duplicate
+          </span>
+        </Link>
         <Link
           href={`/director/game/create?editId=${id}`}
           className="flex h-9 shrink-0 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
@@ -1146,6 +1156,7 @@ function ApplicantCard({
   onNoShow?: () => void;
 }) {
   const p = applicant.profile;
+  const rate = showRate(applicant.reliability);
   const initials = p ? `${p.first_name[0] ?? "?"}${p.last_initial}`.toUpperCase() : "??";
   const displayName = p ? `${p.first_name} ${p.last_initial}.`.toUpperCase() : "UNKNOWN REF";
 
@@ -1201,6 +1212,13 @@ function ApplicantCard({
               Leagues: {applicant.credentials.leaguesWorked}
             </span>
           )}
+          <span
+            className={`block truncate font-mono text-[9px] uppercase ${rate.rate != null && rate.rate < 90 ? "text-foul" : "text-ink-60"}`}
+            style={{ letterSpacing: 1 }}
+            title={rate.detail}
+          >
+            {rate.label}{rate.rate != null && rate.rate < 100 ? ` · ${rate.detail}` : ""}
+          </span>
           {applicant.late_minutes != null && applicant.status === "accepted" && (
             <span
               className="block font-mono-bold text-[9px] uppercase text-foul"

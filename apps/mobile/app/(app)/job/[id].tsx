@@ -90,8 +90,8 @@ export default function JobDetailScreen() {
     Alert.alert(
       "Withdraw from this game?",
       late
-        ? "⚠ Tip-off is less than 48 hours away. Withdrawing now counts against your reliability record."
-        : "You're more than 48 hours out, so this won't affect your rating. The slot reopens for other refs.",
+        ? "⚠ Tip-off is less than 48 hours away. Withdrawing now lowers the show rate directors see when you apply."
+        : "You're more than 48 hours out, so this won't affect your show rate. The slot reopens for other refs.",
       [
         { text: "Stay On Crew", style: "cancel" },
         {

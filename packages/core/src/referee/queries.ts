@@ -167,3 +167,97 @@ export async function fetchMyRatings(): Promise<{ ratings: ReceivedRating[]; err
   }));
   return { ratings, error: null };
 }
+
+// ── Earnings statement ───────────────────────────────────────────────────────
+// One line per game worked (and per late-cancellation fee), with where that
+// money stands, so a referee can reconcile what Refee owes them against what
+// reached their bank, and later against their 1099.
+
+export type PayoutState = "paid" | "processing" | "pending" | "failed";
+
+export type LedgerRow = {
+  assignmentId: string;
+  jobId: string;
+  title: string;
+  orgName: string;
+  startsAt: string;
+  timeZone: string | null;
+  /** A game worked, or the fee paid when a director cancelled late. */
+  kind: "game" | "late_cancel";
+  amount: number;
+  payout: PayoutState;
+  paidAt: string | null;
+};
+
+const PAYOUT_STATES: PayoutState[] = ["paid", "processing", "pending", "failed"];
+
+/** Shapes raw job_assignments rows (with their job and organizer) into statement lines, newest first. */
+export function toLedgerRows(data: unknown[]): LedgerRow[] {
+  const rows: LedgerRow[] = [];
+  for (const raw of data as any[]) {
+    const job = Array.isArray(raw.jobs) ? raw.jobs[0] : raw.jobs;
+    if (!job) continue;
+    let kind: LedgerRow["kind"];
+    if (raw.status === "completed") kind = "game";
+    else if (raw.status === "cancelled" && (raw.amount_due ?? 0) > 0) kind = "late_cancel";
+    else continue;
+    const hirer = Array.isArray(job.hirers) ? job.hirers[0] : job.hirers;
+    rows.push({
+      assignmentId: raw.id,
+      jobId: job.id,
+      title: job.title,
+      orgName: hirer?.org_name ?? "Organizer",
+      startsAt: job.starts_at,
+      timeZone: job.timezone ?? null,
+      kind,
+      amount: Number(raw.amount_due ?? job.pay_per_game ?? 0),
+      payout: PAYOUT_STATES.includes(raw.payout_status) ? raw.payout_status : "pending",
+      paidAt: raw.paid_at ?? null,
+    });
+  }
+  return rows.sort((a, b) => b.startsAt.localeCompare(a.startsAt));
+}
+
+/** Money already paid out vs still owed; games counts games worked, not fees. */
+export function ledgerTotals(rows: LedgerRow[]): { paid: number; owed: number; games: number } {
+  let paid = 0;
+  let owed = 0;
+  let games = 0;
+  for (const r of rows) {
+    if (r.payout === "paid") paid += r.amount;
+    else owed += r.amount;
+    if (r.kind === "game") games += 1;
+  }
+  return { paid, owed, games };
+}
+
+/** Where one line's money stands, in words. */
+export function payoutLabel(row: LedgerRow): string {
+  switch (row.payout) {
+    case "paid": {
+      if (!row.paidAt) return "Paid";
+      const day = new Date(row.paidAt).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return `Paid ${day}`;
+    }
+    case "processing":
+      return "Sending to your Stripe account";
+    case "failed":
+      return "Payment failed · Refee is fixing it";
+    default:
+      return "Owed · paid within 48 hours of the game";
+  }
+}
+
+export async function fetchEarningsLedger(
+  userId: string
+): Promise<{ rows: LedgerRow[]; error: Error | null }> {
+  const { data, error } = await supabase
+    .from("job_assignments")
+    .select(
+      "id, status, amount_due, payout_status, paid_at, jobs(id, title, starts_at, timezone, pay_per_game, hirers(org_name))"
+    )
+    .eq("ref_id", userId)
+    .in("status", ["completed", "cancelled"]);
+  if (error) return { rows: [], error: new Error(error.message) };
+  return { rows: toLedgerRows(data ?? []), error: null };
+}

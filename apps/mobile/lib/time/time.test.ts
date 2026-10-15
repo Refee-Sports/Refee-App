@@ -7,6 +7,7 @@ import {
   formatGameTime,
   formatGameTimeWithZone,
   venueDay,
+  venueWallClock,
   zoneLabel,
   zoneName,
 } from "@refee/core/time";
@@ -90,5 +91,24 @@ describe("date-only values", () => {
 
   it("handles leap days", () => {
     expect(formatDateOnly("2028-02-29", { month: "short", day: "numeric" })).toBe("Feb 29");
+  });
+});
+
+describe("venueWallClock", () => {
+  it("uses the stored venue-local time when there is one", () => {
+    expect(
+      venueWallClock({ starts_local: "2026-09-20T13:30:00", starts_at: "2026-09-20T18:30:00Z", timezone: "America/Chicago" })
+    ).toEqual({ date: "2026-09-20", time: "13:30" });
+  });
+
+  it("converts the instant into the venue's zone, not the device's", () => {
+    // 01:30 UTC on the 21st is 6:30 PM on the 20th in Los Angeles.
+    expect(
+      venueWallClock({ starts_local: null, starts_at: "2026-09-21T01:30:00Z", timezone: "America/Los_Angeles" })
+    ).toEqual({ date: "2026-09-20", time: "18:30" });
+  });
+
+  it("falls back to the default zone for rows without one", () => {
+    expect(venueWallClock({ starts_at: "2026-09-20T18:00:00Z" })).toEqual({ date: "2026-09-20", time: "13:00" });
   });
 });

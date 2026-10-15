@@ -31,6 +31,7 @@ import {
   AGE_REQUIRED_LEVELS,
 } from "@/lib/basketball/options";
 import { US_STATES } from "@refee/core/geo/regions";
+import { venueWallClock } from "@refee/core/time";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -125,8 +126,7 @@ export default function CreateGame() {
     (async () => {
       const { game } = await fetchGameForEdit(sourceId);
       if (game) {
-        const d = new Date(game.starts_at);
-        const pad = (n: number) => String(n).padStart(2, "0");
+        const venue = venueWallClock(game as { starts_at: string });
         setForm((f) => ({
           ...f,
           homeTeam: game.home_team ?? "",
@@ -134,10 +134,8 @@ export default function CreateGame() {
           level: game.level ?? "",
           crewSize: (game.crew_size === 3 ? 3 : 2) as 2 | 3,
           payPerGame: String(game.pay_per_game ?? ""),
-          gameDate: isEdit
-            ? `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-            : "",
-          gameTime: isEdit ? `${pad(d.getHours())}:${pad(d.getMinutes())}` : "",
+          gameDate: isEdit ? venue.date : "",
+          gameTime: isEdit ? venue.time : "",
           gameFormat: (game.game_format ?? "") as "" | "quarters" | "halves",
           periodMinutes: game.period_minutes ? String(game.period_minutes) : "",
           venueName: game.venue_name ?? "",

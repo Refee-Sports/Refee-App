@@ -8,11 +8,13 @@ import { supabase } from "@/lib/supabase";
 import {
   fetchMyTournaments,
   fetchGamesNeedingCompletion,
+  fetchMyPaymentIssues,
   fetchStandaloneGames,
   type TournamentRow,
   type NeedsCompletionRow,
   type DirectorGameRow,
 } from "@/lib/director/queries";
+import type { PaymentIssue } from "@refee/core/director/payment-issues";
 import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
@@ -36,6 +38,7 @@ export default function TournamentsScreen() {
   const [tournaments, setTournaments] = useState<TournamentRow[]>([]);
   const [singleGames, setSingleGames] = useState<DirectorGameRow[]>([]);
   const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
+  const [paymentIssues, setPaymentIssues] = useState<PaymentIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,13 +63,15 @@ export default function TournamentsScreen() {
       }
     });
 
-    const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }] = await Promise.all([
+    const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, issues] = await Promise.all([
       fetchMyTournaments(session.user.id),
       fetchGamesNeedingCompletion(session.user.id),
       fetchStandaloneGames(session.user.id),
+      fetchMyPaymentIssues(session.user.id),
     ]);
     setTournaments(rows);
     setNeedsCompletion(nudge);
+    setPaymentIssues(issues);
     setSingleGames(solo);
     if (fetchErr) setError(fetchErr.message);
     setLoading(false);
@@ -111,6 +116,43 @@ export default function TournamentsScreen() {
         <ZebraRule variant="signal" thin />
       </View>
 
+      {/* Payment problems the director has to act on */}
+      {paymentIssues.length > 0 && (
+        <View className="mx-5 mb-4 border border-foul bg-foul/10">
+          <View className="px-4 py-2.5 border-b border-foul/30 flex-row items-center gap-2">
+            <Feather name="credit-card" size={13} color="#E63946" />
+            <Text className="font-mono-bold text-[10px] text-foul uppercase" style={{ letterSpacing: 1.5 }}>
+              {paymentIssues.length} PAYMENT ISSUE{paymentIssues.length !== 1 ? "S" : ""}
+            </Text>
+          </View>
+          {paymentIssues.slice(0, 4).map((issue) => (
+            <Pressable
+              key={issue.gameId}
+              onPress={() => {
+                Haptics.selectionAsync();
+                router.push(`/(director)/game/${issue.gameId}` as any);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={`${issue.title}. ${issue.message}`}
+              className="px-4 py-2.5 flex-row items-center justify-between active:opacity-70 border-b border-foul/20"
+            >
+              <View className="flex-1 pr-2">
+                <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
+                  {issue.title}
+                </Text>
+                <Text className="text-[12px] text-ink-60 leading-[17px] mt-0.5">{issue.message}</Text>
+              </View>
+              <Feather name="chevron-right" size={14} color="#08111C" />
+            </Pressable>
+          ))}
+          {paymentIssues.length > 4 ? (
+            <Text className="px-4 py-2 font-mono text-[8px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
+              +{paymentIssues.length - 4} MORE · OPEN EACH GAME TO FIX
+            </Text>
+          ) : null}
+        </View>
+      )}
+
       {/* Completion nudge — games ended but not yet closed out */}
       {needsCompletion.length > 0 && (
         <View className="mx-5 mb-4 border border-ink bg-hi-vis">
@@ -141,7 +183,7 @@ export default function TournamentsScreen() {
             </Pressable>
           ))}
           <Text className="px-4 py-2 font-mono text-[8px] text-ink/50 uppercase" style={{ letterSpacing: 1 }}>
-            AUTO-COMPLETES 24H AFTER GAME END IF NOT DONE
+            AUTO-COMPLETES 1H AFTER GAME END IF NOT DONE
           </Text>
         </View>
       )}

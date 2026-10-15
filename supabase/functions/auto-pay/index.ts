@@ -15,6 +15,7 @@ import {
   withinDailyLimit,
 } from "../_shared/util.ts";
 import { transferIdempotencyKey } from "../_shared/stripe-events.ts";
+import { notifyPayoutsSent } from "../_shared/payout-push.ts";
 
 // Backstop against a loop or an abusive account burning Stripe calls.
 // Far above real use; see withinDailyLimit in _shared/util.ts.
@@ -167,14 +168,19 @@ Deno.serve(async (req) => {
               },
               { idempotencyKey: transferIdempotencyKey(a.id, piId ?? game.id) }
             );
-            await admin
+            // Only rows that weren't already paid, so a retry or the webhook
+            // doesn't tell the referee twice.
+            const { data: newlyPaid } = await admin
               .from("job_assignments")
               .update({
                 payout_status: "paid",
                 paid_at: new Date().toISOString(),
                 stripe_transfer_id: transfer.id,
               })
-              .eq("id", a.id);
+              .eq("id", a.id)
+              .or("payout_status.is.null,payout_status.neq.paid")
+              .select("id");
+            await notifyPayoutsSent(admin, (newlyPaid ?? []).map((r: { id: string }) => r.id));
             transferred += 1;
           } else {
             await admin

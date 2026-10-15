@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ from: vi.fn() }));
+const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn() }));
 
-vi.mock("@/lib/supabase", () => ({ supabase: { from: mocks.from } }));
+vi.mock("@/lib/supabase", () => ({ supabase: { from: mocks.from, rpc: mocks.rpc } }));
 
 import { fetchGameApplicants } from "./queries";
 
@@ -28,6 +28,7 @@ const ASSIGNMENTS = [
 
 describe("applicant cards show credentials", () => {
   beforeEach(() => {
+    mocks.rpc.mockReset().mockResolvedValue({ data: [], error: null });
     mocks.from.mockReset().mockImplementation((name: string) => {
       if (name === "job_assignments") return table({ data: ASSIGNMENTS });
       if (name === "certifications") return table({ data: [{ ref_id: "ref-1", org_name: "iaabo" }, { ref_id: "ref-1", org_name: "nfhs" }] });
@@ -35,6 +36,21 @@ describe("applicant cards show credentials", () => {
       if (name === "ref_sports") return table({ data: [{ ref_id: "ref-1", leagues_worked: "AAU, YMCA" }] });
       return table({ data: [] });
     });
+  });
+
+  it("attaches each applicant's show-rate counts, and none for a referee with no answer", async () => {
+    mocks.rpc.mockResolvedValue({ data: [{ ref_id: "ref-1", kept: 9, late_withdrawals: 1, no_shows: 0 }], error: null });
+    const { applicants } = await fetchGameApplicants("job-1");
+    expect(mocks.rpc).toHaveBeenCalledWith("referee_reliability", { p_ref_ids: ["ref-1", "ref-2"] });
+    expect(applicants[0].reliability).toEqual({ kept: 9, late_withdrawals: 1, no_shows: 0 });
+    expect(applicants[1].reliability).toBeNull();
+  });
+
+  it("still lists applicants when the show rate can't be loaded", async () => {
+    mocks.rpc.mockRejectedValue(new Error("offline"));
+    const { applicants, error } = await fetchGameApplicants("job-1");
+    expect(error).toBeNull();
+    expect(applicants).toHaveLength(2);
   });
 
   it("attaches each applicant's certs, levels and leagues worked", async () => {

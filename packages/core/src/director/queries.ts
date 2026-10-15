@@ -1,4 +1,6 @@
 import { supabase } from "../client";
+import { paymentIssues, type PaymentIssue } from "./payment-issues";
+import { fetchReliability, type ReliabilityCounts } from "../referee/reliability";
 import { geocodeAddress } from "../geo/geocode";
 import { notifyNewGames, sendPush } from "../push/send";
 
@@ -126,6 +128,8 @@ export type ApplicantRow = {
   withdrew_late: boolean | null;
   /** What a director weighs before approving, without opening the full profile. */
   credentials?: ApplicantCredentials;
+  /** Games kept vs late drop-outs and no-shows over the last year (0069). */
+  reliability?: ReliabilityCounts | null;
   profile: {
     first_name: string;
     last_initial: string;
@@ -531,13 +535,16 @@ export async function fetchGameApplicants(
   if (error) return { applicants: [], error: new Error(error.message) };
 
   const refIds = [...new Set((data ?? []).map((row: any) => row.ref_id as string).filter(Boolean))];
-  const [certsRes, levelsRes, sportsRes] = refIds.length
-    ? await Promise.all([
-        supabase.from("certifications").select("ref_id, org_name").in("ref_id", refIds),
-        supabase.from("ref_levels").select("ref_id, level_id").in("ref_id", refIds),
-        supabase.from("ref_sports").select("ref_id, leagues_worked").in("ref_id", refIds),
-      ])
-    : [{ data: [] }, { data: [] }, { data: [] }];
+  const [[certsRes, levelsRes, sportsRes], reliability] = await Promise.all([
+    refIds.length
+      ? Promise.all([
+          supabase.from("certifications").select("ref_id, org_name").in("ref_id", refIds),
+          supabase.from("ref_levels").select("ref_id, level_id").in("ref_id", refIds),
+          supabase.from("ref_sports").select("ref_id, leagues_worked").in("ref_id", refIds),
+        ])
+      : Promise.resolve([{ data: [] }, { data: [] }, { data: [] }] as { data: unknown[] | null }[]),
+    fetchReliability(refIds),
+  ]);
 
   const credentialsFor = (refId: string): ApplicantCredentials => ({
     certs: ((certsRes.data ?? []) as any[]).filter((c) => c.ref_id === refId).map((c) => c.org_name),
@@ -555,6 +562,7 @@ export async function fetchGameApplicants(
     late_minutes: row.late_minutes ?? null,
     withdrew_late: row.withdrew_late ?? null,
     credentials: credentialsFor(row.ref_id),
+    reliability: reliability.get(row.ref_id) ?? null,
     profile: Array.isArray(row.public_profiles)
       ? (row.public_profiles[0] ?? null)
       : row.public_profiles,
@@ -1216,6 +1224,26 @@ export async function fetchGamesNeedingCompletion(
     })
     .filter((j) => j.endMs < now)
     .map(({ endMs, ...rest }) => rest);
+}
+
+/**
+ * Money problems across the director's games: declined cards, overdue crew
+ * payouts, disputes and refunds under review, games never charged. Covers
+ * upcoming games and the last 60 days; older trouble is Refee support's.
+ */
+export async function fetchMyPaymentIssues(userId: string): Promise<PaymentIssue[]> {
+  const hirerId = await fetchMyHirerId(userId);
+  if (!hirerId) return [];
+
+  const since = new Date(Date.now() - 60 * 24 * 3600 * 1000).toISOString();
+  const { data, error } = await supabase
+    .from("jobs")
+    .select("*, job_assignments(status, payout_status)")
+    .eq("hirer_id", hirerId)
+    .gte("starts_at", since)
+    .order("starts_at", { ascending: true });
+  if (error) return [];
+  return paymentIssues(withStaffing(data ?? []));
 }
 
 // ── Assignor staffing (tournaments) ──────────────────────────────────────────

@@ -76,8 +76,8 @@ export default function JobDetailPage({ params }: { params: Promise<{ id: string
     setActionError(null);
     const late = job.startsAtIso ? isLateWithdrawal(job.startsAtIso) : false;
     const message = late
-      ? "Withdraw from this game?\n\n⚠ Tip-off is less than 48 hours away. Withdrawing now counts against your reliability record."
-      : "Withdraw from this game?\n\nYou're more than 48 hours out, so this won't affect your rating. The slot reopens for other refs.";
+      ? "Withdraw from this game?\n\n⚠ Tip-off is less than 48 hours away. Withdrawing now lowers the show rate directors see when you apply."
+      : "Withdraw from this game?\n\nYou're more than 48 hours out, so this won't affect your show rate. The slot reopens for other refs.";
     if (!window.confirm(message)) return;
 
     const { error: wErr } = await withdrawFromJob(supabase, id);

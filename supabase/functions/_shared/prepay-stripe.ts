@@ -4,6 +4,7 @@
 import { adminClient, stripe } from "./util.ts";
 import { prepayQuote, prepaySettlement } from "./prepay.ts";
 import { transferIdempotencyKey } from "./stripe-events.ts";
+import { notifyPayoutsSent } from "./payout-push.ts";
 
 type Admin = ReturnType<typeof adminClient>;
 
@@ -204,10 +205,14 @@ export async function settlePrepaidGame(admin: Admin, jobId: string): Promise<Se
         },
         { idempotencyKey: transferIdempotencyKey(a.id, job.payment_intent_id) }
       );
-      await admin
+      // Only a row that wasn't already paid, so a rerun doesn't tell the referee twice.
+      const { data: newlyPaid } = await admin
         .from("job_assignments")
         .update({ payout_status: "paid", paid_at: now, stripe_transfer_id: transfer.id })
-        .eq("id", a.id);
+        .eq("id", a.id)
+        .or("payout_status.is.null,payout_status.neq.paid")
+        .select("id");
+      await notifyPayoutsSent(admin, (newlyPaid ?? []).map((r: { id: string }) => r.id));
       outcome.transferred += 1;
     } else {
       await admin.from("job_assignments").update({ payout_status: "processing" }).eq("id", a.id);

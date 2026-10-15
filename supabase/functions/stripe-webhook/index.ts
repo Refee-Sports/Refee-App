@@ -1,5 +1,6 @@
 import type Stripe from "npm:stripe@17";
 import { adminClient, json, stripe } from "../_shared/util.ts";
+import { notifyPayoutsSent } from "../_shared/payout-push.ts";
 import {
   reconciliationAction,
   closedDisputeStatus,
@@ -110,15 +111,20 @@ async function settlePayment(admin: AdminClient, intent: Stripe.PaymentIntent) {
         },
         { idempotencyKey: transferIdempotencyKey(assignment.id, intent.id) }
       );
-      const { error: assignmentError } = await admin
+      // Only a row that wasn't already paid (the app's confirm-payout may have
+      // got there first), so the referee hears about it once.
+      const { data: newlyPaid, error: assignmentError } = await admin
         .from("job_assignments")
         .update({
           payout_status: "paid",
           paid_at: now,
           stripe_transfer_id: transfer.id,
         })
-        .eq("id", assignment.id);
+        .eq("id", assignment.id)
+        .or("payout_status.is.null,payout_status.neq.paid")
+        .select("id");
       if (assignmentError) throw new Error(assignmentError.message);
+      await notifyPayoutsSent(admin, (newlyPaid ?? []).map((r: { id: string }) => r.id));
     } else {
       const { error: heldError } = await admin
         .from("job_assignments")

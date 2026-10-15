@@ -43,6 +43,7 @@ import { useStripe } from "@/lib/payments/stripe";
 import { startCrewPayment, confirmCrewPayout, runAutoPay } from "@/lib/payments/queries";
 import { canOfferCrewPayment, paymentNeedsReview } from "@/lib/payments/status";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { showRate } from "@refee/core/referee/reliability";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -424,6 +425,23 @@ export default function GameDetail() {
             >
               GAME DETAIL
             </Text>
+            <Pressable
+              onPress={() => {
+                Haptics.selectionAsync();
+                // Same game, new date and time: everything else carries over.
+                router.push({
+                  pathname: "/(director)/game/create" as any,
+                  params: { copyFromId: id, ...(game.tournament_id ? { tournamentId: game.tournament_id } : {}) },
+                });
+              }}
+              accessibilityLabel="Duplicate game"
+              className="h-9 px-3 mr-2 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
+            >
+              <Feather name="copy" size={12} color="#08111C" />
+              <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+                DUPLICATE
+              </Text>
+            </Pressable>
             <Pressable
               onPress={() => {
                 Haptics.selectionAsync();
@@ -918,6 +936,7 @@ function ApplicantCard({
   onNoShow?: () => void;
 }) {
   const p = applicant.profile;
+  const rate = showRate(applicant.reliability);
   const initials = p
     ? `${p.first_name[0] ?? "?"}${p.last_initial}`.toUpperCase()
     : "??";
@@ -974,6 +993,14 @@ function ApplicantCard({
               LEAGUES: {applicant.credentials.leaguesWorked}
             </Text>
           )}
+          <Text
+            className={`font-mono text-[9px] uppercase mt-0.5 ${rate.rate != null && rate.rate < 90 ? "text-foul" : "text-ink-60"}`}
+            numberOfLines={1}
+            style={{ letterSpacing: 1 }}
+            accessibilityLabel={`${rate.label}. ${rate.detail}`}
+          >
+            {rate.label}{rate.rate != null && rate.rate < 100 ? ` · ${rate.detail}` : ""}
+          </Text>
           {applicant.late_minutes != null && applicant.status === "accepted" && (
             <Text className="font-mono-bold text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1, color: "#E53E3E" }}>
               ⏱ RUNNING ~{applicant.late_minutes} MIN LATE

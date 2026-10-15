@@ -176,6 +176,7 @@ function RootLayout() {
             <Stack.Screen name="notifications" options={{ animation: "slide_from_right" }} />
             <Stack.Screen name="edit-details" options={{ animation: "slide_from_right" }} />
             <Stack.Screen name="my-organizations" options={{ animation: "slide_from_right" }} />
+            <Stack.Screen name="earnings" options={{ animation: "slide_from_right" }} />
             <Stack.Screen name="join/[code]" options={{ animation: "slide_from_right" }} />
           </Stack>
           <NotificationRouter primaryRole={primaryRole} />

@@ -16,6 +16,7 @@ import {
   approveApplicant,
   declineApplicantForGame,
   fetchGamesNeedingCompletion,
+  fetchMyPaymentIssues,
   fetchMyTournaments,
   fetchPendingApprovals,
   fetchStandaloneGames,
@@ -25,6 +26,7 @@ import {
   type TournamentRow,
 } from "@/lib/director/queries";
 import { runAutoPay } from "@/lib/payments/queries";
+import type { PaymentIssue } from "@refee/core/director/payment-issues";
 import { gameStatusDisplay, isClosedGame, payoutDisplay, type PayoutTone } from "@/lib/director/game-status";
 import { formatDateOnly, formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 
@@ -103,6 +105,7 @@ function DirectorHome() {
   const [singleGames, setSingleGames] = useState<DirectorGameRow[]>([]);
   const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
+  const [paymentIssues, setPaymentIssues] = useState<PaymentIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [autoPayNote, setAutoPayNote] = useState<string | null>(null);
@@ -143,13 +146,14 @@ function DirectorHome() {
             /* best-effort; the page works without it */
           });
 
-        const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }] =
+        const [{ tournaments: rows, error: fetchErr }, nudge, { games: solo }, { approvals: pending }, issues] =
           await withDeadline(
             Promise.all([
               fetchMyTournaments(session.user.id),
               fetchGamesNeedingCompletion(session.user.id),
               fetchStandaloneGames(session.user.id),
               fetchPendingApprovals(session.user.id),
+              fetchMyPaymentIssues(session.user.id),
             ])
           );
 
@@ -158,6 +162,7 @@ function DirectorHome() {
         setNeedsCompletion(nudge);
         setSingleGames(solo);
         setApprovals(pending);
+        setPaymentIssues(issues);
         // With no tab in the URL, open where the work is: approvals if refs are
         // waiting, otherwise whichever list has something in it. Only decided
         // once, so a reload of the data never yanks the view out from under you.
@@ -263,6 +268,41 @@ function DirectorHome() {
         </div>
       ) : null}
 
+      {/* Payment problems the director has to act on */}
+      {paymentIssues.length > 0 && (
+        <div className="mx-5 mb-4 border border-foul bg-foul/10 sm:mx-0" role="region" aria-label="Payment issues">
+          <div className="flex items-center gap-2 border-b border-foul/30 px-4 py-2.5 text-foul">
+            <Icon name="credit-card" size={13} />
+            <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+              {paymentIssues.length} payment issue{paymentIssues.length !== 1 ? "s" : ""}
+            </span>
+          </div>
+          {paymentIssues.slice(0, 4).map((issue) => (
+            <Link
+              key={issue.gameId}
+              href={`/director/game/${issue.gameId}`}
+              className="flex items-center justify-between border-b border-foul/20 px-4 py-2.5 hover:opacity-70"
+            >
+              <span className="min-w-0 flex-1 pr-2">
+                <span
+                  className="block truncate font-mono-bold text-[11px] uppercase text-ink"
+                  style={{ letterSpacing: 0.5 }}
+                >
+                  {issue.title}
+                </span>
+                <span className="mt-0.5 block text-[12px] leading-[17px] text-ink-60">{issue.message}</span>
+              </span>
+              <Icon name="chevron-right" size={14} />
+            </Link>
+          ))}
+          {paymentIssues.length > 4 ? (
+            <p className="px-4 py-2 font-mono text-[8px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+              +{paymentIssues.length - 4} more · open each game to fix
+            </p>
+          ) : null}
+        </div>
+      )}
+
       {/* Completion nudge — games ended but not yet closed out */}
       {needsCompletion.length > 0 && (
         <div className="mx-5 mb-4 border border-ink bg-hi-vis sm:mx-0">
@@ -302,7 +342,7 @@ function DirectorHome() {
             className="px-4 py-2 font-mono text-[8px] uppercase text-ink/50"
             style={{ letterSpacing: 1 }}
           >
-            Auto-completes 2h after game end if not done
+            Auto-completes 1h after game end if not done
           </p>
         </div>
       )}
