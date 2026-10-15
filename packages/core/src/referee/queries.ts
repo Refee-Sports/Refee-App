@@ -261,3 +261,56 @@ export async function fetchEarningsLedger(
   if (error) return { rows: [], error: new Error(error.message) };
   return { rows: toLedgerRows(data ?? []), error: null };
 }
+
+// ── Earnings export ──────────────────────────────────────────────────────────
+
+const CSV_STATUS: Record<PayoutState, string> = {
+  paid: "Paid",
+  processing: "Sending",
+  pending: "Owed",
+  failed: "Failed",
+};
+
+/** One CSV cell: quoted when needed, and never read as a formula by a spreadsheet. */
+function csvCell(value: string): string {
+  const safe = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return /[",\r\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+/** "2026-10-04": a game's calendar day at the venue. */
+function venueDate(iso: string, tz: string | null): string {
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: tz || "America/Chicago" });
+}
+
+/**
+ * The earnings statement as CSV, for a spreadsheet or an accountant. Pass a
+ * year to export one tax year (by the game's date).
+ */
+export function earningsCsv(rows: LedgerRow[], opts: { year?: number } = {}): string {
+  const header = ["Game date", "Game", "Organizer", "Type", "Amount (USD)", "Status", "Paid on"];
+  const lines = rows
+    .filter((r) => opts.year == null || venueDate(r.startsAt, r.timeZone).startsWith(`${opts.year}-`))
+    .map((r) =>
+      [
+        venueDate(r.startsAt, r.timeZone),
+        r.title,
+        r.orgName,
+        r.kind === "game" ? "Game" : "Late-cancellation fee",
+        r.amount.toFixed(2),
+        CSV_STATUS[r.payout],
+        r.paidAt ? r.paidAt.slice(0, 10) : "",
+      ]
+        .map(csvCell)
+        .join(",")
+    );
+  return [header.join(","), ...lines].join("\r\n") + "\r\n";
+}
+
+export function earningsCsvFilename(opts: { year?: number } = {}, now: Date = new Date()): string {
+  return `refee-earnings-${opts.year ?? now.toISOString().slice(0, 10)}.csv`;
+}
+
+/** The years a referee has earnings in, newest first, for choosing a tax year to export. */
+export function earningsYears(rows: LedgerRow[]): number[] {
+  return [...new Set(rows.map((r) => Number(venueDate(r.startsAt, r.timeZone).slice(0, 4))))].sort((a, b) => b - a);
+}

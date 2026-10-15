@@ -435,7 +435,7 @@ function AssignorsSection() {
             <span className="text-whistle-ink">work the game.</span>
           </h2>
           <p className="mt-5 max-w-md text-lg leading-relaxed text-ink-80">
-            Bring the roster you've built. Refee handles ID checks,
+            Bring the roster you&apos;ve built. Refee handles ID checks,
             confirmations, and payment. You decide who works.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
@@ -568,7 +568,7 @@ function TrustSection() {
         </h2>
         <p className="mt-5 max-w-xl text-lg leading-relaxed text-paper/70">
           Every user verifies their ID. Officials can add a background check to
-          their profile. Everyone's data is private by default.
+          their profile. Everyone&apos;s data is private by default.
         </p>
 
         <div className="mt-12 grid gap-px overflow-hidden border border-paper/20 bg-paper/20 sm:grid-cols-2 lg:grid-cols-4">

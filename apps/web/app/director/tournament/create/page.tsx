@@ -153,7 +153,6 @@ function CreateTournamentInner() {
     if (isEdit) return;
     const carried = takeCarriedSchedule();
     if (carried) applySchedule(carried, "your file");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit]);
 
   const readFile = async (file: File | null | undefined) => {

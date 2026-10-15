@@ -196,7 +196,7 @@ export function JobDetailActionBar({
             className="mt-1 text-center font-mono text-[9px] uppercase text-ink-60"
             style={{ letterSpacing: 1 }}
           >
-            The organizer confirms the crew — you'll see it on your home screen
+            The organizer confirms the crew — you&apos;ll see it on your home screen
           </span>
         </div>
         {/* Retracting a pending application goes through respond_to_job, not

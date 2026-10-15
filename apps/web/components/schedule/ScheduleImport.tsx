@@ -30,6 +30,7 @@ import {
   takePendingImport,
   type ReviewRowState,
 } from "@/lib/schedule/rows";
+import { downloadTextFile } from "@/lib/files/download";
 
 const ACCEPT = "image/jpeg,image/png,image/webp,image/gif,application/pdf,.csv,text/csv,.txt";
 const LIMITS = { image: 5 * 1024 * 1024, pdf: 10 * 1024 * 1024, text: 1024 * 1024 };
@@ -107,14 +108,7 @@ export function ScheduleImport({
 
   const downloadTemplate = () => {
     const csv = buildScheduleTemplate({ date: tournament?.starts_on.slice(0, 10), courts: tournament?.courts });
-    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = TEMPLATE_FILE_NAME;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 0);
+    downloadTextFile(TEMPLATE_FILE_NAME, csv);
   };
 
   const choose = (f: File | null | undefined) => {

@@ -6,7 +6,16 @@ import { Spinner } from "@/components/ui/AppButton";
 import { Icon } from "@/components/ui/Icon";
 import { useFocusEffect } from "@/hooks/useFocusEffect";
 import { supabase } from "@/lib/supabase";
-import { fetchEarningsLedger, ledgerTotals, payoutLabel, type LedgerRow } from "@/lib/referee/queries";
+import {
+  earningsCsv,
+  earningsCsvFilename,
+  earningsYears,
+  fetchEarningsLedger,
+  ledgerTotals,
+  payoutLabel,
+  type LedgerRow,
+} from "@/lib/referee/queries";
+import { downloadTextFile } from "@/lib/files/download";
 import { formatGameDate } from "@refee/core/time";
 
 const PAYOUT_COLOR: Record<LedgerRow["payout"], string> = {
@@ -21,6 +30,7 @@ export default function EarningsPage() {
   const [rows, setRows] = useState<LedgerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [exportYear, setExportYear] = useState<number | "all">("all");
 
   const load = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -37,6 +47,12 @@ export default function EarningsPage() {
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   const totals = ledgerTotals(rows);
+  const years = earningsYears(rows);
+
+  const exportCsv = () => {
+    const opts = exportYear === "all" ? {} : { year: exportYear };
+    downloadTextFile(earningsCsvFilename(opts), earningsCsv(rows, opts));
+  };
 
   return (
     <div className="app-canvas bg-paper pb-10">
@@ -69,6 +85,33 @@ export default function EarningsPage() {
           </p>
           {error ? (
             <p className="mt-3 border border-foul bg-foul/10 p-3 text-[13px] text-foul" role="alert">{error}</p>
+          ) : null}
+
+          {rows.length > 0 ? (
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <label htmlFor="export-year" className="font-mono-bold text-[9px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
+                Export
+              </label>
+              <select
+                id="export-year"
+                value={exportYear}
+                onChange={(e) => setExportYear(e.target.value === "all" ? "all" : Number(e.target.value))}
+                className="border border-ink bg-chalk px-2 py-1.5 font-mono text-[11px] text-ink"
+              >
+                <option value="all">All time</option>
+                {years.map((y) => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={exportCsv}
+                className="border border-ink bg-ink px-3 py-1.5 font-mono-bold text-[10px] uppercase text-paper hover:opacity-80"
+                style={{ letterSpacing: 1.5 }}
+              >
+                Download CSV
+              </button>
+            </div>
           ) : null}
 
           {rows.length === 0 ? (

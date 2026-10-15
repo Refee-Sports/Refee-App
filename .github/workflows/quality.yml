@@ -61,6 +61,7 @@ jobs:
 
       - run: npm ci
         working-directory: .
+      - run: npm run lint
       - run: npm run typecheck
       # The shared package and its tests (packages/core/test), which both apps run.
       - run: npm run typecheck -w @refee/core

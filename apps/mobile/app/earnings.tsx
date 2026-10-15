@@ -1,10 +1,19 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
-import { fetchEarningsLedger, ledgerTotals, payoutLabel, type LedgerRow } from "@/lib/referee/queries";
+import {
+  earningsCsv,
+  earningsCsvFilename,
+  earningsYears,
+  fetchEarningsLedger,
+  ledgerTotals,
+  payoutLabel,
+  type LedgerRow,
+} from "@/lib/referee/queries";
+import { shareCsv } from "@/lib/files/share";
 import { formatGameDate } from "@refee/core/time";
 
 const PAYOUT_COLOR: Record<LedgerRow["payout"], string> = {
@@ -22,6 +31,8 @@ export default function EarningsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportYear, setExportYear] = useState<number | "all">("all");
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -36,6 +47,20 @@ export default function EarningsScreen() {
   useFocusEffect(useCallback(() => { void load(); }, [load]));
 
   const totals = ledgerTotals(rows);
+  const years = earningsYears(rows);
+
+  const exportCsv = async () => {
+    if (exporting) return;
+    setExporting(true);
+    const opts = exportYear === "all" ? {} : { year: exportYear };
+    try {
+      await shareCsv(earningsCsvFilename(opts), earningsCsv(rows, opts), "Save your Refee earnings");
+    } catch (e) {
+      Alert.alert("Couldn't export", (e as Error).message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
@@ -82,6 +107,34 @@ export default function EarningsScreen() {
               </Text>
               {error ? (
                 <Text className="mt-3 border border-foul bg-foul/10 p-3 text-foul text-[13px]">{error}</Text>
+              ) : null}
+              {rows.length > 0 ? (
+                <View className="mt-4 flex-row flex-wrap items-center gap-2">
+                  {(["all", ...years] as const).map((y) => (
+                    <Pressable
+                      key={String(y)}
+                      onPress={() => setExportYear(y)}
+                      className={`border px-2.5 py-1.5 ${exportYear === y ? "border-ink bg-ink" : "border-ink-20 bg-chalk"}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: exportYear === y }}
+                    >
+                      <Text className={`font-mono-bold text-[9px] uppercase ${exportYear === y ? "text-paper" : "text-ink"}`} style={{ letterSpacing: 1 }}>
+                        {y === "all" ? "ALL TIME" : String(y)}
+                      </Text>
+                    </Pressable>
+                  ))}
+                  <Pressable
+                    onPress={exportCsv}
+                    disabled={exporting}
+                    className="ml-auto border border-ink bg-ink px-3 py-1.5 active:opacity-80 disabled:opacity-50"
+                    accessibilityRole="button"
+                    accessibilityLabel="Export earnings as a CSV file"
+                  >
+                    <Text className="font-mono-bold text-[9px] uppercase text-paper" style={{ letterSpacing: 1.5 }}>
+                      {exporting ? "EXPORTING…" : "EXPORT CSV"}
+                    </Text>
+                  </Pressable>
+                </View>
               ) : null}
             </View>
           }

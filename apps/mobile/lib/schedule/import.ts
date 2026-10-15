@@ -1,10 +1,9 @@
-import { Platform } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
-import { File as LocalFile, Paths } from "expo-file-system";
-import * as Sharing from "expo-sharing";
+import { File as LocalFile } from "expo-file-system";
 import { supabase } from "@/lib/supabase";
 import { notifyNewGames } from "@/lib/push/send";
 import { SCHEDULE_CSV_TEMPLATE, type ScheduleImportRow } from "./csv";
+import { shareCsv } from "@/lib/files/share";
 
 const MAX_CSV_BYTES = 5 * 1024 * 1024;
 
@@ -24,25 +23,7 @@ export async function pickScheduleCsv(): Promise<{ name: string; text: string } 
 }
 
 export async function downloadScheduleTemplate() {
-  if (Platform.OS === "web") {
-    const url = URL.createObjectURL(new Blob([SCHEDULE_CSV_TEMPLATE], { type: "text/csv;charset=utf-8" }));
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "refee-schedule-template.csv";
-    anchor.click();
-    URL.revokeObjectURL(url);
-    return;
-  }
-
-  const file = new LocalFile(Paths.cache, "refee-schedule-template.csv");
-  file.create({ overwrite: true });
-  file.write(SCHEDULE_CSV_TEMPLATE);
-  if (!await Sharing.isAvailableAsync()) throw new Error("File sharing is not available on this device.");
-  await Sharing.shareAsync(file.uri, {
-    mimeType: "text/csv",
-    UTI: "public.comma-separated-values-text",
-    dialogTitle: "Save Refee schedule template",
-  });
+  await shareCsv("refee-schedule-template.csv", SCHEDULE_CSV_TEMPLATE, "Save Refee schedule template");
 }
 
 export async function importTournamentSchedule(tournamentId: string, rows: ScheduleImportRow[]) {
