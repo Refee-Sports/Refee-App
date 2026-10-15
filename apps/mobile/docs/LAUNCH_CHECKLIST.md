@@ -1,6 +1,6 @@
 # REFEE — Pre-Launch Checklist
 
-**Created:** July 8, 2026 · **Last updated:** Aug 31, 2026
+**Created:** July 8, 2026 · **Last updated:** Oct 15, 2026
 **Scope:** Basketball MVP, first paying directors. Grouped by "must fix before real money/users" vs "should have" vs "decide."
 
 ---
@@ -36,6 +36,10 @@
 - [ ] **`ANTHROPIC_API_KEY` / `STRIPE_SECRET_KEY` in prod function secrets**, not committed.
 - [ ] **EAS build + App Store / Play Store submission.** Stripe payment sheet + Express onboarding require a real device build (not Expo Go).
 - [ ] **pg_cron enabled on hosted Supabase** so `sweep_game_lifecycle` runs server-side, not just on client focus.
+
+### Email
+- [ ] **Create `support@refee.app`** (a mailbox someone actually reads). Then change the "Email changed" notification (`supabase/templates/email_changed_notification.html`, and the copy pasted into the Supabase dashboard) from "reply to this email" to "contact us at support@refee.app". Auth mail comes from a no-reply address, so replies from someone whose account was taken over currently go nowhere.
+- [~] **Custom SMTP (Resend) on hosted Supabase.** Supabase's built-in mail only reaches team members (~2/hour), so email-code sign-in and change-email don't work for real users without it. **Remaining:** verify the domain's DNS in Resend, connect SMTP, raise the auth email rate limit (~200/hour), and test a sign-in code to a non-team address.
 
 ### Messaging
 - [x] **Conversation-creation RLS bug** — ✅ fixed. Directors post crew messages via a security-definer RPC (`post_crew_note`, 0021); refs create crew threads after a SELECT-policy fix (0023, creator-or-participant read). Both verified.
