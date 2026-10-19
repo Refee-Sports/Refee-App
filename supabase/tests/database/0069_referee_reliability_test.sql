@@ -8,6 +8,11 @@ select plan(7);
 -- last year, against late withdrawals and no-shows.
 --
 -- Seeded users: ref C …202, ref B …201, director D …101.
+-- What the seed already gives ref C, so the checks count only this test's games.
+create temp table baseline as
+  select * from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[]);
+grant select on baseline to authenticated;
+
 insert into public.jobs (id, hirer_id, sport_id, title, level, crew_size, pay_per_game, starts_at, duration_minutes,
                          venue_name, venue_city, venue_state, job_type, status, num_games)
 select v.id::uuid, h.id, 'basketball', 'Reliability ' || v.n, 'high_school', 2, 70, now() + v.starts_in, 60,
@@ -41,13 +46,13 @@ select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claim.sub', '11111111-1111-4111-8111-111111111101', true);
 
 select is(
-  (select kept from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[])),
+  (select r.kept - b.kept from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[]) r, baseline b),
   3, 'counts the games the referee worked in the last year');
 select is(
-  (select late_withdrawals from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[])),
+  (select r.late_withdrawals - b.late_withdrawals from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[]) r, baseline b),
   1, 'counts only late withdrawals, not ones made in good time');
 select is(
-  (select no_shows from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[])),
+  (select r.no_shows - b.no_shows from public.referee_reliability(array['22222222-2222-4222-8222-222222222202']::uuid[]) r, baseline b),
   1, 'counts no-shows from the last year only');
 select is(
   (select kept from public.referee_reliability(array['22222222-2222-4222-8222-2222222222ff']::uuid[])),

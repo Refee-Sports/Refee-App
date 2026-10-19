@@ -57,9 +57,12 @@ export async function fetchRoles(userId: string): Promise<{ roles: Role[]; error
  * not make them a different person.
  */
 export async function addRole(userId: string, role: Role): Promise<{ error: Error | null }> {
+  // Duplicates are skipped, not rewritten: user_roles has no UPDATE policy, so
+  // an upsert that turned into an update on a role they already hold was
+  // refused ("new row violates row-level security policy").
   const { error } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role }, { onConflict: "user_id,role" });
+    .upsert({ user_id: userId, role }, { onConflict: "user_id,role", ignoreDuplicates: true });
   return { error: error ? new Error(error.message) : null };
 }
 

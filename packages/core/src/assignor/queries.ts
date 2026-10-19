@@ -86,14 +86,14 @@ export type MyProposalRow = {
 export async function addAssignorRole(userId: string): Promise<{ error: Error | null }> {
   const { error } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role: "assignor" }, { onConflict: "user_id,role" });
+    .upsert({ user_id: userId, role: "assignor" }, { onConflict: "user_id,role", ignoreDuplicates: true });
   return { error: error ? new Error(error.message) : null };
 }
 
 export async function addRefereeRole(userId: string): Promise<{ error: Error | null }> {
   const { error } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role: "referee" }, { onConflict: "user_id,role" });
+    .upsert({ user_id: userId, role: "referee" }, { onConflict: "user_id,role", ignoreDuplicates: true });
   return { error: error ? new Error(error.message) : null };
 }
 
@@ -143,7 +143,7 @@ export async function createAssignorProfile(
 
   const { error: roleErr } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role: "assignor" }, { onConflict: "user_id,role" });
+    .upsert({ user_id: userId, role: "assignor" }, { onConflict: "user_id,role", ignoreDuplicates: true });
   return { error: roleErr ? new Error(roleErr.message) : null };
 }
 

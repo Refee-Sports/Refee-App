@@ -139,7 +139,7 @@ export async function saveFullProfile(
   // first profile write so adding a second role never hides referee access.
   const { error: roleError } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role: "referee" }, { onConflict: "user_id,role" });
+    .upsert({ user_id: userId, role: "referee" }, { onConflict: "user_id,role", ignoreDuplicates: true });
   if (roleError) return { error: roleError };
 
   const { error: homeError } = await supabase

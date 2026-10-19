@@ -220,7 +220,7 @@ export async function createDirectorProfile(
 
   const { error: roleError } = await supabase
     .from("user_roles")
-    .upsert({ user_id: userId, role: "director" }, { onConflict: "user_id,role" });
+    .upsert({ user_id: userId, role: "director" }, { onConflict: "user_id,role", ignoreDuplicates: true });
   if (roleError) return { hirerId: null, error: new Error(roleError.message) };
 
   const { data, error: hirerError } = await supabase
