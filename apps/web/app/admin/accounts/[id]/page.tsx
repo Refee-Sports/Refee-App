@@ -413,7 +413,7 @@ function Overview({ account: a }: { account: AccountDetail }) {
           rows={[
             { label: "Games applied to or booked", value: a.work.assignments },
             { label: "Booked", value: a.work.accepted },
-            { label: "Games called", value: a.badges.games_called_total },
+            { label: "Games officiated", value: a.badges.games_called_total },
             {
               label: "Rating",
               value: a.badges.rating_count ? `${Number(a.badges.rating).toFixed(1)} (${a.badges.rating_count})` : "No ratings",
