@@ -2,6 +2,7 @@ import { SiteNav } from "@/components/SiteNav";
 import { Footer } from "@/components/Footer";
 import { PhoneMock } from "@/components/PhoneMock";
 import { StoreButtons } from "@/components/StoreButtons";
+import { SectionMark } from "@/components/ui/SectionMark";
 
 export default function HomePage() {
   return (
@@ -30,10 +31,7 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="mx-auto grid max-w-wrap items-center gap-12 px-6 py-16 md:px-8 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
         <div>
-          <span className="badge badge-signal">
-            <span className="dot dot-pulse" />
-            Basketball first · ID-verified · 18+
-          </span>
+          <SectionMark tone="signal">Basketball first · ID-verified · 18+</SectionMark>
 
           <h1 className="mt-6 font-display font-black leading-[0.95] tracking-tighter text-ink text-[clamp(1.75rem,8vw,3.25rem)] lg:text-[clamp(3rem,5vw,4rem)]">
             <span className="block whitespace-nowrap">Games don&apos;t count</span>
@@ -359,10 +357,7 @@ function OfficialsSection() {
     >
       <div className="mx-auto grid max-w-wrap items-center gap-12 px-6 py-16 md:px-8 lg:grid-cols-2 lg:py-24">
         <div>
-          <span className="badge badge-confirmed">
-            <span className="dot" />
-            For officials
-          </span>
+          <SectionMark tone="court">For officials</SectionMark>
           <h2 className="mt-5 font-display text-4xl font-black leading-[0.98] tracking-tighter text-ink sm:text-5xl">
             Pick your games.
             <br />
@@ -425,10 +420,7 @@ function AssignorsSection() {
     >
       <div className="grid items-center gap-12 lg:grid-cols-2">
         <div>
-          <span className="badge badge-whistle">
-            <span className="dot" />
-            For assignors
-          </span>
+          <SectionMark tone="whistle">For assignors</SectionMark>
           <h2 className="mt-5 font-display text-4xl font-black leading-[0.98] tracking-tighter text-ink sm:text-5xl">
             You know who can
             <br />
@@ -504,10 +496,7 @@ function LeaguesSection() {
         </div>
 
         <div className="order-1 lg:order-2">
-          <span className="badge badge-signal">
-            <span className="dot" />
-            For leagues &amp; organizers
-          </span>
+          <SectionMark tone="signal">For leagues &amp; organizers</SectionMark>
           <h2 className="mt-5 font-display text-4xl font-black leading-[0.98] tracking-tighter text-ink sm:text-5xl">
             Fill every game.
             <br />
@@ -557,10 +546,7 @@ function TrustSection() {
   return (
     <section id="trust" className="border-t border-ink bg-ink text-paper">
       <div className="mx-auto max-w-wrap px-6 py-16 md:px-8 lg:py-24">
-        <span className="badge !border-hi-vis-dark !bg-transparent !text-hi-vis-dark">
-          <span className="dot dot-pulse" />
-          Trust &amp; safety
-        </span>
+        <SectionMark tone="hiVis">Trust &amp; safety</SectionMark>
         <h2 className="mt-5 max-w-2xl font-display text-4xl font-black leading-[0.98] tracking-tighter text-paper sm:text-5xl">
           Built for games
           <br />

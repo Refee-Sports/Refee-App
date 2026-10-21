@@ -39,12 +39,7 @@ export function Footer() {
             Where officials find games and get paid, and where leagues and
             assignors find officials. Every user is ID-verified.
           </p>
-          <div className="mt-5 inline-flex items-center gap-2">
-            <span className="dot dot-pulse bg-court-dark" />
-            <span className="kicker !text-paper/60">
-              Officials online now
-            </span>
-          </div>
+
         </div>
 
         {COLUMNS.map((col) => (

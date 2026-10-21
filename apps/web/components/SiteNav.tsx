@@ -15,10 +15,6 @@ export function SiteNav() {
       <nav className="mx-auto flex max-w-wrap items-center justify-between gap-6 px-6 py-4 md:px-8">
         <Link href="/" className="flex items-center gap-3">
           <Wordmark className="text-2xl" />
-          <span className="hidden items-center gap-1.5 text-court sm:inline-flex">
-            <span className="dot dot-pulse bg-court" />
-            <span className="kicker">Live</span>
-          </span>
         </Link>
 
         <ul className="hidden items-center gap-7 lg:flex">

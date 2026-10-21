@@ -189,6 +189,15 @@
     color: var(--whistle-ink);
   }
 
+  /* Section label mark: a few referee-shirt stripes in the label's colour. */
+  .stripe-mark {
+    display: inline-block;
+    width: 18px; /* exactly three stripes: 4px on, 3px off */
+    height: 12px;
+    flex-shrink: 0;
+    background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 7px);
+  }
+
   .dot {
     width: 6px;
     height: 6px;
