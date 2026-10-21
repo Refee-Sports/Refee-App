@@ -107,9 +107,9 @@ export function JobDetailActionBar({
           <Pressable
             onPress={onDecline}
             disabled={actionLoading || !canMutate}
-            className="rounded-md border-[1.5px] border-ink py-4 px-4 items-center justify-center active:bg-ink/10 active:scale-[0.97] disabled:opacity-40"
+            className="rounded-md border-[1.5px] border-foul-ink py-4 px-4 items-center justify-center active:bg-ink/10 active:scale-[0.97] disabled:opacity-40"
           >
-            <Text className="text-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
+            <Text className="text-foul-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
               DROP OUT
             </Text>
           </Pressable>

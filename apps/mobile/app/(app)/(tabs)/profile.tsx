@@ -505,7 +505,7 @@ export default function Profile() {
       {/* ── Upcoming games ───────────────────────────────────────── */}
       {upcomingGames.length > 0 && (
         <>
-          <PSectionHeader num="01" title="Upcoming Games" />
+          <PSectionHeader title="Upcoming Games" />
           <View className="mx-5 gap-1.5 mb-2">
             {upcomingGames.map((g) => (
               <UpcomingGameCard key={g.assignmentId} game={g} />
@@ -517,7 +517,7 @@ export default function Profile() {
       {/* ── Ratings received ─────────────────────────────────────── */}
       {ratings.length > 0 && (
         <>
-          <PSectionHeader num="★" title="Ratings Received" />
+          <PSectionHeader title="Ratings Received" />
           <View className="mx-5 border border-ink bg-chalk mb-2">
             {ratings.slice(0, 10).map((r, i) => (
               <View
@@ -645,7 +645,6 @@ export default function Profile() {
       {certs.length > 0 && (
         <>
           <PSectionHeader
-            num={upcomingGames.length > 0 ? "02" : "01"}
             title="Credentials"
             action="[ MANAGE ]"
             onAction={() => {
@@ -676,7 +675,7 @@ export default function Profile() {
       {/* ── Sports ───────────────────────────────────────────────── */}
       {sports.length > 0 && (
         <>
-          <PSectionHeader num={certs.length > 0 ? "02" : "01"} title="Sports" />
+          <PSectionHeader title="Sports" />
           <View className="mx-5 gap-1.5">
             {sports.map((s) => (
               <View
@@ -701,7 +700,6 @@ export default function Profile() {
       {levels.length > 0 && (
         <>
           <PSectionHeader
-            num={String((certs.length > 0 ? 1 : 0) + (sports.length > 0 ? 1 : 0) + 1).padStart(2, "0")}
             title="Levels"
           />
           <View className="mx-5 gap-3">
@@ -933,12 +931,10 @@ function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
 }
 
 function PSectionHeader({
-  num,
   title,
   action,
   onAction,
 }: {
-  num: string;
   title: string;
   action?: string;
   onAction?: () => void;
@@ -946,9 +942,6 @@ function PSectionHeader({
   return (
     <View className="mx-5 flex-row justify-between items-baseline mt-5 mb-2.5">
       <View className="flex-row items-baseline gap-2">
-        <Text className="text-ink-40 font-mono text-[8px]" style={{ letterSpacing: 1.5 }}>
-          {num}
-        </Text>
         <Text
           className="text-ink font-display"
           style={{ fontSize: 18, letterSpacing: -0.5, lineHeight: 20 }}

@@ -252,9 +252,6 @@ export default function RefereeProfilePage() {
   }
   const tierOrder = ["AMATEUR", "COLLEGE", "PRO"];
 
-  let sectionNum = 0;
-  const nextNum = () => String(++sectionNum).padStart(2, "0");
-
   return (
     <div className="app-canvas bg-paper pb-6">
       {/* App header */}
@@ -504,7 +501,7 @@ export default function RefereeProfilePage() {
       {/* Upcoming games */}
       {upcomingGames.length > 0 && (
         <>
-          <PSectionHeader num={nextNum()} title="Upcoming Games" />
+          <PSectionHeader title="Upcoming Games" />
           <div className="mx-5 sm:mx-0 mb-2 flex flex-col gap-1.5">
             {upcomingGames.map((g) => (
               <UpcomingGameCard key={g.assignmentId} game={g} />
@@ -516,7 +513,7 @@ export default function RefereeProfilePage() {
       {/* Ratings received (scores only; directors' comments stay private) */}
       {ratings.length > 0 && (
         <>
-          <PSectionHeader num={nextNum()} title="Ratings Received" />
+          <PSectionHeader title="Ratings Received" />
           <div className="mx-5 sm:mx-0 mb-2 border border-ink bg-chalk">
             {ratings.slice(0, 10).map((r, i) => (
               <div
@@ -657,7 +654,6 @@ export default function RefereeProfilePage() {
       {certs.length > 0 && (
         <>
           <PSectionHeader
-            num={nextNum()}
             title="Credentials"
             action="[ MANAGE ]"
             actionHref="/app/edit-profile"
@@ -685,7 +681,7 @@ export default function RefereeProfilePage() {
       {/* Sports */}
       {sports.length > 0 && (
         <>
-          <PSectionHeader num={nextNum()} title="Sports" />
+          <PSectionHeader title="Sports" />
           <div className="mx-5 sm:mx-0 flex flex-col gap-1.5">
             {sports.map((s) => (
               <div
@@ -715,7 +711,7 @@ export default function RefereeProfilePage() {
       {/* Levels */}
       {levels.length > 0 && (
         <>
-          <PSectionHeader num={nextNum()} title="Levels" />
+          <PSectionHeader title="Levels" />
           <div className="mx-5 sm:mx-0 flex flex-col gap-3">
             {tierOrder.map((tier) => {
               const tierLevels = levelsByTier[tier];
@@ -937,12 +933,10 @@ function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
 }
 
 function PSectionHeader({
-  num,
   title,
   action,
   actionHref,
 }: {
-  num: string;
   title: string;
   action?: string;
   actionHref?: string;
@@ -950,9 +944,6 @@ function PSectionHeader({
   return (
     <div className="mx-5 sm:mx-0 mb-2.5 mt-5 flex items-baseline justify-between">
       <span className="flex items-baseline gap-2">
-        <span className="font-mono text-[8px] text-ink-40" style={{ letterSpacing: 1.5 }}>
-          {num}
-        </span>
         <span
           className="font-display text-ink"
           style={{ fontSize: 18, letterSpacing: -0.5, lineHeight: "20px" }}

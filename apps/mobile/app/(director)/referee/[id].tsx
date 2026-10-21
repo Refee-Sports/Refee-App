@@ -170,7 +170,7 @@ export default function RefereePublicProfile() {
         {/* Credentials */}
         {ref.certifications.length > 0 && (
           <>
-            <SectionHead num="01" title="Credentials" />
+            <SectionHead title="Credentials" />
             <View className="mx-5 flex-row flex-wrap gap-1.5 mb-4">
               {ref.certifications.map((c, i) => (
                 <View
@@ -194,7 +194,7 @@ export default function RefereePublicProfile() {
         {/* Levels */}
         {ref.levels.length > 0 && (
           <>
-            <SectionHead num={ref.certifications.length > 0 ? "02" : "01"} title="Levels Worked" />
+            <SectionHead title="Levels Worked" />
             <View className="mx-5 gap-3">
               {tierOrder.map((tier) => {
                 const tierLevels = levelsByTier[tier];
@@ -227,7 +227,6 @@ export default function RefereePublicProfile() {
         {ref.leagues_worked && (
           <>
             <SectionHead
-              num={String(1 + (ref.certifications.length > 0 ? 1 : 0) + (ref.levels.length > 0 ? 1 : 0)).padStart(2, "0")}
               title="Leagues Worked"
             />
             <View className="mx-5 border border-ink-20 bg-chalk px-4 py-3">
@@ -271,10 +270,9 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub: st
   );
 }
 
-function SectionHead({ num, title }: { num: string; title: string }) {
+function SectionHead({ title }: { title: string }) {
   return (
     <View className="mx-5 flex-row items-baseline gap-2 mt-5 mb-2.5">
-      <Text className="text-ink-40 font-mono text-[8px]" style={{ letterSpacing: 1.5 }}>{num}</Text>
       <Text
         className="text-ink font-display"
         style={{ fontSize: 18, letterSpacing: -0.5, lineHeight: 20 }}

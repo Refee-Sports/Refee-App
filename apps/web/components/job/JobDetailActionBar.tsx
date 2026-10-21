@@ -146,10 +146,10 @@ export function JobDetailActionBar({
             type="button"
             onClick={onDecline}
             disabled={actionLoading || !canMutate}
-            className={`flex items-center justify-center border-[1.5px] border-ink px-4 py-4 active:bg-ink/10 ${ACT}`}
+            className={`flex items-center justify-center border-[1.5px] border-foul-ink px-4 py-4 active:bg-ink/10 ${ACT}`}
           >
             <span
-              className="font-mono-bold text-xs uppercase text-ink"
+              className="font-mono-bold text-xs uppercase text-foul-ink"
               style={{ letterSpacing: 1.4 }}
             >
               Drop out

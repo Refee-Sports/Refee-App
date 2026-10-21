@@ -205,7 +205,7 @@ export default function RefereePublicProfilePage({
       {/* Credentials */}
       {ref.certifications.length > 0 && (
         <>
-          <SectionHead num="01" title="Credentials" />
+          <SectionHead title="Credentials" />
           <div className="mx-5 sm:mx-0 mb-4 flex flex-wrap gap-1.5">
             {ref.certifications.map((c, i) => (
               <span
@@ -234,7 +234,6 @@ export default function RefereePublicProfilePage({
       {ref.levels.length > 0 && (
         <>
           <SectionHead
-            num={ref.certifications.length > 0 ? "02" : "01"}
             title="Levels Worked"
           />
           <div className="mx-5 sm:mx-0 flex flex-col gap-3">
@@ -269,7 +268,6 @@ export default function RefereePublicProfilePage({
       {ref.leagues_worked && (
         <>
           <SectionHead
-            num={String(1 + (ref.certifications.length > 0 ? 1 : 0) + (ref.levels.length > 0 ? 1 : 0)).padStart(2, "0")}
             title="Leagues Worked"
           />
           <div className="mx-5 sm:mx-0 mb-4 border border-ink-20 bg-chalk px-4 py-3">
@@ -322,12 +320,9 @@ function StatCell({ label, value, sub }: { label: string; value: string; sub: st
   );
 }
 
-function SectionHead({ num, title }: { num: string; title: string }) {
+function SectionHead({ title }: { title: string }) {
   return (
     <div className="mx-5 sm:mx-0 mb-2.5 mt-5 flex items-baseline gap-2">
-      <span className="font-mono text-[8px] text-ink-40" style={{ letterSpacing: 1.5 }}>
-        {num}
-      </span>
       <h2
         className="font-display text-ink"
         style={{ fontSize: 18, letterSpacing: -0.5, lineHeight: "20px" }}
