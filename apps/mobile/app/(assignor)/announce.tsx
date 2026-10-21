@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { sendRosterBlast } from "@/lib/assignor/queries";
+import { palette } from "@refee/design";
 
 const MAX_LENGTH = 1000;
 
@@ -55,7 +56,7 @@ export default function AnnounceToRoster() {
           onPress={() => router.back()}
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           SEND MESSAGE BLAST TO ROSTER
@@ -72,7 +73,7 @@ export default function AnnounceToRoster() {
           value={body}
           onChangeText={(t) => setBody(t.slice(0, MAX_LENGTH))}
           placeholder="What do your referees need to know?"
-          placeholderTextColor="rgba(8,17,28,0.35)"
+          placeholderTextColor={palette.ink60}
           multiline
           autoFocus
           className="border border-ink bg-chalk px-3 py-3 mt-4 text-ink"
@@ -90,7 +91,7 @@ export default function AnnounceToRoster() {
           className={`py-4 items-center ${canSend ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
         >
           {busy ? (
-            <ActivityIndicator color="#E5E1D6" />
+            <ActivityIndicator color={palette.paper} />
           ) : (
             <Text
               className={`font-mono-bold ${canSend ? "text-paper" : "text-ink-40"}`}

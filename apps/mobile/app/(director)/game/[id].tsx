@@ -44,6 +44,7 @@ import { startCrewPayment, confirmCrewPayout, runAutoPay } from "@/lib/payments/
 import { canOfferCrewPayment, paymentNeedsReview } from "@/lib/payments/status";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { showRate } from "@refee/core/referee/reliability";
+import { palette } from "@refee/design";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -363,7 +364,7 @@ export default function GameDetail() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -405,9 +406,9 @@ export default function GameDetail() {
   });
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#E5E1D6" }}>
+    <View style={{ flex: 1, backgroundColor: palette.paper }}>
     <FlatList
-      style={{ flex: 1, backgroundColor: "#E5E1D6" }}
+      style={{ flex: 1, backgroundColor: palette.paper }}
       contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
       ListHeaderComponent={
         <View style={{ paddingTop: insets.top }}>
@@ -437,7 +438,7 @@ export default function GameDetail() {
               accessibilityLabel="Duplicate game"
               className="h-9 px-3 mr-2 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
             >
-              <Feather name="copy" size={12} color="#08111C" />
+              <Feather name="copy" size={12} color={palette.ink} />
               <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
                 DUPLICATE
               </Text>
@@ -452,7 +453,7 @@ export default function GameDetail() {
               }}
               className="h-9 px-3 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
             >
-              <Feather name="edit-2" size={12} color="#08111C" />
+              <Feather name="edit-2" size={12} color={palette.ink} />
               <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
                 EDIT
               </Text>
@@ -523,10 +524,10 @@ export default function GameDetail() {
           {isCompleted && unratedCount === 0 && accepted.length > 0 && (
             <View className="mx-5 mb-4 flex-row items-center gap-3 border border-court/30 bg-court/10 px-4 py-3.5">
               <View className="w-7 h-7 rounded-full bg-court items-center justify-center">
-                <Feather name="check" size={15} color="#F1EDE1" />
+                <Feather name="check" size={15} color={palette.paper} />
               </View>
               <View className="flex-1">
-                <Text className="font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.2, color: "#00A85C" }}>
+                <Text className="font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.2, color: palette.court }}>
                   COMPLETED
                 </Text>
                 <Text className="font-mono text-[9px] uppercase text-ink-60 mt-0.5" style={{ letterSpacing: 1 }}>
@@ -545,10 +546,10 @@ export default function GameDetail() {
                 className="bg-signal py-4 flex-row items-center justify-center gap-2 active:opacity-80"
               >
                 {paying ? (
-                  <ActivityIndicator color="#E5E1D6" size="small" />
+                  <ActivityIndicator color={palette.paper} size="small" />
                 ) : (
                   <>
-                    <Feather name="dollar-sign" size={14} color="#E5E1D6" />
+                    <Feather name="dollar-sign" size={14} color={palette.paper} />
                     <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 2 }}>
                       PAY CREW
                     </Text>
@@ -563,7 +564,7 @@ export default function GameDetail() {
           {isClosed && isPaid && (
             <View className="mx-5 mb-4 flex-row items-center gap-3 bg-court px-4 py-3.5">
               <View className="w-7 h-7 rounded-full bg-paper/20 items-center justify-center">
-                <Feather name="check" size={15} color="#F1EDE1" />
+                <Feather name="check" size={15} color={palette.paper} />
               </View>
               <View className="flex-1">
                 <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.2 }}>
@@ -583,7 +584,7 @@ export default function GameDetail() {
                 onPress={handleMessageCrew}
                 className="border border-ink bg-ink py-3.5 flex-row items-center justify-center gap-2 active:opacity-70"
               >
-                <Feather name="send" size={14} color="#C9F031" />
+                <Feather name="send" size={14} color={palette.hiVis} />
                 <Text
                   className="text-paper font-mono-bold text-[10px] uppercase"
                   style={{ letterSpacing: 2 }}
@@ -608,7 +609,7 @@ export default function GameDetail() {
                   CREW MESSAGES
                 </Text>
                 <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.2 }}>
-                  <Text style={{ color: "#00A85C" }}>
+                  <Text style={{ color: palette.court }}>
                     ✓ SEEN {seenCount(crewThread.receipts, crewThread.lastMessageAt)}/{crewThread.receipts.length}
                   </Text>
                 </Text>
@@ -634,11 +635,11 @@ export default function GameDetail() {
                       <Feather
                         name={seen ? "check-circle" : "circle"}
                         size={11}
-                        color={seen ? "#00A85C" : "rgba(8,17,28,0.36)"}
+                        color={seen ? palette.court : palette.ink40}
                       />
                       <Text
                         className="font-mono-bold text-[9px] uppercase"
-                        style={{ letterSpacing: 0.8, color: seen ? "#08111C" : "rgba(8,17,28,0.56)" }}
+                        style={{ letterSpacing: 0.8, color: seen ? palette.ink : palette.ink60 }}
                       >
                         {r.displayName}
                       </Text>
@@ -657,7 +658,7 @@ export default function GameDetail() {
                   onPress={handleCompleteGame}
                   className="bg-court py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
                 >
-                  <Feather name="check-circle" size={14} color="#E5E1D6" />
+                  <Feather name="check-circle" size={14} color={palette.paper} />
                   <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
                     MARK GAME COMPLETED
                   </Text>
@@ -698,7 +699,7 @@ export default function GameDetail() {
           {/* Sections */}
           <ApplicantSection
             title={`PENDING · ${pending.length}`}
-            accentColor="#F59E0B"
+            accentColor={palette.whistle}
             empty="No pending applications."
           >
             {pending.map((a) => (
@@ -716,7 +717,7 @@ export default function GameDetail() {
 
           <ApplicantSection
             title={`ACCEPTED · ${accepted.length}`}
-            accentColor="#00A85C"
+            accentColor={palette.court}
             empty="No accepted referees yet."
           >
             {accepted.map((a) => (
@@ -737,7 +738,7 @@ export default function GameDetail() {
           {dropped.length > 0 && (
             <ApplicantSection
               title={`DROPPED · ${dropped.length}`}
-              accentColor="#E53E3E"
+              accentColor={palette.foulInk}
               empty=""
             >
               {dropped.map((a) => (
@@ -755,7 +756,7 @@ export default function GameDetail() {
           {declined.length > 0 && (
             <ApplicantSection
               title={`DECLINED · ${declined.length}`}
-              accentColor="rgba(8,17,28,0.30)"
+              accentColor={palette.ink40}
               empty=""
             >
               {declined.map((a) => (
@@ -795,7 +796,7 @@ export default function GameDetail() {
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
           className="flex-1 justify-end"
-          style={{ backgroundColor: "rgba(8,17,28,0.5)" }}
+          style={{ backgroundColor: palette.ink60 }}
         >
           <View className="bg-paper border-t-2 border-ink px-5 pt-5 pb-8">
             <Text className="text-ink font-display uppercase" style={{ fontSize: 20, letterSpacing: -0.5 }}>
@@ -808,7 +809,7 @@ export default function GameDetail() {
               value={noteText}
               onChangeText={setNoteText}
               placeholder="e.g. Arrive 30 min early, park behind the gym…"
-              placeholderTextColor="rgba(8,17,28,0.36)"
+              placeholderTextColor={palette.ink60}
               multiline
               autoFocus
               maxLength={4000}
@@ -832,10 +833,10 @@ export default function GameDetail() {
                 }`}
               >
                 {postingNote ? (
-                  <ActivityIndicator size="small" color="#E5E1D6" />
+                  <ActivityIndicator size="small" color={palette.paper} />
                 ) : (
                   <>
-                    <Feather name="send" size={13} color="#E5E1D6" />
+                    <Feather name="send" size={13} color={palette.paper} />
                     <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
                       SEND
                     </Text>
@@ -866,7 +867,7 @@ function SpecCell({ label, value }: { label: string; value: string }) {
 function DetailRow({ icon, label, value }: { icon: any; label: string; value: string }) {
   return (
     <View className="flex-row gap-3 px-4 py-3 items-start">
-      <Feather name={icon} size={14} color="rgba(8,17,28,0.56)" style={{ marginTop: 1 }} />
+      <Feather name={icon} size={14} color={palette.ink60} style={{ marginTop: 1 }} />
       <View className="flex-1">
         <Text className="font-mono-bold text-[9px] text-ink-40 uppercase mb-0.5" style={{ letterSpacing: 2 }}>
           {label}
@@ -945,14 +946,14 @@ function ApplicantCard({
     : "UNKNOWN REF";
 
   const statusColor: Record<string, string> = {
-    pending: "#F59E0B",
-    accepted: "#00A85C",
-    declined: "rgba(8,17,28,0.36)",
-    needs_reconfirm: "#E53E3E",
-    completed: "#00A85C",
-    cancelled: "rgba(8,17,28,0.36)",
-    withdrawn: "#E53E3E",
-    no_show: "#E53E3E",
+    pending: palette.whistleInk,
+    accepted: palette.courtInk,
+    declined: palette.ink60,
+    needs_reconfirm: palette.foulInk,
+    completed: palette.courtInk,
+    cancelled: palette.ink60,
+    withdrawn: palette.foulInk,
+    no_show: palette.foulInk,
   };
 
   const statusLabel: Record<string, string> = {
@@ -1002,7 +1003,7 @@ function ApplicantCard({
             {rate.label}{rate.rate != null && rate.rate < 100 ? ` · ${rate.detail}` : ""}
           </Text>
           {applicant.late_minutes != null && applicant.status === "accepted" && (
-            <Text className="font-mono-bold text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1, color: "#E53E3E" }}>
+            <Text className="font-mono-bold text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1, color: palette.foulInk }}>
               ⏱ RUNNING ~{applicant.late_minutes} MIN LATE
             </Text>
           )}
@@ -1011,7 +1012,7 @@ function ApplicantCard({
         {/* Status */}
         <Text
           className="font-mono-bold text-[9px] uppercase"
-          style={{ letterSpacing: 1.5, color: statusColor[applicant.status] ?? "#08111C" }}
+          style={{ letterSpacing: 1.5, color: statusColor[applicant.status] ?? palette.ink }}
         >
           {statusLabel[applicant.status] ?? applicant.status.toUpperCase()}
         </Text>
@@ -1034,7 +1035,7 @@ function ApplicantCard({
             className="flex-1 py-2.5 items-center bg-court active:opacity-70"
           >
             {actioning ? (
-              <ActivityIndicator size="small" color="#E5E1D6" />
+              <ActivityIndicator size="small" color={palette.paper} />
             ) : (
               <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
                 ACCEPT ✓
@@ -1051,7 +1052,7 @@ function ApplicantCard({
               onPress={onMessage}
               className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 active:opacity-70"
             >
-              <Feather name="message-square" size={11} color="#1F4FCC" />
+              <Feather name="message-square" size={11} color={palette.signal} />
               <Text className="text-signal font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
                 MESSAGE
               </Text>
@@ -1062,7 +1063,7 @@ function ApplicantCard({
               onPress={onRate}
               className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20 bg-ink active:opacity-70"
             >
-              <Feather name="star" size={11} color="#C9F031" />
+              <Feather name="star" size={11} color={palette.hiVis} />
               <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
                 RATE
               </Text>
@@ -1080,8 +1081,8 @@ function ApplicantCard({
           )}
           {rated && (
             <View className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20">
-              <Text style={{ color: "#00A85C", fontSize: 10 }}>✓</Text>
-              <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
+              <Text style={{ color: palette.court, fontSize: 10 }}>✓</Text>
+              <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: palette.court }}>
                 RATED
               </Text>
             </View>

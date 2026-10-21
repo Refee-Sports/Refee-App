@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { fetchTournamentById, type TournamentRow } from "@/lib/director/queries";
 import { parseScheduleCsv, type ScheduleParseResult } from "@/lib/schedule/csv";
 import { downloadScheduleTemplate, importTournamentSchedule, pickScheduleCsv } from "@/lib/schedule/import";
+import { palette } from "@refee/design";
 
 export function ScheduleImporter({ tournamentId }: { tournamentId: string }) {
   const router = useRouter();
@@ -72,14 +73,14 @@ export function ScheduleImporter({ tournamentId }: { tournamentId: string }) {
     ]);
   };
 
-  if (loading) return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>;
+  if (loading) return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color={palette.signal} /></View>;
 
   const invalidCount = preview?.rows.filter((row) => row.errors.length > 0).length ?? 0;
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
         <Pressable onPress={() => router.back()} className="w-9 h-9 border border-ink items-center justify-center active:opacity-70">
-          <Feather name="x" size={16} color="#08111C" />
+          <Feather name="x" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.7 }}>IMPORT SCHEDULE</Text>
         <View className="w-9" />
@@ -95,7 +96,7 @@ export function ScheduleImporter({ tournamentId }: { tournamentId: string }) {
           <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>1 · USE THE TEMPLATE</Text>
           <Text className="font-mono text-[9px] text-ink-60 mt-2 leading-4">KEEP THE COLUMN HEADERS. USE 24-HOUR TIME AND AN IANA TIMEZONE SUCH AS AMERICA/CHICAGO.</Text>
           <Pressable onPress={() => void downloadScheduleTemplate().catch((caught) => setError(caught instanceof Error ? caught.message : "Could not save the template."))} className="border border-ink px-4 py-3 mt-4 flex-row justify-center items-center gap-2 active:opacity-70">
-            <Feather name="download" size={13} color="#08111C" />
+            <Feather name="download" size={13} color={palette.ink} />
             <Text className="font-mono-bold text-[9px] text-ink uppercase">DOWNLOAD CSV TEMPLATE</Text>
           </Pressable>
         </View>
@@ -103,7 +104,7 @@ export function ScheduleImporter({ tournamentId }: { tournamentId: string }) {
         <View className="border border-ink bg-chalk p-4 mt-3">
           <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>2 · UPLOAD AND REVIEW</Text>
           <Pressable onPress={() => void chooseFile()} disabled={working || !tournament} className="bg-ink px-4 py-3 mt-4 flex-row justify-center items-center gap-2 active:opacity-70">
-            {working && !preview ? <ActivityIndicator color="#E5E1D6" /> : <Feather name="upload" size={13} color="#E5E1D6" />}
+            {working && !preview ? <ActivityIndicator color={palette.paper} /> : <Feather name="upload" size={13} color={palette.paper} />}
             <Text className="font-mono-bold text-[9px] text-paper uppercase">{fileName ? "CHOOSE ANOTHER CSV" : "CHOOSE CSV"}</Text>
           </Pressable>
           {fileName && <Text className="font-mono text-[9px] text-ink-60 mt-3" numberOfLines={1}>{fileName.toUpperCase()}</Text>}
@@ -134,7 +135,7 @@ export function ScheduleImporter({ tournamentId }: { tournamentId: string }) {
 
       <View className="absolute bottom-0 left-0 right-0 border-t border-ink bg-paper px-5 pt-3" style={{ paddingBottom: insets.bottom + 14 }}>
         <Pressable onPress={() => void save()} disabled={!preview?.canImport || working} className={`py-4 items-center ${preview?.canImport && !working ? "bg-ink" : "bg-ink-20"}`}>
-          {working && preview ? <ActivityIndicator color="#E5E1D6" /> : <Text className={`font-mono-bold text-[10px] uppercase ${preview?.canImport ? "text-paper" : "text-ink-40"}`}>IMPORT {preview?.validRows.length ?? 0} GAMES →</Text>}
+          {working && preview ? <ActivityIndicator color={palette.paper} /> : <Text className={`font-mono-bold text-[10px] uppercase ${preview?.canImport ? "text-paper" : "text-ink-40"}`}>IMPORT {preview?.validRows.length ?? 0} GAMES →</Text>}
         </Pressable>
       </View>
     </View>

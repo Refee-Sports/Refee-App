@@ -14,6 +14,7 @@ import { fetchMyRoles } from "@/lib/assignor/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
+import { palette } from "@refee/design";
 
 export default function AssignorProfile() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function AssignorProfile() {
   };
 
   if (loading) {
-    return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>;
+    return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color={palette.signal} /></View>;
   }
 
   if (!profile) {
@@ -64,7 +65,7 @@ export default function AssignorProfile() {
         </Text>
         <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
           {profile.is_verified ? (
-            <Text className="font-mono-bold" style={{ color: "#00A85C" }}>✓ {verificationLabel(true)}</Text>
+            <Text className="font-mono-bold" style={{ color: palette.court }}>✓ {verificationLabel(true)}</Text>
           ) : verificationLabel(false)}
         </Text>
       </View>
@@ -122,7 +123,7 @@ export default function AssignorProfile() {
         </Pressable>
 
         <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
-          <Feather name="log-out" size={14} color="#F1EDE1" />
+          <Feather name="log-out" size={14} color={palette.paper} />
           <Text className="text-paper font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>SIGN OUT</Text>
         </Pressable>
       </View>

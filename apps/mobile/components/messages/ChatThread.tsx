@@ -22,6 +22,7 @@ import {
   subscribeToConversation,
   type MessageRow,
 } from "@/lib/messages/queries";
+import { palette } from "@refee/design";
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", {
@@ -123,7 +124,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
       >
         {loading ? (
           <View className="flex-1 items-center justify-center">
-            <ActivityIndicator color="#1F4FCC" />
+            <ActivityIndicator color={palette.signal} />
           </View>
         ) : (
           <FlatList
@@ -177,7 +178,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
               value={draft}
               onChangeText={setDraft}
               placeholder="MESSAGE..."
-              placeholderTextColor="rgba(8,17,28,0.36)"
+              placeholderTextColor={palette.ink60}
               multiline
               className="flex-1 border border-ink bg-paper px-3 py-2.5 font-mono text-[13px] text-ink"
               style={{ maxHeight: 100, letterSpacing: 0.5 }}
@@ -189,7 +190,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
                 draft.trim() ? "bg-signal" : "bg-paper"
               } active:opacity-70`}
             >
-              <Feather name="arrow-up" size={18} color={draft.trim() ? "#E5E1D6" : "rgba(8,17,28,0.36)"} />
+              <Feather name="arrow-up" size={18} color={draft.trim() ? palette.paper : palette.ink40} />
             </Pressable>
           </View>
         ) : (

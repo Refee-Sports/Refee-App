@@ -1,6 +1,7 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import type { AssignmentStatus } from "@/lib/jobs/queries";
+import { palette } from "@refee/design";
 
 type Props = {
   bottomInset: number;
@@ -49,7 +50,7 @@ export function JobDetailActionBar({
               onPress={onMessageCrew}
               className="bg-ink px-5 items-center justify-center active:opacity-80"
             >
-              <Text className="font-mono-bold text-[10px] uppercase text-center" style={{ letterSpacing: 1.5, color: "#C9F031" }}>
+              <Text className="font-mono-bold text-[10px] uppercase text-center" style={{ letterSpacing: 1.5, color: palette.hiVis }}>
                 MESSAGE{"\n"}CREW
               </Text>
             </Pressable>
@@ -119,7 +120,7 @@ export function JobDetailActionBar({
             className="flex-1 rounded-md bg-court py-4 items-center justify-center active:scale-[0.97] flex-row gap-2 disabled:opacity-40"
           >
             {actionLoading ? (
-              <ActivityIndicator color="#E5E1D6" />
+              <ActivityIndicator color={palette.paper} />
             ) : (
               <Text className="text-paper font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
                 RE-CONFIRM MY SPOT →
@@ -205,7 +206,7 @@ export function JobDetailActionBar({
           className="flex-1 rounded-md bg-court py-4 items-center justify-center active:scale-[0.97] flex-row gap-2 disabled:opacity-40"
         >
           {actionLoading ? (
-            <ActivityIndicator color="#E5E1D6" />
+            <ActivityIndicator color={palette.paper} />
           ) : (
             <>
               <Text className="text-paper font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>

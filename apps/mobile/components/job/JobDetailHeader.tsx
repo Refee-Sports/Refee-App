@@ -1,6 +1,7 @@
 import { Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { palette } from "@refee/design";
 
 type Props = {
   jobCode: string;
@@ -17,7 +18,7 @@ export function JobDetailHeader({ jobCode, onBack }: Props) {
         }}
         className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
       >
-        <Feather name="chevron-left" size={20} color="#08111C" />
+        <Feather name="chevron-left" size={20} color={palette.ink} />
       </Pressable>
       <View className="items-center flex-1 px-2">
         <Text
@@ -38,13 +39,13 @@ export function JobDetailHeader({ jobCode, onBack }: Props) {
           onPress={() => Haptics.selectionAsync()}
           className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
         >
-          <Feather name="bookmark" size={14} color="#08111C" />
+          <Feather name="bookmark" size={14} color={palette.ink} />
         </Pressable>
         <Pressable
           onPress={() => Haptics.selectionAsync()}
           className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
         >
-          <Feather name="share-2" size={14} color="#08111C" />
+          <Feather name="share-2" size={14} color={palette.ink} />
         </Pressable>
       </View>
     </View>

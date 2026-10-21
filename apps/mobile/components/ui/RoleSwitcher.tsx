@@ -16,6 +16,7 @@ import {
   setPrimaryRole as persistPrimaryRole,
   type Role,
 } from "@/lib/roles/queries";
+import { palette } from "@refee/design";
 
 const HOME: Record<Role, string> = {
   referee: "/(app)/(tabs)/jobs",
@@ -206,7 +207,7 @@ export function RoleSwitcher() {
             value={orgForm.orgName}
             onChangeText={(orgName) => setOrgForm((f) => (f ? { ...f, orgName } : f))}
             placeholder="Austin Hoops Classic"
-            placeholderTextColor="rgba(8,17,28,0.35)"
+            placeholderTextColor={palette.ink60}
             autoCapitalize="words"
             autoFocus
             accessibilityLabel="Organization name"

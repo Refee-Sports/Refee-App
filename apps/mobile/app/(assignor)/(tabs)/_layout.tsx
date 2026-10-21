@@ -1,14 +1,15 @@
 import { Feather } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
+import { palette } from "@refee/design";
 
 const tabOptions = {
   headerShown: false,
-  tabBarActiveTintColor: "#1F4FCC",
-  tabBarInactiveTintColor: "rgba(8,17,28,0.36)",
+  tabBarActiveTintColor: palette.signal,
+  tabBarInactiveTintColor: palette.ink40,
   tabBarStyle: {
-    backgroundColor: "#E5E1D6",
+    backgroundColor: palette.paper,
     borderTopWidth: 1,
-    borderTopColor: "#08111C",
+    borderTopColor: palette.ink,
     paddingTop: 8,
     height: 84,
   },

@@ -513,7 +513,7 @@ function CertStep({
                     value={entry.licenseNumber}
                     onChange={(e) => onSetLicense(body.id, e.target.value)}
                     placeholder="e.g. 123456"
-                    className="w-full border border-ink-20 bg-paper px-3 py-2 font-mono text-ink outline-none placeholder:text-ink-40"
+                    className="w-full border border-ink-20 bg-paper px-3 py-2 font-mono text-ink outline-none placeholder:text-ink-60"
                     style={{ fontSize: 13 }}
                   />
                 </div>

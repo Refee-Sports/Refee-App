@@ -21,6 +21,7 @@ import { supabase } from "@/lib/supabase";
 import { getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { withdrawFromJob, isLateWithdrawal, reportRunningLate, canReportRunningLate, canWithdraw } from "@/lib/jobs/queries";
 import { jobAvailability } from "@refee/core/jobs/availability";
+import { palette } from "@refee/design";
 
 const ACTION_BAR_HEIGHT = 88;
 
@@ -184,7 +185,7 @@ export default function JobDetailScreen() {
     return (
       <View className="flex-1 bg-paper items-center justify-center">
         <StatusBar style="dark" />
-        <ActivityIndicator color="#1F4FCC" size="large" />
+        <ActivityIndicator color={palette.signal} size="large" />
         <Text
           className="text-ink-60 font-mono-bold text-[10px] uppercase mt-4"
           style={{ letterSpacing: 2 }}
@@ -205,7 +206,7 @@ export default function JobDetailScreen() {
             onPress={() => router.back()}
             className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70 mb-6"
           >
-            <Feather name="chevron-left" size={20} color="#08111C" />
+            <Feather name="chevron-left" size={20} color={palette.ink} />
           </Pressable>
           <Text
             className="text-ink font-display uppercase"

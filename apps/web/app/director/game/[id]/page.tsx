@@ -1011,7 +1011,7 @@ export default function DirectorGameDetailPage({
               maxLength={4000}
               autoFocus
               aria-label="Crew message"
-              className="w-full border border-ink bg-chalk px-3 py-3 font-mono text-[13px] text-ink outline-none placeholder:text-ink-40"
+              className="w-full border border-ink bg-chalk px-3 py-3 font-mono text-[13px] text-ink outline-none placeholder:text-ink-60"
               style={{ minHeight: 90 }}
             />
             <div className="mt-4 flex gap-2">

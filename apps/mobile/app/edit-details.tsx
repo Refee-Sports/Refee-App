@@ -10,6 +10,7 @@ import { fetchMyHirerProfile } from "@/lib/director/queries";
 import { pickAndUploadAvatar } from "@/lib/profile/avatar";
 import { updateAssignorDetails, updateDirectorDetails } from "@/lib/profile/account";
 import { ORG_TYPES } from "@/lib/roles/queries";
+import { palette } from "@refee/design";
 
 /**
  * Edit the details a director or assignor gave at sign-up: photo, name, city,
@@ -104,7 +105,7 @@ export default function EditDetailsScreen() {
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
           accessibilityLabel="Back"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           EDIT PROFILE
@@ -114,7 +115,7 @@ export default function EditDetailsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F4FCC" />
+          <ActivityIndicator color={palette.signal} />
         </View>
       ) : (
         <ScrollView
@@ -124,11 +125,11 @@ export default function EditDetailsScreen() {
           <Pressable onPress={changePhoto} className="flex-row items-center gap-4 mb-6 active:opacity-80">
             <View className="w-16 h-16 bg-ink border border-ink items-center justify-center overflow-hidden">
               {uploading ? (
-                <ActivityIndicator color="#F5F2EA" />
+                <ActivityIndicator color={palette.chalk} />
               ) : avatarUrl ? (
                 <Image source={{ uri: avatarUrl }} style={{ width: 64, height: 64 }} />
               ) : (
-                <Feather name="camera" size={18} color="#F5F2EA" />
+                <Feather name="camera" size={18} color={palette.chalk} />
               )}
             </View>
             <Text className="font-mono-bold text-[10px] uppercase underline">Change photo</Text>

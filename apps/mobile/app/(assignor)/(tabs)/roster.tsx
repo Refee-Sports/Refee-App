@@ -25,6 +25,7 @@ import {
   type RefSearchResult,
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
+import { palette } from "@refee/design";
 
 export default function AssignorRoster() {
   const insets = useSafeAreaInsets();
@@ -137,7 +138,7 @@ export default function AssignorRoster() {
           onPress={() => router.push("/(assignor)/invite" as any)}
           className="flex-1 bg-ink py-3 flex-row items-center justify-center gap-2 active:opacity-80"
         >
-          <Feather name="user-plus" size={13} color="#E5E1D6" />
+          <Feather name="user-plus" size={13} color={palette.paper} />
           <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
             INVITE / QR
           </Text>
@@ -146,7 +147,7 @@ export default function AssignorRoster() {
           onPress={() => router.push("/(assignor)/announce" as any)}
           className="flex-1 border border-ink py-3 flex-row items-center justify-center gap-2 active:opacity-70"
         >
-          <Feather name="radio" size={13} color="#08111C" />
+          <Feather name="radio" size={13} color={palette.ink} />
           <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
             MESSAGE BLAST
           </Text>
@@ -154,16 +155,16 @@ export default function AssignorRoster() {
       </View>
 
       <View className="mx-5 mb-3 border border-ink bg-chalk flex-row items-center px-3">
-        <Feather name="search" size={14} color="rgba(8,17,28,0.5)" />
+        <Feather name="search" size={14} color={palette.ink60} />
         <TextInput
           value={query}
           onChangeText={setQuery}
           placeholder="SEARCH REFEREES BY NAME OR CITY"
-          placeholderTextColor="rgba(8,17,28,0.35)"
+          placeholderTextColor={palette.ink60}
           autoCapitalize="words"
           className="flex-1 py-3 px-2 font-mono text-[10px] text-ink"
         />
-        {searching && <ActivityIndicator size="small" color="#1F4FCC" />}
+        {searching && <ActivityIndicator size="small" color={palette.signal} />}
       </View>
 
       {query.trim().length >= 2 ? (
@@ -187,13 +188,13 @@ export default function AssignorRoster() {
           )}
         />
       ) : loading ? (
-        <View className="flex-1 items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>
+        <View className="flex-1 items-center justify-center"><ActivityIndicator color={palette.signal} /></View>
       ) : (
         <FlatList
           data={visibleMembers}
           keyExtractor={(member) => member.roster_id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 90 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={palette.signal} />}
           ListEmptyComponent={(
             <Text className="font-mono text-[9px] text-ink-40 uppercase text-center py-16" style={{ letterSpacing: 1 }}>
               Search above to invite referees already on Refee, or tap INVITE / QR to bring in new ones.
@@ -241,7 +242,7 @@ function PersonRow({
         <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1" style={{ letterSpacing: 0.8 }} numberOfLines={1}>{meta}</Text>
       </View>
       <Pressable disabled={busy} onPress={onPress} className={`border px-2.5 py-2 active:opacity-70 ${destructive ? "border-foul" : "border-ink bg-ink"}`}>
-        {busy ? <ActivityIndicator size="small" color={destructive ? "#E53E3E" : "#E5E1D6"} /> : (
+        {busy ? <ActivityIndicator size="small" color={destructive ? palette.foulInk : palette.paper} /> : (
           <Text className={`font-mono-bold text-[8px] ${destructive ? "text-foul-ink" : "text-paper"}`} style={{ letterSpacing: 1 }}>{action}</Text>
         )}
       </Pressable>

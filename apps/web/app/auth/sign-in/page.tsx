@@ -168,7 +168,7 @@ export default function SignInPage() {
               placeholder="you@example.com"
               disabled={oauthBusy}
               autoFocus
-              className="w-full border-[1.5px] border-ink bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-40"
+              className="w-full border-[1.5px] border-ink bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-60"
               style={{ fontSize: 14 }}
             />
 

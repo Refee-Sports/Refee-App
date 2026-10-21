@@ -14,6 +14,7 @@ import {
   type NotificationPreferences,
 } from "@/lib/push/preferences";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
+import { palette } from "@refee/design";
 
 /**
  * Three switches: new games near me, crew messages, game updates. Each saves as
@@ -78,7 +79,7 @@ export default function NotificationsScreen() {
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
           accessibilityLabel="Back"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           NOTIFICATIONS
@@ -88,7 +89,7 @@ export default function NotificationsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F4FCC" />
+          <ActivityIndicator color={palette.signal} />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
@@ -116,8 +117,8 @@ export default function NotificationsScreen() {
                   <Switch
                     value={prefs[s.kind]}
                     onValueChange={(v) => void flip(s.kind, v)}
-                    trackColor={{ false: "rgba(8,17,28,0.18)", true: "#1F4FCC" }}
-                    thumbColor="#F5F2EA"
+                    trackColor={{ false: palette.ink20, true: palette.signal }}
+                    thumbColor={palette.chalk}
                     accessibilityLabel={s.label}
                   />
                 </View>

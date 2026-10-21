@@ -14,6 +14,7 @@ import {
   startIdentityVerification,
   type IdentityStatus,
 } from "@/lib/identity/queries";
+import { palette } from "@refee/design";
 
 const POLL_MS = 3000;
 const GIVE_UP_MS = 60_000;
@@ -146,7 +147,7 @@ export default function Verify() {
             : "Someone is looking at your ID now. This usually takes a few minutes."}
         </Body>
         {!waiting && reason ? <ReasonLine text={reason} /> : null}
-        {waiting ? <ActivityIndicator className="mt-6" color="#08111C" /> : null}
+        {waiting ? <ActivityIndicator className="mt-6" color={palette.ink} /> : null}
         <Primary label="KEEP LOOKING AROUND" onPress={skip} />
       </Shell>
     );

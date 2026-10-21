@@ -1,4 +1,5 @@
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { palette } from "@refee/design";
 
 type Props = {
   variant: "welcome" | "sign-in";
@@ -20,7 +21,7 @@ export function SocialAuthButtons({ variant, loading, onGoogle, onApple }: Props
         className={`flex-row items-center justify-center gap-2 py-4 bg-chalk active:opacity-80 ${googleBorder}`}
       >
         {loading === "google" ? (
-          <ActivityIndicator color="#08111C" />
+          <ActivityIndicator color={palette.ink} />
         ) : (
           <Text
             className="text-ink font-mono-bold uppercase"
@@ -37,7 +38,7 @@ export function SocialAuthButtons({ variant, loading, onGoogle, onApple }: Props
         className="flex-row items-center justify-center gap-2 py-4 bg-black active:opacity-80"
       >
         {loading === "apple" ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color={palette.inkInv} />
         ) : (
           <Text
             className="text-white font-mono-bold uppercase"

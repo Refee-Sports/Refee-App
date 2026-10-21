@@ -18,6 +18,7 @@ import {
   type RosterInviteRow,
 } from "@/lib/assignor/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 /** "SAT · SEP 20" in the venue's zone. */
 function formatCardDate(iso: string, tz?: string | null): string {
@@ -174,7 +175,7 @@ export default function Home() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center">
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -209,7 +210,7 @@ export default function Home() {
             className="font-mono-bold text-[9px] uppercase"
             style={{
               letterSpacing: 1.5,
-              color: profile?.is_available ? "#2E7D32" : "rgba(8,17,28,0.36)",
+              color: profile?.is_available ? palette.courtInk : palette.ink40,
             }}
           >
             {profile?.is_available ? "AVAILABLE" : "UNAVAILABLE"}
@@ -255,7 +256,7 @@ export default function Home() {
                     <Text className="font-mono-bold text-[9px] text-ink uppercase">DECLINE</Text>
                   </Pressable>
                   <Pressable disabled={rosterBusyId !== null} onPress={() => void respondToRoster(invite, true)} className="flex-1 border border-ink bg-ink py-2.5 items-center active:opacity-70">
-                    {rosterBusyId === invite.roster_id ? <ActivityIndicator size="small" color="#E5E1D6" /> : <Text className="font-mono-bold text-[9px] text-paper uppercase">JOIN ROSTER</Text>}
+                    {rosterBusyId === invite.roster_id ? <ActivityIndicator size="small" color={palette.paper} /> : <Text className="font-mono-bold text-[9px] text-paper uppercase">JOIN ROSTER</Text>}
                   </Pressable>
                 </View>
               </View>

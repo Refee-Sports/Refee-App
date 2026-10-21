@@ -2,7 +2,7 @@
   "name": "@refee/web",
   "version": "0.1.0",
   "private": true,
-  "description": "Refee — the web app and landing page. Shares the backend in ../../supabase with the mobile app in ../mobile.",
+  "description": "Refee \u2014 the web app and landing page. Shares the backend in ../../supabase with the mobile app in ../mobile.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@refee/core": "*",
+    "@refee/design": "*",
     "@stripe/react-stripe-js": "^6.9.0",
     "@stripe/stripe-js": "^9.16.0",
     "@supabase/supabase-js": "^2.116.0",

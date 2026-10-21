@@ -5,12 +5,15 @@ import path from "node:path";
 // (packages/core/test), which both apps run so shared code is proven under
 // each. Shared tests register a fake backend with configureSupabase.
 export default defineConfig({
+  // Components are imported by a few tests (design parity); JSX compiles the
+  // way Next does it.
+  esbuild: { jsx: "automatic" },
   resolve: {
     alias: { "@": path.resolve(__dirname, ".") },
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "../../packages/core/test/**/*.test.ts"],
+    include: ["lib/**/*.test.ts", "../../packages/core/test/**/*.test.ts", "../../packages/design/test/**/*.test.ts"],
     globals: false,
   },
 });

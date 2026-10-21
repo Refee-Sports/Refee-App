@@ -16,6 +16,7 @@ import {
   type BackgroundCheckRow,
 } from "@/lib/referee/backgroundCheck";
 import { pickBackgroundCheckFile } from "@/lib/roster/files";
+import { palette } from "@refee/design";
 
 const STATE_STYLE = {
   none: { bg: "bg-chalk", border: "border-ink-20", text: "text-ink-60", title: "NO BACKGROUND CHECK ON FILE" },
@@ -119,7 +120,7 @@ export default function BackgroundCheckScreen() {
           onPress={() => router.back()}
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           BACKGROUND CHECK
@@ -128,7 +129,7 @@ export default function BackgroundCheckScreen() {
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>
+        <View className="flex-1 items-center justify-center"><ActivityIndicator color={palette.signal} /></View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}>
           <Text className="text-ink font-display" style={{ fontSize: 34, lineHeight: 38, letterSpacing: -1.5 }}>
@@ -172,10 +173,10 @@ export default function BackgroundCheckScreen() {
             className="bg-ink py-4 items-center mt-5 flex-row justify-center gap-2 active:opacity-80"
           >
             {busy ? (
-              <ActivityIndicator color="#E5E1D6" />
+              <ActivityIndicator color={palette.paper} />
             ) : (
               <>
-                <Feather name="upload" size={14} color="#E5E1D6" />
+                <Feather name="upload" size={14} color={palette.paper} />
                 <Text className="text-paper font-mono-bold text-[12px] uppercase" style={{ letterSpacing: 2 }}>
                   {check ? "UPLOAD A NEW ONE" : "UPLOAD BACKGROUND CHECK"}
                 </Text>

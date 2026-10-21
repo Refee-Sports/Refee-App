@@ -4,6 +4,7 @@ import { useFocusEffect } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import { fetchConversations, type ConversationRow } from "@/lib/messages/queries";
+import { palette } from "@refee/design";
 
 function fmtWhen(iso: string): string {
   const d = new Date(iso);
@@ -43,7 +44,7 @@ export function ConversationList({
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center">
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -66,7 +67,7 @@ export function ConversationList({
       data={conversations}
       keyExtractor={(c) => c.id}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />
+        <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={palette.signal} />
       }
       contentContainerStyle={{ paddingBottom: 40 }}
       renderItem={({ item }) => (

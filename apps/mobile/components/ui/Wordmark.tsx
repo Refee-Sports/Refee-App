@@ -1,4 +1,5 @@
 import { Text, View } from "react-native";
+import { dark, palette } from "@refee/design";
 
 type Props = {
   size?: number;
@@ -13,8 +14,8 @@ type Props = {
  * For our actual app sizes this is acceptable; for marketing, use SVG.
  */
 export function Wordmark({ size = 24, mode = "light" }: Props) {
-  const inkColor = mode === "dark" ? "#FFFFFF" : "#08111C";
-  const signalColor = mode === "dark" ? "#4F8CFF" : "#1F4FCC";
+  const inkColor = mode === "dark" ? palette.inkInv : palette.ink;
+  const signalColor = mode === "dark" ? dark.signal : palette.signal;
 
   return (
     <View className="flex-row items-baseline">

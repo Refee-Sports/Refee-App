@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Image, Pressable, Text, View } from "react-na
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { pickHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
+import { palette } from "@refee/design";
 
 /**
  * The sign-up step that asks for a headshot. Continuing is blocked by the
@@ -56,11 +57,11 @@ export function HeadshotStep({
           }`}
         >
           {busy ? (
-            <ActivityIndicator color="#1F4FCC" />
+            <ActivityIndicator color={palette.signal} />
           ) : photo ? (
             <Image source={{ uri: photo.uri }} style={{ width: 176, height: 176 }} resizeMode="cover" />
           ) : (
-            <Feather name="user" size={56} color="rgba(8,17,28,0.25)" />
+            <Feather name="user" size={56} color={palette.ink20} />
           )}
         </View>
         {photo ? (
@@ -80,7 +81,7 @@ export function HeadshotStep({
           disabled={busy}
           className="flex-1 border border-ink bg-ink py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
         >
-          <Feather name="camera" size={14} color="#E5E1D6" />
+          <Feather name="camera" size={14} color={palette.paper} />
           <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
             {photo ? "RETAKE" : "TAKE PHOTO"}
           </Text>
@@ -90,7 +91,7 @@ export function HeadshotStep({
           disabled={busy}
           className="flex-1 border border-ink bg-chalk py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
         >
-          <Feather name="image" size={14} color="#08111C" />
+          <Feather name="image" size={14} color={palette.ink} />
           <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
             CHOOSE
           </Text>

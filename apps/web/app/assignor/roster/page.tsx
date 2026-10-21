@@ -145,7 +145,7 @@ export default function AssignorRosterPage() {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="SEARCH REFEREES BY NAME OR CITY"
           aria-label="Search referees"
-          className="flex-1 bg-transparent px-2 py-3 font-mono text-[11px] uppercase text-ink outline-none placeholder:text-ink-40"
+          className="flex-1 bg-transparent px-2 py-3 font-mono text-[11px] uppercase text-ink outline-none placeholder:text-ink-60"
         />
         {searching ? (
           <span className="text-signal">

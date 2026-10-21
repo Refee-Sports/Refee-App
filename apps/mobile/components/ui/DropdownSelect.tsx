@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Text, View, Pressable, Modal, FlatList } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
+import { palette } from "@refee/design";
 
 export type DropdownOption = { value: string; label: string };
 
@@ -33,13 +34,13 @@ export function DropdownSelect({
         >
           {selected?.label ?? placeholder}
         </Text>
-        <Feather name="chevron-down" size={16} color="rgba(8,17,28,0.56)" />
+        <Feather name="chevron-down" size={16} color={palette.ink60} />
       </Pressable>
 
       <Modal visible={open} animationType="slide" transparent>
         <Pressable
           className="flex-1 justify-end"
-          style={{ backgroundColor: "rgba(8,17,28,0.5)" }}
+          style={{ backgroundColor: palette.ink60 }}
           onPress={() => setOpen(false)}
         >
           <Pressable className="bg-paper border-t-2 border-ink rounded-t-lg overflow-hidden" style={{ maxHeight: "60%" }}>

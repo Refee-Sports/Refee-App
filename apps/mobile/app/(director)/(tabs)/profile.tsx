@@ -16,6 +16,7 @@ import { getCardSetupParams } from "@/lib/payments/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
+import { palette } from "@refee/design";
 
 const ORG_TYPE_LABELS: Record<string, string> = {
   tournament: "TOURNAMENT ORGANIZER",
@@ -100,7 +101,7 @@ export default function DirectorProfile() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center">
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -137,7 +138,7 @@ export default function DirectorProfile() {
         </Text>
         <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
           {hirer.is_verified ? (
-            <Text className="font-mono-bold" style={{ color: "#00A85C" }}>✓ {verificationLabel(true)}</Text>
+            <Text className="font-mono-bold" style={{ color: palette.court }}>✓ {verificationLabel(true)}</Text>
           ) : verificationLabel(false)}
         </Text>
       </View>
@@ -212,13 +213,13 @@ export default function DirectorProfile() {
         <View className="flex-1 pr-3">
           <Text
             className={`font-mono-bold text-[11px] uppercase ${cardSaved ? "" : "text-paper"}`}
-            style={{ letterSpacing: 1.5, ...(cardSaved ? { color: "#00A85C" } : {}) }}
+            style={{ letterSpacing: 1.5, ...(cardSaved ? { color: palette.court } : {}) }}
           >
             {savingCard ? "OPENING STRIPE..." : cardSaved ? "✓ AUTO-PAY ON" : "SET UP AUTO-PAY"}
           </Text>
           <Text
             className="font-mono text-[9px] uppercase mt-0.5"
-            style={{ letterSpacing: 1, color: cardSaved ? "rgba(8,17,28,0.56)" : "rgba(229,225,214,0.6)" }}
+            style={{ letterSpacing: 1, color: cardSaved ? palette.ink60 : "rgba(229,225,214,0.6)" }}
           >
             {cardSaved
               ? "COMPLETED GAMES CHARGE YOUR CARD & PAY REFS AUTOMATICALLY"
@@ -226,9 +227,9 @@ export default function DirectorProfile() {
           </Text>
         </View>
         {savingCard ? (
-          <ActivityIndicator color="#C9F031" size="small" />
+          <ActivityIndicator color={palette.hiVis} size="small" />
         ) : (
-          <Feather name={cardSaved ? "check-circle" : "credit-card"} size={16} color={cardSaved ? "#00A85C" : "#C9F031"} />
+          <Feather name={cardSaved ? "check-circle" : "credit-card"} size={16} color={cardSaved ? palette.court : palette.hiVis} />
         )}
       </Pressable>
 
@@ -262,7 +263,7 @@ export default function DirectorProfile() {
       {/* Sign out */}
       <View className="mx-5 mt-6">
         <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
-          <Feather name="log-out" size={14} color="#F1EDE1" />
+          <Feather name="log-out" size={14} color={palette.paper} />
           <Text className="text-paper font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
             SIGN OUT
           </Text>

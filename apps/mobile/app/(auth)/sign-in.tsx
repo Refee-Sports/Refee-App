@@ -17,6 +17,7 @@ import { signInWithAppleOAuth, signInWithGoogleOAuth } from "@/lib/oauth";
 import { isValidEmail, normalizeEmail, sendEmailCode } from "@/lib/auth/emailCode";
 import { getSupabaseConfig, isLocalSupabaseUrl } from "@/lib/supabase-config";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
+import { palette } from "@refee/design";
 
 /**
  * Sign in with Apple, Google, or a one-time code emailed to you. No passwords,
@@ -161,7 +162,7 @@ export default function SignIn() {
             value={email}
             onChangeText={setEmail}
             placeholder="you@example.com"
-            placeholderTextColor="rgba(8,17,28,0.36)"
+            placeholderTextColor={palette.ink60}
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
@@ -190,7 +191,7 @@ export default function SignIn() {
         >
           <View className="flex-row justify-center items-center gap-2">
             {sending ? (
-              <ActivityIndicator color="#E5E1D6" />
+              <ActivityIndicator color={palette.paper} />
             ) : (
               <>
                 <Text

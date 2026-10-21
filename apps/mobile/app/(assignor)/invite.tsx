@@ -24,6 +24,7 @@ import {
   type EmailInviteResult,
 } from "@/lib/assignor/queries";
 import { pickEmailCsv } from "@/lib/roster/files";
+import { palette } from "@refee/design";
 
 const RESULT_LABEL: Record<EmailInviteResult["result"], string> = {
   invited: "INVITED — ALREADY ON REFEE",
@@ -133,7 +134,7 @@ export default function InviteToRoster() {
           onPress={() => router.back()}
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           INVITE REFEREES
@@ -175,7 +176,7 @@ export default function InviteToRoster() {
           ) : codeError ? (
             <Text className="text-foul-ink font-mono text-[10px] uppercase">{codeError}</Text>
           ) : (
-            <ActivityIndicator color="#1F4FCC" />
+            <ActivityIndicator color={palette.signal} />
           )}
         </View>
 
@@ -190,7 +191,7 @@ export default function InviteToRoster() {
             setResults(null);
           }}
           placeholder={"jordan@example.com\nsam@example.com"}
-          placeholderTextColor="rgba(8,17,28,0.35)"
+          placeholderTextColor={palette.ink60}
           multiline
           autoCapitalize="none"
           autoCorrect={false}
@@ -204,7 +205,7 @@ export default function InviteToRoster() {
 
         <View className="flex-row gap-2 mt-3">
           <Pressable onPress={importCsv} className="flex-1 border border-ink py-3 flex-row items-center justify-center gap-2 active:opacity-70">
-            <Feather name="upload" size={13} color="#08111C" />
+            <Feather name="upload" size={13} color={palette.ink} />
             <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
               IMPORT CSV
             </Text>
@@ -215,7 +216,7 @@ export default function InviteToRoster() {
             className={`flex-1 py-3 items-center justify-center ${emails.length > 0 && !busy ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
           >
             {busy ? (
-              <ActivityIndicator color="#E5E1D6" size="small" />
+              <ActivityIndicator color={palette.paper} size="small" />
             ) : (
               <Text
                 className={`font-mono-bold text-[10px] uppercase ${emails.length > 0 ? "text-paper" : "text-ink-40"}`}

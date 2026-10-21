@@ -21,6 +21,7 @@ import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
 
 import { ORG_TYPES } from "@/lib/roles/queries";
+import { palette } from "@refee/design";
 
 const STEPS = ["NAME", "ORGANIZATION", "LOCATION", "HEADSHOT"];
 
@@ -220,7 +221,7 @@ export default function DirectorOnboarding() {
           >
             <View className="flex-row justify-center items-center gap-2">
               {loading ? (
-                <ActivityIndicator color="#E5E1D6" />
+                <ActivityIndicator color={palette.paper} />
               ) : (
                 <>
                   <Text
@@ -434,7 +435,7 @@ function DInput({
   return (
     <>
       <TextInput
-        placeholderTextColor="rgba(8,17,28,0.36)"
+        placeholderTextColor={palette.ink60}
         className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${
           error ? "border-foul" : "border-ink"
         }`}

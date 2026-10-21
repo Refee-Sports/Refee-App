@@ -1,4 +1,5 @@
 import { View } from "react-native";
+import { palette } from "@refee/design";
 
 type Props = {
   variant?: "ink" | "signal" | "hi-vis";
@@ -13,7 +14,7 @@ type Props = {
  */
 export function ZebraRule({ variant = "ink", thin = false, noMargin = false }: Props) {
   const stripeColor =
-    variant === "signal" ? "#1F4FCC" : variant === "hi-vis" ? "#C9F031" : "#08111C";
+    variant === "signal" ? palette.signal : variant === "hi-vis" ? palette.hiVis : palette.ink;
   const height = thin ? 4 : 12;
   const stripeWidth = 12;
 

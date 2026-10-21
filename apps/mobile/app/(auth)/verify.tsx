@@ -19,6 +19,7 @@ import {
   sendEmailCode,
   verifyEmailCode,
 } from "@/lib/auth/emailCode";
+import { palette } from "@refee/design";
 
 const RESEND_SECONDS = 60;
 
@@ -183,7 +184,7 @@ export default function Verify() {
 
         {loading && (
           <View className="mt-6 items-center">
-            <ActivityIndicator color="#1F4FCC" />
+            <ActivityIndicator color={palette.signal} />
             <Text className="text-ink-60 font-mono-bold text-[10px] uppercase mt-2" style={{ letterSpacing: 2 }}>
               VERIFYING...
             </Text>

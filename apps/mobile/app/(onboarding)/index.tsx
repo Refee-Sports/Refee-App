@@ -20,6 +20,7 @@ import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age
 import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
+import { palette } from "@refee/design";
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
 
@@ -311,7 +312,7 @@ export default function Onboarding() {
           >
             <View className="flex-row justify-center items-center gap-2">
               {loading ? (
-                <ActivityIndicator color="#E5E1D6" />
+                <ActivityIndicator color={palette.paper} />
               ) : (
                 <>
                   <Text
@@ -550,7 +551,7 @@ function RateStep({ form, set }: { form: FormData; set: StringSetter }) {
           value={form.minPay}
           onChangeText={(v) => set("minPay")(v.replace(/\D/g, "").slice(0, 4))}
           placeholder="35"
-          placeholderTextColor="rgba(8,17,28,0.36)"
+          placeholderTextColor={palette.ink60}
           keyboardType="number-pad"
           className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
           style={{ fontSize: 14 }}
@@ -569,7 +570,7 @@ function RateStep({ form, set }: { form: FormData; set: StringSetter }) {
           value={form.travelRadius}
           onChangeText={(v) => set("travelRadius")(v.replace(/\D/g, "").slice(0, 3))}
           placeholder="25"
-          placeholderTextColor="rgba(8,17,28,0.36)"
+          placeholderTextColor={palette.ink60}
           keyboardType="number-pad"
           className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
           style={{ fontSize: 14 }}
@@ -654,7 +655,7 @@ function CertStep({
                     value={entry.licenseNumber}
                     onChangeText={(v) => onSetLicense(body.id, v)}
                     placeholder="e.g. 123456"
-                    placeholderTextColor="rgba(8,17,28,0.36)"
+                    placeholderTextColor={palette.ink60}
                     autoCapitalize="characters"
                     className="text-ink font-mono border border-ink-20 bg-paper px-3 py-2"
                     style={{ fontSize: 13 }}
@@ -757,7 +758,7 @@ function StyledInput({
   return (
     <>
       <TextInput
-        placeholderTextColor="rgba(8,17,28,0.36)"
+        placeholderTextColor={palette.ink60}
         className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${error ? "border-foul" : "border-ink"}`}
         style={{ fontSize: 14 }}
         {...props}

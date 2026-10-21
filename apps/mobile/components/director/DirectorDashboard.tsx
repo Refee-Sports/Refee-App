@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { loadDirectorDashboard, waitingLabel, type DirectorDashboard as Dashboard, type Spend } from "@refee/core/director/dashboard";
 import { fetchPendingApprovals, type PendingApproval } from "@/lib/director/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 /** Crew coverage, applicants waiting on the director, and spend. */
 export function DirectorDashboard({ userId }: { userId: string }) {
@@ -105,7 +106,7 @@ export function DirectorDashboard({ userId }: { userId: string }) {
                     {waitingLabel(a.appliedAt).toUpperCase()} · {a.job.acceptedCount}/{a.job.crewSize} CONFIRMED
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={14} color="#08111C" />
+                <Feather name="chevron-right" size={14} color={palette.ink} />
               </Pressable>
             ))}
           </View>

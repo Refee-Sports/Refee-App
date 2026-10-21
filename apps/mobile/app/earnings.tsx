@@ -15,6 +15,7 @@ import {
 } from "@/lib/referee/queries";
 import { shareCsv } from "@/lib/files/share";
 import { formatGameDate } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 const PAYOUT_COLOR: Record<LedgerRow["payout"], string> = {
   paid: "text-ink",
@@ -70,7 +71,7 @@ export default function EarningsScreen() {
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
           accessibilityLabel="Back"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           EARNINGS STATEMENT
@@ -80,7 +81,7 @@ export default function EarningsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F4FCC" />
+          <ActivityIndicator color={palette.signal} />
         </View>
       ) : (
         <FlatList
@@ -88,7 +89,7 @@ export default function EarningsScreen() {
           keyExtractor={(r) => r.assignmentId}
           contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor="#1F4FCC" />
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={palette.signal} />
           }
           ListHeaderComponent={
             <View className="mb-4">

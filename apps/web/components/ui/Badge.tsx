@@ -1,11 +1,4 @@
-type Variant =
-  | "live"
-  | "confirmed"
-  | "signal"
-  | "warn"
-  | "foul"
-  | "neutral"
-  | "ink";
+import type { BadgeVariant as Variant } from "@refee/design";
 
 type Props = {
   label: string;
@@ -14,8 +7,8 @@ type Props = {
   withDot?: boolean;
 };
 
-/** Port of the app's components/ui/Badge. */
-const styles: Record<Variant, string> = {
+/** Port of the app's components/ui/Badge. A test checks these match @refee/design's badgeVariants. */
+export const badgeClasses: Record<Variant, string> = {
   live: "bg-hi-vis text-ink border-ink",
   confirmed: "bg-transparent text-court-ink border-court",
   signal: "bg-transparent text-signal border-signal",
@@ -28,7 +21,7 @@ const styles: Record<Variant, string> = {
 export function Badge({ label, variant = "neutral", pulse, withDot }: Props) {
   return (
     <span
-      className={`${styles[variant]} inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[5px] font-mono-bold text-[9px] uppercase`}
+      className={`${badgeClasses[variant]} inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[5px] font-mono-bold text-[9px] uppercase`}
       style={{ letterSpacing: 1.5 }}
     >
       {withDot && (

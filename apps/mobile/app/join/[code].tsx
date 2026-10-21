@@ -11,6 +11,7 @@ import {
   type RosterCodePreview,
 } from "@/lib/assignor/queries";
 import { setPendingRosterCode } from "@/lib/roster/files";
+import { palette } from "@refee/design";
 
 /**
  * Where a scanned QR code (refee://join/<code>) or a typed code lands.
@@ -69,7 +70,7 @@ export default function JoinRoster() {
   return (
     <View className="flex-1 bg-paper px-6 justify-center" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
       {state === "loading" ? (
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       ) : state === "invalid" ? (
         <View>
           <Text className="text-ink font-display" style={{ fontSize: 34, lineHeight: 38, letterSpacing: -1 }}>
@@ -102,7 +103,7 @@ export default function JoinRoster() {
             disabled={state === "joining"}
             className="bg-ink py-4 items-center mt-7 active:opacity-80"
           >
-            {state === "joining" ? <ActivityIndicator color="#E5E1D6" /> : (
+            {state === "joining" ? <ActivityIndicator color={palette.paper} /> : (
               <Text className="text-paper font-mono-bold text-[12px] uppercase" style={{ letterSpacing: 2.5 }}>JOIN ROSTER</Text>
             )}
           </Pressable>

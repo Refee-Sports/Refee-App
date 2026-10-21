@@ -16,6 +16,7 @@ import {
   type MyProposalRow,
   type TournamentInviteRow,
 } from "@/lib/assignor/queries";
+import { palette } from "@refee/design";
 
 function formatWhen(value: string, timeZone: string) {
   return new Date(value).toLocaleString("en-US", {
@@ -106,7 +107,7 @@ export default function AssignorTournamentDetail() {
     ]);
   };
 
-  if (loading) return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>;
+  if (loading) return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color={palette.signal} /></View>;
   if (!tournament) return <View className="flex-1 bg-paper items-center justify-center px-6"><Text className="font-mono-bold text-ink text-center">TOURNAMENT NOT AVAILABLE</Text></View>;
 
   const accepted = tournament.assignor_status === "accepted";
@@ -116,7 +117,7 @@ export default function AssignorTournamentDetail() {
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
         <Pressable onPress={() => router.back()} className="w-9 h-9 border border-ink items-center justify-center active:opacity-70">
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>TOURNAMENT</Text>
         <View className="w-9" />
@@ -148,10 +149,10 @@ export default function AssignorTournamentDetail() {
                     </Pressable>
                   ))}
                 </View>
-                <TextInput value={fee} onChangeText={setFee} keyboardType="decimal-pad" placeholder={feeType === "flat" ? "FLAT FEE ($)" : "PERCENTAGE (%)"} placeholderTextColor="rgba(8,17,28,0.35)" className="border border-ink px-3 py-3 font-mono text-[11px] text-ink mb-3" />
-                <TextInput value={message} onChangeText={setMessage} multiline placeholder="OPTIONAL NOTE TO DIRECTOR" placeholderTextColor="rgba(8,17,28,0.35)" className="border border-ink px-3 py-3 font-mono text-[10px] text-ink mb-3 min-h-[76px]" textAlignVertical="top" />
+                <TextInput value={fee} onChangeText={setFee} keyboardType="decimal-pad" placeholder={feeType === "flat" ? "FLAT FEE ($)" : "PERCENTAGE (%)"} placeholderTextColor={palette.ink60} className="border border-ink px-3 py-3 font-mono text-[11px] text-ink mb-3" />
+                <TextInput value={message} onChangeText={setMessage} multiline placeholder="OPTIONAL NOTE TO DIRECTOR" placeholderTextColor={palette.ink60} className="border border-ink px-3 py-3 font-mono text-[10px] text-ink mb-3 min-h-[76px]" textAlignVertical="top" />
                 <Pressable onPress={() => void submit()} disabled={saving} className="bg-ink py-3.5 items-center active:opacity-75">
-                  {saving ? <ActivityIndicator color="#E5E1D6" /> : <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>SUBMIT PROPOSAL</Text>}
+                  {saving ? <ActivityIndicator color={palette.paper} /> : <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>SUBMIT PROPOSAL</Text>}
                 </Pressable>
                 {proposal?.status === "submitted" && <Pressable onPress={withdraw} className="py-3 items-center"><Text className="font-mono-bold text-[9px] text-foul-ink uppercase">WITHDRAW PROPOSAL</Text></Pressable>}
               </View>
@@ -161,7 +162,7 @@ export default function AssignorTournamentDetail() {
               <View className="flex-row items-center justify-between mt-6 mb-2">
                 <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 2 }}>── GAME STAFFING ({games.length})</Text>
                 <Pressable onPress={() => router.push({ pathname: "/(assignor)/tournament/import" as any, params: { tournamentId: id } })} className="h-8 px-3 border border-ink flex-row items-center gap-1.5 active:opacity-70">
-                  <Feather name="upload" size={12} color="#08111C" />
+                  <Feather name="upload" size={12} color={palette.ink} />
                   <Text className="font-mono-bold text-[8px] text-ink uppercase">IMPORT CSV</Text>
                 </Pressable>
               </View>

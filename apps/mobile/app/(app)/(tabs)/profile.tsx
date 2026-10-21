@@ -37,6 +37,7 @@ import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
 import { fetchReliability, showRate, type ReliabilityCounts } from "@refee/core/referee/reliability";
+import { palette } from "@refee/design";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -67,7 +68,7 @@ const LEVEL_TIERS: Record<string, string> = {
   pro_am: "PRO",
 };
 
-const PAPER = "#E5E1D6";
+const PAPER = palette.paper;
 
 function dayBit(day: number, mask: number) {
   return !!(mask & (1 << day));
@@ -238,7 +239,7 @@ export default function Profile() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center">
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -279,7 +280,7 @@ export default function Profile() {
           }}
           className="w-9 h-9 bg-chalk border border-ink items-center justify-center active:opacity-70"
         >
-          <Feather name="edit-2" size={14} color="#08111C" />
+          <Feather name="edit-2" size={14} color={palette.ink} />
         </Pressable>
       </View>
 
@@ -299,7 +300,7 @@ export default function Profile() {
         <Pressable onPress={handleAvatarPress} style={{ position: "relative" }} className="active:opacity-80">
           <View className="w-16 h-16 bg-ink border border-ink items-center justify-center overflow-hidden">
             {uploadingAvatar ? (
-              <ActivityIndicator color="#E5E1D6" size="small" />
+              <ActivityIndicator color={palette.paper} size="small" />
             ) : profile.avatar_url ? (
               <Image source={{ uri: profile.avatar_url }} style={{ width: 64, height: 64 }} resizeMode="cover" />
             ) : (
@@ -314,12 +315,12 @@ export default function Profile() {
               position: "absolute",
               top: -4,
               left: -4,
-              backgroundColor: "#08111C",
+              backgroundColor: palette.ink,
               paddingHorizontal: 3,
               paddingVertical: 2,
             }}
           >
-            <Feather name="camera" size={9} color="#C9F031" />
+            <Feather name="camera" size={9} color={palette.hiVis} />
           </View>
           <View
             style={{
@@ -328,7 +329,7 @@ export default function Profile() {
               right: -2,
               width: 14,
               height: 14,
-              backgroundColor: profile.is_available ? "#00A85C" : "rgba(8,17,28,0.18)",
+              backgroundColor: profile.is_available ? palette.court : palette.ink20,
               borderWidth: 2,
               borderColor: PAPER,
             }}
@@ -383,7 +384,7 @@ export default function Profile() {
           style={{ fontSize: 42, lineHeight: 38, letterSpacing: -2 }}
         >
           {profile.first_name.toUpperCase()}{"\n"}
-          <Text style={{ color: "#1F4FCC" }}>{profile.last_initial.toUpperCase()}.</Text>
+          <Text style={{ color: palette.signal }}>{profile.last_initial.toUpperCase()}.</Text>
         </Text>
 
         {/* Handle */}
@@ -412,7 +413,7 @@ export default function Profile() {
                 fontSize: 7,
                 textTransform: "uppercase",
                 letterSpacing: 2.5,
-                color: "#08111C",
+                color: palette.ink,
               }}
             >
               {`SCORECARD / ${currentYear}`}
@@ -431,7 +432,7 @@ export default function Profile() {
               label="STATUS"
               value={profile.is_verified ? "A+" : "—"}
               sub={verificationLabel(profile.is_verified)}
-              subColor={profile.is_verified ? "#00A85C" : undefined}
+              subColor={profile.is_verified ? palette.court : undefined}
             />
           </View>
         </View>
@@ -546,8 +547,8 @@ export default function Profile() {
       {payoutStatus?.payoutsEnabled ? (
         <View className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3">
           <View className="flex-row items-center gap-2">
-            <Feather name="check-circle" size={13} color="#00A85C" />
-            <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: "#00A85C" }}>
+            <Feather name="check-circle" size={13} color={palette.court} />
+            <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: palette.court }}>
               PAYOUTS READY · TRANSFERS ARE AUTOMATIC
             </Text>
           </View>
@@ -575,9 +576,9 @@ export default function Profile() {
             </Text>
           </View>
           {payoutBusy ? (
-            <ActivityIndicator color="#C9F031" size="small" />
+            <ActivityIndicator color={palette.hiVis} size="small" />
           ) : (
-            <Feather name="arrow-right" size={16} color="#C9F031" />
+            <Feather name="arrow-right" size={16} color={palette.hiVis} />
           )}
         </Pressable>
       )}
@@ -585,7 +586,7 @@ export default function Profile() {
       {/* ── Availability ─────────────────────────────────────────── */}
       <View
         className="mx-5 mb-4 border border-ink flex-row items-center justify-between px-4 py-3.5"
-        style={{ backgroundColor: profile.is_available ? "#C9F031" : "#F5F2EA" }}
+        style={{ backgroundColor: profile.is_available ? palette.hiVis : palette.chalk }}
       >
         <View>
           <Text
@@ -608,8 +609,8 @@ export default function Profile() {
           value={profile.is_available}
           onValueChange={handleAvailToggle}
           disabled={availToggling}
-          trackColor={{ false: "rgba(8,17,28,0.15)", true: "#08111C" }}
-          thumbColor={profile.is_available ? "#C9F031" : "#E5E1D6"}
+          trackColor={{ false: palette.ink20, true: palette.ink }}
+          thumbColor={profile.is_available ? palette.hiVis : palette.paper}
         />
       </View>
 
@@ -658,7 +659,7 @@ export default function Profile() {
                 key={c.id}
                 className="flex-row items-center gap-1.5 border border-ink bg-chalk px-2.5 py-1.5"
               >
-                <Text style={{ color: "#00A85C", fontSize: 10 }}>✓</Text>
+                <Text style={{ color: palette.court, fontSize: 10 }}>✓</Text>
                 <Text
                   className="font-mono text-[9px] text-ink uppercase"
                   style={{ letterSpacing: 1.5 }}
@@ -739,7 +740,7 @@ export default function Profile() {
             <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>EARNINGS STATEMENT</Text>
             <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>EVERY GAME AND WHERE ITS PAY STANDS</Text>
           </View>
-          <Feather name="chevron-right" size={16} color="#08111C" />
+          <Feather name="chevron-right" size={16} color={palette.ink} />
         </Pressable>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.push("/my-organizations" as any); }}
@@ -749,7 +750,7 @@ export default function Profile() {
             <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>MY ORGANIZATIONS</Text>
             <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>ASSIGNOR ROSTERS YOU&apos;RE ON</Text>
           </View>
-          <Feather name="chevron-right" size={16} color="#08111C" />
+          <Feather name="chevron-right" size={16} color={palette.ink} />
         </Pressable>
         <Pressable
           onPress={() => { Haptics.selectionAsync(); router.push("/background-check" as any); }}
@@ -759,7 +760,7 @@ export default function Profile() {
             <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>BACKGROUND CHECK</Text>
             <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>UPLOAD · NOT VERIFIED YET</Text>
           </View>
-          <Feather name="chevron-right" size={16} color="#08111C" />
+          <Feather name="chevron-right" size={16} color={palette.ink} />
         </Pressable>
       </View>
 
@@ -820,7 +821,7 @@ function ScoreCell({
       </Text>
       <Text
         className="font-mono text-[9px] uppercase mt-1 text-center"
-        style={{ letterSpacing: 1.5, color: subColor ?? "rgba(8,17,28,0.56)" }}
+        style={{ letterSpacing: 1.5, color: subColor ?? palette.ink60 }}
       >
         {sub}
       </Text>
@@ -923,7 +924,7 @@ function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
           }}
           className="w-8 h-8 border border-ink bg-paper items-center justify-center active:opacity-70"
         >
-          <Feather name="message-square" size={13} color="#08111C" />
+          <Feather name="message-square" size={13} color={palette.ink} />
         </Pressable>
       </View>
     </Pressable>

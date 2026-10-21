@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Text, View, Pressable, Modal, TextInput, ActivityIndicator } from "react-native";
 import * as Haptics from "expo-haptics";
 import type { CategoryRatings } from "@/lib/director/queries";
+import { palette } from "@refee/design";
 
 const CATEGORIES: { key: keyof CategoryRatings; label: string; hint: string }[] = [
   { key: "onTime", label: "ON TIME", hint: "Arrived ready before tip-off?" },
@@ -38,7 +39,7 @@ export function RateRefereeModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(8,17,28,0.5)" }}>
+      <View className="flex-1 justify-end" style={{ backgroundColor: palette.ink60 }}>
         <View className="bg-paper border-t-2 border-ink px-5 pt-5 pb-10">
           <View className="flex-row items-center justify-between mb-1">
             <Text
@@ -97,7 +98,7 @@ export function RateRefereeModal({
             value={comment}
             onChangeText={setComment}
             placeholder="OPTIONAL COMMENT..."
-            placeholderTextColor="rgba(8,17,28,0.36)"
+            placeholderTextColor={palette.ink60}
             multiline
             className="border border-ink-20 bg-chalk px-3 py-2.5 font-mono text-[12px] text-ink mb-4"
             style={{ minHeight: 60, letterSpacing: 0.5 }}
@@ -111,7 +112,7 @@ export function RateRefereeModal({
             } active:opacity-70`}
           >
             {submitting ? (
-              <ActivityIndicator size="small" color="#E5E1D6" />
+              <ActivityIndicator size="small" color={palette.paper} />
             ) : (
               <Text
                 className={`font-mono-bold text-[11px] uppercase ${

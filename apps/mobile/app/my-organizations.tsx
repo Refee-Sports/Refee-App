@@ -23,6 +23,7 @@ import {
   type MyRosterRow,
   type RosterInviteRow,
 } from "@/lib/assignor/queries";
+import { palette } from "@refee/design";
 
 /**
  * Every roster (organization) this referee is on. A referee can be on any
@@ -109,7 +110,7 @@ export default function MyOrganizations() {
           onPress={() => router.back()}
           className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
         >
-          <Feather name="arrow-left" size={16} color="#08111C" />
+          <Feather name="arrow-left" size={16} color={palette.ink} />
         </Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           MY ORGANIZATIONS
@@ -118,11 +119,11 @@ export default function MyOrganizations() {
       </View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>
+        <View className="flex-1 items-center justify-center"><ActivityIndicator color={palette.signal} /></View>
       ) : (
         <ScrollView
           contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={palette.signal} />}
           keyboardShouldPersistTaps="handled"
         >
           {invites.length > 0 ? (
@@ -142,7 +143,7 @@ export default function MyOrganizations() {
                       onPress={() => void respond(invite, true)}
                       className="flex-1 bg-ink py-2.5 items-center active:opacity-80"
                     >
-                      {busyId === invite.roster_id ? <ActivityIndicator size="small" color="#E5E1D6" /> : (
+                      {busyId === invite.roster_id ? <ActivityIndicator size="small" color={palette.paper} /> : (
                         <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>JOIN</Text>
                       )}
                     </Pressable>
@@ -186,7 +187,7 @@ export default function MyOrganizations() {
                   onPress={() => leave(roster)}
                   className="border border-foul px-2.5 py-2 active:opacity-70"
                 >
-                  {busyId === roster.roster_id ? <ActivityIndicator size="small" color="#E53E3E" /> : (
+                  {busyId === roster.roster_id ? <ActivityIndicator size="small" color={palette.foulInk} /> : (
                     <Text className="font-mono-bold text-[8px] text-foul-ink" style={{ letterSpacing: 1 }}>LEAVE</Text>
                   )}
                 </Pressable>
@@ -202,7 +203,7 @@ export default function MyOrganizations() {
               value={code}
               onChangeText={(t) => setCode(t.toUpperCase())}
               placeholder="ROSTER CODE"
-              placeholderTextColor="rgba(8,17,28,0.35)"
+              placeholderTextColor={palette.ink60}
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={40}

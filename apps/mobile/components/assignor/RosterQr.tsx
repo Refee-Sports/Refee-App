@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { View } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import { qrModules } from "@/lib/assignor/qr";
+import { palette } from "@refee/design";
 
 /** A QR code drawn with react-native-svg — no image to host, works offline. */
 export function RosterQr({ value, size = 220 }: { value: string; size?: number }) {
@@ -23,11 +24,11 @@ export function RosterQr({ value, size = 220 }: { value: string; size?: number }
     <View
       accessible
       accessibilityLabel="QR code to join this roster"
-      style={{ width: size, height: size, backgroundColor: "#FFFFFF", padding: 0 }}
+      style={{ width: size, height: size, backgroundColor: palette.inkInv, padding: 0 }}
     >
       <Svg width={size} height={size} viewBox={`0 0 ${box} ${box}`}>
-        <Rect x={0} y={0} width={box} height={box} fill="#FFFFFF" />
-        <Path d={path} transform={`translate(${quiet} ${quiet})`} fill="#08111C" />
+        <Rect x={0} y={0} width={box} height={box} fill={palette.inkInv} />
+        <Path d={path} transform={`translate(${quiet} ${quiet})`} fill={palette.ink} />
       </Svg>
     </View>
   );

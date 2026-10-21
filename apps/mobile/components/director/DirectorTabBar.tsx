@@ -2,6 +2,7 @@ import { Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { palette } from "@refee/design";
 
 type DirectorTab = "tournaments" | "messages" | "profile";
 
@@ -24,16 +25,16 @@ export function DirectorTabBar({ active }: { active?: DirectorTab }) {
     <View
       className="flex-row"
       style={{
-        backgroundColor: "#E5E1D6",
+        backgroundColor: palette.paper,
         borderTopWidth: 1,
-        borderTopColor: "#08111C",
+        borderTopColor: palette.ink,
         paddingTop: 10,
         paddingBottom: insets.bottom + 6,
       }}
     >
       {ITEMS.map((it) => {
         const focused = active === it.key;
-        const color = focused ? "#1F4FCC" : "rgba(8,17,28,0.36)";
+        const color = focused ? palette.signal : palette.ink40;
         return (
           <Pressable
             key={it.key}

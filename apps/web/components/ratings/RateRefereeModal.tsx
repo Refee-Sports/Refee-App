@@ -110,7 +110,7 @@ export function RateRefereeModal({
           onChange={(e) => setComment(e.target.value)}
           placeholder="OPTIONAL COMMENT..."
           aria-label="Optional comment"
-          className="mb-4 w-full border border-ink-20 bg-chalk px-3 py-2.5 font-mono text-[12px] text-ink outline-none placeholder:text-ink-40"
+          className="mb-4 w-full border border-ink-20 bg-chalk px-3 py-2.5 font-mono text-[12px] text-ink outline-none placeholder:text-ink-60"
           style={{ minHeight: 60, letterSpacing: 0.5 }}
         />
 

@@ -24,6 +24,7 @@ import {
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { LEAGUES_WORKED_MAX, cleanLeaguesWorked } from "@refee/core/profile/leagues";
+import { palette } from "@refee/design";
 
 
 const CERT_BODIES = [
@@ -225,7 +226,7 @@ export default function EditProfile() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center">
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -262,7 +263,7 @@ export default function EditProfile() {
           >
             <View className="flex-row justify-center items-center gap-2">
               {saving ? (
-                <ActivityIndicator color="#E5E1D6" />
+                <ActivityIndicator color={palette.paper} />
               ) : (
                 <>
                   <Text
@@ -357,7 +358,7 @@ export default function EditProfile() {
               value={form.minPay}
               onChangeText={(v) => set("minPay")(v.replace(/\D/g, "").slice(0, 4))}
               placeholder="35"
-              placeholderTextColor="rgba(8,17,28,0.36)"
+              placeholderTextColor={palette.ink60}
               keyboardType="number-pad"
               className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
               style={{ fontSize: 14 }}
@@ -480,7 +481,7 @@ export default function EditProfile() {
                         value={entry.licenseNumber}
                         onChangeText={(v) => setCertLicense(body.id, v)}
                         placeholder="e.g. 123456"
-                        placeholderTextColor="rgba(8,17,28,0.36)"
+                        placeholderTextColor={palette.ink60}
                         autoCapitalize="characters"
                         className="text-ink font-mono border border-ink-20 bg-paper px-3 py-2"
                         style={{ fontSize: 13 }}
@@ -605,7 +606,7 @@ function FieldInput({
   return (
     <>
       <TextInput
-        placeholderTextColor="rgba(8,17,28,0.36)"
+        placeholderTextColor={palette.ink60}
         className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${error ? "border-foul" : "border-ink"}`}
         style={{ fontSize: 14 }}
         {...props}

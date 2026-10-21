@@ -32,6 +32,7 @@ import {
 } from "@/lib/basketball/options";
 import { US_STATES } from "@refee/core/geo/regions";
 import { venueWallClock } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -45,7 +46,7 @@ const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
 });
 
 
-const PAPER = "#E5E1D6";
+const PAPER = palette.paper;
 
 function parseYMD(s: string): Date {
   const [y, m, d] = s.split("-").map(Number);
@@ -290,7 +291,7 @@ export default function CreateGame() {
           >
             <View className="flex-row justify-center items-center gap-2">
               {loading ? (
-                <ActivityIndicator color="#E5E1D6" />
+                <ActivityIndicator color={palette.paper} />
               ) : (
                 <Text
                   className={`font-mono-bold ${canSubmit ? "text-paper" : "text-ink-40"}`}
@@ -307,7 +308,7 @@ export default function CreateGame() {
     >
       {prefilling && (
         <View className="py-10 items-center">
-          <ActivityIndicator color="#1F4FCC" />
+          <ActivityIndicator color={palette.signal} />
         </View>
       )}
 
@@ -453,7 +454,7 @@ export default function CreateGame() {
           value={form.payPerGame}
           onChangeText={(v) => set("payPerGame")(v.replace(/\D/g, "").slice(0, 4))}
           placeholder="50"
-          placeholderTextColor="rgba(8,17,28,0.36)"
+          placeholderTextColor={palette.ink60}
           keyboardType="number-pad"
           className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
           style={{ fontSize: 14 }}
@@ -653,8 +654,8 @@ export default function CreateGame() {
         <Switch
           value={form.autoAccept}
           onValueChange={(v) => { Haptics.selectionAsync(); setForm((f) => ({ ...f, autoAccept: v })); }}
-          trackColor={{ false: "rgba(8,17,28,0.15)", true: "#08111C" }}
-          thumbColor={form.autoAccept ? "#C9F031" : PAPER}
+          trackColor={{ false: palette.ink20, true: palette.ink }}
+          thumbColor={form.autoAccept ? palette.hiVis : PAPER}
         />
       </View>
     </ScrollScreen>
@@ -691,7 +692,7 @@ function FInput({
   return (
     <>
       <TextInput
-        placeholderTextColor="rgba(8,17,28,0.36)"
+        placeholderTextColor={palette.ink60}
         className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${
           error ? "border-foul" : "border-ink"
         }`}

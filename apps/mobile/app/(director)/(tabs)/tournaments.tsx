@@ -20,12 +20,13 @@ import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { formatDateOnly } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 const STATUS_COLORS: Record<string, string> = {
-  open: "#1F4FCC",
-  staffed: "#00A85C",
-  completed: "rgba(8,17,28,0.40)",
-  cancelled: "#E53E3E",
+  open: palette.signal,
+  staffed: palette.courtInk,
+  completed: palette.ink60,
+  cancelled: palette.foulInk,
 };
 
 /** A tournament's date-only start/end, shown as the calendar day it is. */
@@ -101,7 +102,7 @@ export default function TournamentsScreen() {
           onPress={handleNew}
           className="h-9 px-3 bg-ink items-center justify-center flex-row gap-1.5 active:opacity-70"
         >
-          <Feather name="plus" size={14} color="#E5E1D6" />
+          <Feather name="plus" size={14} color={palette.paper} />
           <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
             New
           </Text>
@@ -123,7 +124,7 @@ export default function TournamentsScreen() {
       {paymentIssues.length > 0 && (
         <View className="mx-5 mb-4 border border-foul bg-foul/10">
           <View className="px-4 py-2.5 border-b border-foul/30 flex-row items-center gap-2">
-            <Feather name="credit-card" size={13} color="#E63946" />
+            <Feather name="credit-card" size={13} color={palette.foul} />
             <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>
               {paymentIssues.length} PAYMENT ISSUE{paymentIssues.length !== 1 ? "S" : ""}
             </Text>
@@ -145,7 +146,7 @@ export default function TournamentsScreen() {
                 </Text>
                 <Text className="text-[12px] text-ink-60 leading-[17px] mt-0.5">{issue.message}</Text>
               </View>
-              <Feather name="chevron-right" size={14} color="#08111C" />
+              <Feather name="chevron-right" size={14} color={palette.ink} />
             </Pressable>
           ))}
           {paymentIssues.length > 4 ? (
@@ -160,7 +161,7 @@ export default function TournamentsScreen() {
       {needsCompletion.length > 0 && (
         <View className="mx-5 mb-4 border border-ink bg-hi-vis">
           <View className="px-4 py-2.5 border-b border-ink/20 flex-row items-center gap-2">
-            <Feather name="alert-circle" size={13} color="#08111C" />
+            <Feather name="alert-circle" size={13} color={palette.ink} />
             <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
               {needsCompletion.length} GAME{needsCompletion.length !== 1 ? "S" : ""} NEED CLOSING OUT
             </Text>
@@ -182,7 +183,7 @@ export default function TournamentsScreen() {
                   {g.acceptedCount} REF{g.acceptedCount !== 1 ? "S" : ""} · MARK COMPLETE TO PAY
                 </Text>
               </View>
-              <Feather name="chevron-right" size={14} color="#08111C" />
+              <Feather name="chevron-right" size={14} color={palette.ink} />
             </Pressable>
           ))}
           <Text className="px-4 py-2 font-mono text-[8px] text-ink/50 uppercase" style={{ letterSpacing: 1 }}>
@@ -193,7 +194,7 @@ export default function TournamentsScreen() {
 
       {loading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#1F4FCC" />
+          <ActivityIndicator color={palette.signal} />
         </View>
       ) : (
         <FlatList
@@ -201,7 +202,7 @@ export default function TournamentsScreen() {
           keyExtractor={(t) => t.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 80 }}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />
+            <RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={palette.signal} />
           }
           ListHeaderComponent={
             // The list pads its sides; the dashboard sets its own.
@@ -260,7 +261,7 @@ function TournamentCard({
   tournament: TournamentRow;
   onPress: () => void;
 }) {
-  const statusColor = STATUS_COLORS[tournament.status] ?? "rgba(8,17,28,0.40)";
+  const statusColor = STATUS_COLORS[tournament.status] ?? palette.ink60;
   return (
     <Pressable
       onPress={() => { Haptics.selectionAsync(); onPress(); }}
@@ -300,14 +301,14 @@ function TournamentCard({
         <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1.5 }}>
           BASKETBALL · DIRECT HIRE
         </Text>
-        <Feather name="chevron-right" size={14} color="rgba(8,17,28,0.40)" />
+        <Feather name="chevron-right" size={14} color={palette.ink40} />
       </View>
     </Pressable>
   );
 }
 
 function SingleGameCard({ game, onPress }: { game: DirectorGameRow; onPress: () => void }) {
-  const statusColor = STATUS_COLORS[game.status] ?? "rgba(8,17,28,0.40)";
+  const statusColor = STATUS_COLORS[game.status] ?? palette.ink60;
   const title = game.home_team && game.away_team
     ? `${game.home_team} vs ${game.away_team}`
     : game.title;
@@ -355,7 +356,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
   return (
     <View className="flex-1 items-center justify-center px-8">
       <View className="w-16 h-16 border-2 border-ink-20 items-center justify-center mb-5">
-        <Feather name="grid" size={28} color="rgba(8,17,28,0.20)" />
+        <Feather name="grid" size={28} color={palette.ink20} />
       </View>
       <Text
         className="font-display text-ink text-center mb-2"

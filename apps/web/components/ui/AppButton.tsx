@@ -1,9 +1,10 @@
 "use client";
 
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
+import type { ButtonVariant } from "@refee/design";
 import { Icon } from "./Icon";
 
-export type ButtonVariant = "primary" | "hi-vis" | "secondary" | "danger" | "danger-fill" | "court";
+export type { ButtonVariant };
 
 export interface AppButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   label: string;
@@ -38,12 +39,13 @@ const base = cn(
   "motion-reduce:transition-none motion-reduce:hover:translate-x-0 motion-reduce:hover:translate-y-0"
 );
 
-const variants: Record<ButtonVariant, string> = {
+/** Literal classes per variant; a test checks they match @refee/design's buttonVariants. */
+export const buttonClasses: Record<ButtonVariant, string> = {
   primary: "bg-ink text-paper border-ink active:bg-ink-press active:border-ink-press",
   "hi-vis": "bg-hi-vis text-ink border-ink active:bg-hi-vis-press",
   secondary: "bg-transparent text-ink border-ink active:bg-ink-10",
   danger: "bg-transparent text-foul-ink border-foul-ink active:bg-ink-10",
-  "danger-fill": "bg-foul-ink text-white border-foul-ink active:bg-[#961A24]",
+  "danger-fill": "bg-foul-ink text-ink-inv border-foul-ink active:bg-foul-ink-press",
   court: "bg-court text-ink border-ink",
 };
 
@@ -97,7 +99,7 @@ export const AppButton = forwardRef<HTMLButtonElement, AppButtonProps>(function 
         aria-busy={loading || undefined}
         aria-label={loading ? loadingLabel ?? label : undefined}
         onClick={loading ? undefined : onClick}
-        className={cn(base, variants[v], fullWidth && "w-full", loading && "pointer-events-none cursor-progress", className)}
+        className={cn(base, buttonClasses[v], fullWidth && "w-full", loading && "pointer-events-none cursor-progress", className)}
         {...rest}
       >
         <span className={cn("inline-flex items-center gap-2", loading && "invisible")}>

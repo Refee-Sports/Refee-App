@@ -14,6 +14,7 @@ import {
   type TournamentRow,
   type DirectorGameRow,
 } from "@/lib/director/queries";
+import { palette } from "@refee/design";
 
 function fmtDateOnly(iso: string, opts: Intl.DateTimeFormatOptions) {
   // Noon UTC prevents a date-only database value from rolling back a day in US timezones.
@@ -58,7 +59,7 @@ export default function TournamentDetail() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -109,7 +110,7 @@ export default function TournamentDetail() {
           }}
           className="h-9 px-3 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
         >
-          <Feather name="edit-2" size={12} color="#08111C" />
+          <Feather name="edit-2" size={12} color={palette.ink} />
           <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
             EDIT
           </Text>
@@ -162,7 +163,7 @@ export default function TournamentDetail() {
                   onPress={() => router.push({ pathname: "/(director)/tournament/import" as any, params: { tournamentId: id } })}
                   className="h-8 px-3 border border-ink flex-row items-center gap-1.5 active:opacity-70"
                 >
-                  <Feather name="upload" size={12} color="#08111C" />
+                  <Feather name="upload" size={12} color={palette.ink} />
                   <Text className="text-ink font-mono-bold text-[9px] uppercase">CSV</Text>
                 </Pressable>
                 <Pressable
@@ -172,7 +173,7 @@ export default function TournamentDetail() {
                   }}
                   className="h-8 px-3 bg-ink flex-row items-center gap-1.5 active:opacity-70"
                 >
-                  <Feather name="plus" size={12} color="#E5E1D6" />
+                  <Feather name="plus" size={12} color={palette.paper} />
                   <Text className="text-paper font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
                     ADD GAME
                   </Text>
@@ -238,7 +239,7 @@ export default function TournamentDetail() {
                 }}
                 className="px-3 py-2.5 border-l border-ink-20 flex-row items-center gap-1 active:opacity-60"
               >
-                <Feather name="copy" size={11} color="#1F4FCC" />
+                <Feather name="copy" size={11} color={palette.signal} />
                 <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1 }}>
                   COPY
                 </Text>
@@ -267,15 +268,15 @@ function StatCell({ label, value }: { label: string; value: string }) {
 
 function GameStatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    open: "#1F4FCC",
-    staffed: "#00A85C",
-    completed: "#00A85C",
-    cancelled: "#E53E3E",
+    open: palette.signal,
+    staffed: palette.courtInk,
+    completed: palette.courtInk,
+    cancelled: palette.foulInk,
   };
   return (
     <Text
       className="font-mono-bold text-[8px] uppercase"
-      style={{ letterSpacing: 1.5, color: colors[status] ?? "rgba(8,17,28,0.40)" }}
+      style={{ letterSpacing: 1.5, color: colors[status] ?? palette.ink40 }}
     >
       {status}
     </Text>

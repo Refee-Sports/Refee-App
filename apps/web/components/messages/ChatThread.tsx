@@ -177,7 +177,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
           placeholder="MESSAGE..."
           rows={1}
           aria-label="Message"
-          className="min-h-[42px] flex-1 resize-none border border-ink bg-paper px-3 py-2.5 font-mono text-[13px] text-ink outline-none placeholder:text-ink-40"
+          className="min-h-[42px] flex-1 resize-none border border-ink bg-paper px-3 py-2.5 font-mono text-[13px] text-ink outline-none placeholder:text-ink-60"
           style={{ maxHeight: 100, letterSpacing: 0.5 }}
         />
         <button

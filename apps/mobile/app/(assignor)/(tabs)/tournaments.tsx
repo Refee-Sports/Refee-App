@@ -12,6 +12,7 @@ import {
   fetchTournamentInvites,
   type TournamentInviteRow,
 } from "@/lib/assignor/queries";
+import { palette } from "@refee/design";
 
 type SectionRow =
   | { kind: "heading"; id: string; label: string; count: number }
@@ -90,13 +91,13 @@ export default function AssignorTournaments() {
       <View className="px-5 mb-4"><ZebraRule variant="signal" thin /></View>
 
       {loading ? (
-        <View className="flex-1 items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>
+        <View className="flex-1 items-center justify-center"><ActivityIndicator color={palette.signal} /></View>
       ) : (
         <FlatList
           data={rows}
           keyExtractor={(row) => row.id}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 90 }}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor="#1F4FCC" />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load(true)} tintColor={palette.signal} />}
           ListEmptyComponent={<EmptyState />}
           renderItem={({ item }) => item.kind === "heading" ? (
             <Text className="font-mono-bold text-[10px] text-ink uppercase mt-3 mb-2" style={{ letterSpacing: 2 }}>
@@ -125,7 +126,7 @@ export default function AssignorTournaments() {
                 <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1.2 }}>
                   {dateRange(item.tournament)} · {item.tournament.total_games ?? "—"} GAMES
                 </Text>
-                <Feather name="chevron-right" size={14} color="rgba(8,17,28,0.4)" />
+                <Feather name="chevron-right" size={14} color={palette.ink40} />
               </View>
             </Pressable>
           )}
@@ -139,7 +140,7 @@ export default function AssignorTournaments() {
 function EmptyState() {
   return (
     <View className="items-center justify-center px-8 py-24">
-      <Feather name="calendar" size={28} color="rgba(8,17,28,0.35)" />
+      <Feather name="calendar" size={28} color={palette.ink40} />
       <Text className="font-mono-bold text-[11px] text-ink uppercase text-center mt-4" style={{ letterSpacing: 1.5 }}>
         NO TOURNAMENTS YET
       </Text>

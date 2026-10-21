@@ -7,6 +7,7 @@ import { countdownLabel, loadRefereeDashboard, type RefereeDashboardData } from 
 import { showRate } from "@refee/core/referee/reliability";
 import { LEVELS } from "@refee/core/basketball/options";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 const LEVEL_LABEL = new Map(LEVELS.map((l) => [l.id, l.label]));
 
@@ -31,7 +32,7 @@ export function RefereeDashboard({ userId }: { userId: string }) {
   if (!data) {
     return (
       <View className="py-6 items-center">
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }

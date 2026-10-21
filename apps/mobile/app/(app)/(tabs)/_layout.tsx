@@ -1,9 +1,10 @@
 import { Tabs } from "expo-router";
 import { Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { palette } from "@refee/design";
 
 const TabIcon = ({ name, focused }: { name: any; focused: boolean }) => (
-  <Feather name={name} size={20} color={focused ? "#1F4FCC" : "rgba(8,17,28,0.36)"} />
+  <Feather name={name} size={20} color={focused ? palette.signal : palette.ink40} />
 );
 
 const TabLabel = ({ label, focused }: { label: string; focused: boolean }) => (
@@ -24,9 +25,9 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: "#E5E1D6",
+          backgroundColor: palette.paper,
           borderTopWidth: 1,
-          borderTopColor: "#08111C",
+          borderTopColor: palette.ink,
           paddingTop: 8,
           height: 80,
         },

@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import { finalizeOAuthRedirect } from "@/lib/oauth";
+import { palette } from "@refee/design";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function AuthCallback() {
         </>
       ) : (
         <>
-          <ActivityIndicator color="#1F4FCC" />
+          <ActivityIndicator color={palette.signal} />
           <Text className="font-mono-bold text-[10px] text-ink uppercase mt-4" style={{ letterSpacing: 1.5 }}>COMPLETING SIGN IN…</Text>
         </>
       )}

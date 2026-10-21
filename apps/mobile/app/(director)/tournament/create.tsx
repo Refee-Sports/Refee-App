@@ -21,6 +21,7 @@ import { CalendarRangePicker } from "@/components/ui/CalendarRangePicker";
 import { DropdownSelect } from "@/components/ui/DropdownSelect";
 import { RULESETS, QUARTER_MINUTES, HALF_MINUTES } from "@/lib/basketball/options";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
+import { palette } from "@refee/design";
 
 
 const US_TIMEZONES = [
@@ -203,7 +204,7 @@ export default function CreateTournament() {
           >
             <View className="flex-row justify-center items-center gap-2">
               {loading ? (
-                <ActivityIndicator color="#E5E1D6" />
+                <ActivityIndicator color={palette.paper} />
               ) : (
                 <Text
                   className={`font-mono-bold ${canSubmit ? "text-paper" : "text-ink-40"}`}
@@ -447,7 +448,7 @@ function FInput({
   return (
     <>
       <TextInput
-        placeholderTextColor="rgba(8,17,28,0.36)"
+        placeholderTextColor={palette.ink60}
         className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${
           error ? "border-foul" : "border-ink"
         }`}

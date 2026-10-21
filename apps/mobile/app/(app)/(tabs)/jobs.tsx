@@ -22,6 +22,7 @@ import {
 } from "@/lib/jobs/filters";
 import type { FeedTab } from "@/lib/jobs/types";
 import { SEED_JOB_IDS } from "@/lib/jobs/mock-data";
+import { palette } from "@refee/design";
 
 function CardTopStripe({ variant }: { variant?: "hot" | "featured" }) {
   if (!variant) return null;
@@ -37,11 +38,11 @@ function CardTopStripe({ variant }: { variant?: "hot" | "featured" }) {
             backgroundColor:
               variant === "hot"
                 ? i % 2 === 0
-                  ? "#08111C"
-                  : "#C9F031"
+                  ? palette.ink
+                  : palette.hiVis
                 : i % 2 === 0
-                  ? "#1F4FCC"
-                  : "#E5E1D6",
+                  ? palette.signal
+                  : palette.paper,
           }}
         />
       ))}
@@ -155,7 +156,7 @@ export default function Jobs() {
           <Feather
             name="filter"
             size={14}
-            color={filterPanelOpen || filtersActive ? "#1F4FCC" : "#08111C"}
+            color={filterPanelOpen || filtersActive ? palette.signal : palette.ink}
           />
           {filtersActive ? (
             <View className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-1 bg-signal items-center justify-center rounded-full">
@@ -182,12 +183,12 @@ export default function Jobs() {
           accessibilityLabel="Toggle location mode"
         >
           {locating ? (
-            <ActivityIndicator size="small" color="#1F4FCC" />
+            <ActivityIndicator size="small" color={palette.signal} />
           ) : (
             <Feather
               name={locationMode === "near_me" ? "navigation" : "home"}
               size={10}
-              color={locationMode === "near_me" ? "#1F4FCC" : "#08111C"}
+              color={locationMode === "near_me" ? palette.signal : palette.ink}
             />
           )}
           <Text
@@ -213,7 +214,7 @@ export default function Jobs() {
       >
         {loading ? (
           <View className="items-center py-8 mb-2">
-            <ActivityIndicator color="#1F4FCC" />
+            <ActivityIndicator color={palette.signal} />
             <Text
               className="text-ink-60 font-mono-bold text-[10px] uppercase mt-3"
               style={{ letterSpacing: 2 }}

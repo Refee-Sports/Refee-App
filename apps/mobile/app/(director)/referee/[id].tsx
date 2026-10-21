@@ -7,6 +7,7 @@ import * as Haptics from "expo-haptics";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { fetchRefereePublicView, type RefereePublicView } from "@/lib/director/queries";
 import { showRate } from "@refee/core/referee/reliability";
+import { palette } from "@refee/design";
 
 const CERT_LABELS: Record<string, string> = {
   iaabo: "IAABO",
@@ -56,7 +57,7 @@ export default function RefereePublicProfile() {
   if (loading) {
     return (
       <View className="flex-1 bg-paper items-center justify-center" style={{ paddingTop: insets.top }}>
-        <ActivityIndicator color="#1F4FCC" />
+        <ActivityIndicator color={palette.signal} />
       </View>
     );
   }
@@ -83,7 +84,7 @@ export default function RefereePublicProfile() {
 
   return (
     <ScrollView
-      style={{ flex: 1, backgroundColor: "#E5E1D6" }}
+      style={{ flex: 1, backgroundColor: palette.paper }}
       contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
     >
       <View style={{ paddingTop: insets.top }}>
@@ -131,14 +132,14 @@ export default function RefereePublicProfile() {
               style={{ fontSize: 26, letterSpacing: -1, lineHeight: 26 }}
             >
               {ref.first_name.toUpperCase()}{"\n"}
-              <Text style={{ color: "#1F4FCC" }}>{ref.last_initial.toUpperCase()}.</Text>
+              <Text style={{ color: palette.signal }}>{ref.last_initial.toUpperCase()}.</Text>
             </Text>
             <Text className="font-mono text-[9px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 1.5 }}>
               {ref.city.toUpperCase()}, {ref.state}
             </Text>
             <Text
               className={`font-mono text-[9px] uppercase mt-1 ${ref.is_verified ? "font-mono-bold" : "text-ink-60"}`}
-              style={{ letterSpacing: 1.5, ...(ref.is_verified ? { color: "#00A85C" } : {}) }}
+              style={{ letterSpacing: 1.5, ...(ref.is_verified ? { color: palette.court } : {}) }}
             >
               {ref.is_verified ? "✓ " : ""}
               {verificationLabel(ref.is_verified)}
@@ -177,7 +178,7 @@ export default function RefereePublicProfile() {
                   key={i}
                   className="flex-row items-center gap-1.5 border border-ink bg-chalk px-2.5 py-1.5"
                 >
-                  <Text style={{ color: "#00A85C", fontSize: 10 }}>✓</Text>
+                  <Text style={{ color: palette.court, fontSize: 10 }}>✓</Text>
                   <Text
                     className="font-mono text-[9px] text-ink uppercase"
                     style={{ letterSpacing: 1.5 }}

@@ -1,0 +1,19 @@
+{
+  "name": "@refee/design",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The Refee design tokens and per-variant looks, shared by the web and mobile apps. Mirrors docs/design-system/tokens.json.",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens": "./src/tokens.js",
+    "./tailwind": "./src/tailwind.js"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.2"
+  }
+}

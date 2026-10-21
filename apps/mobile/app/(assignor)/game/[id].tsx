@@ -21,6 +21,7 @@ import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
 import { cancelGame, completeGame } from "@/lib/director/queries";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
+import { palette } from "@refee/design";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
 
@@ -195,7 +196,7 @@ export default function AssignorGameDetail() {
     ]);
   };
 
-  if (loading) return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color="#1F4FCC" /></View>;
+  if (loading) return <View className="flex-1 bg-paper items-center justify-center"><ActivityIndicator color={palette.signal} /></View>;
   if (!game) return <View className="flex-1 bg-paper items-center justify-center"><Text className="font-mono-bold text-ink">GAME NOT AVAILABLE</Text></View>;
 
   const assignedIds = new Set(crew.map((member) => member.ref_id));
@@ -212,7 +213,7 @@ export default function AssignorGameDetail() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable onPress={() => router.back()} className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"><Feather name="arrow-left" size={16} color="#08111C" /></Pressable>
+        <Pressable onPress={() => router.back()} className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"><Feather name="arrow-left" size={16} color={palette.ink} /></Pressable>
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>STAFF GAME</Text>
         <View className="w-9" />
       </View>
@@ -254,10 +255,10 @@ export default function AssignorGameDetail() {
                   <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{member.role} · {member.status} · VIEW PROFILE</Text>
                 </Pressable>
                 <Pressable disabled={busyId !== null} onPress={() => void messageRef(member.ref_id)} className="border border-ink px-2.5 py-2 mr-2">
-                  {busyId === `dm:${member.ref_id}` ? <ActivityIndicator size="small" color="#08111C" /> : <Feather name="message-square" size={12} color="#08111C" />}
+                  {busyId === `dm:${member.ref_id}` ? <ActivityIndicator size="small" color={palette.ink} /> : <Feather name="message-square" size={12} color={palette.ink} />}
                 </Pressable>
                 <Pressable disabled={busyId !== null} onPress={() => remove(member)} className="border border-foul px-2.5 py-2">
-                  {busyId === member.id ? <ActivityIndicator size="small" color="#E53E3E" /> : <Text className="font-mono-bold text-[8px] text-foul-ink">REMOVE</Text>}
+                  {busyId === member.id ? <ActivityIndicator size="small" color={palette.foulInk} /> : <Text className="font-mono-bold text-[8px] text-foul-ink">REMOVE</Text>}
                 </Pressable>
               </View>
             ))}
@@ -269,7 +270,7 @@ export default function AssignorGameDetail() {
                   <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">You referee too · schedule conflicts are still checked</Text>
                 </View>
                 <Pressable disabled={busyId !== null} onPress={() => void assignSelf()} className="px-3 py-2 bg-signal">
-                  {busyId === "self" ? <ActivityIndicator size="small" color="#E5E1D6" /> : <Text className="font-mono-bold text-[8px] text-paper">ASSIGN MYSELF</Text>}
+                  {busyId === "self" ? <ActivityIndicator size="small" color={palette.paper} /> : <Text className="font-mono-bold text-[8px] text-paper">ASSIGN MYSELF</Text>}
                 </Pressable>
               </View>
             )}
@@ -279,7 +280,7 @@ export default function AssignorGameDetail() {
               value={note}
               onChangeText={setNote}
               placeholder="A one-way update for everyone confirmed on this game"
-              placeholderTextColor="rgba(8,17,28,0.35)"
+              placeholderTextColor={palette.ink60}
               multiline
               className="border border-ink bg-chalk px-3 py-3 text-ink"
               style={{ minHeight: 70, textAlignVertical: "top", fontSize: 14 }}
@@ -289,7 +290,7 @@ export default function AssignorGameDetail() {
               disabled={posting || note.trim().length === 0}
               className={`py-3 items-center mt-2 ${note.trim().length > 0 && !posting ? "bg-ink" : "bg-ink-20"}`}
             >
-              {posting ? <ActivityIndicator size="small" color="#E5E1D6" /> : (
+              {posting ? <ActivityIndicator size="small" color={palette.paper} /> : (
                 <Text className={`font-mono-bold text-[10px] uppercase ${note.trim().length > 0 ? "text-paper" : "text-ink-40"}`} style={{ letterSpacing: 1.5 }}>SEND UPDATE</Text>
               )}
             </Pressable>
@@ -308,7 +309,7 @@ export default function AssignorGameDetail() {
                 disabled={busyId !== null}
                 className="bg-court py-3.5 items-center active:opacity-80 disabled:opacity-40"
               >
-                {busyId === "complete" ? <ActivityIndicator color="#E5E1D6" /> : (
+                {busyId === "complete" ? <ActivityIndicator color={palette.paper} /> : (
                   <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>MARK GAME COMPLETED</Text>
                 )}
               </Pressable>
@@ -318,7 +319,7 @@ export default function AssignorGameDetail() {
               disabled={busyId !== null}
               className="border-[1.5px] border-foul py-3.5 items-center active:opacity-80 disabled:opacity-40"
             >
-              {busyId === "cancel" ? <ActivityIndicator color="#E63946" /> : (
+              {busyId === "cancel" ? <ActivityIndicator color={palette.foul} /> : (
                 <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>CANCEL GAME</Text>
               )}
             </Pressable>
@@ -331,7 +332,7 @@ export default function AssignorGameDetail() {
               <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{item.city}, {item.state} · {item.rating.toFixed(1)} RATING · VIEW PROFILE</Text>
             </Pressable>
             <Pressable disabled={busyId !== null || crew.length >= game.crew_size} onPress={() => void offer(item)} className={`px-3 py-2 border border-ink ${crew.length >= game.crew_size ? "bg-ink-20" : "bg-ink"}`}>
-              {busyId === item.ref_id ? <ActivityIndicator size="small" color="#E5E1D6" /> : <Text className="font-mono-bold text-[8px] text-paper">OFFER</Text>}
+              {busyId === item.ref_id ? <ActivityIndicator size="small" color={palette.paper} /> : <Text className="font-mono-bold text-[8px] text-paper">OFFER</Text>}
             </Pressable>
           </View>
         )}

@@ -2,6 +2,7 @@ import { Pressable, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
+import { palette } from "@refee/design";
 
 /** The row on every profile that opens the notification switches. */
 export function NotificationsRow() {
@@ -22,7 +23,7 @@ export function NotificationsRow() {
           CHOOSE WHAT WE PUSH TO YOUR PHONE
         </Text>
       </View>
-      <Feather name="chevron-right" size={16} color="#08111C" />
+      <Feather name="chevron-right" size={16} color={palette.ink} />
     </Pressable>
   );
 }
