@@ -1,55 +1,42 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { Wordmark } from "@/components/Wordmark";
-import { ZebraRule } from "@/components/ui/ZebraRule";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AppButton, Spinner } from "@/components/ui/AppButton";
 import { LoadError } from "@/components/ui/LoadError";
-import { friendlyLoadError, withDeadline } from "@/lib/network";
-import { supabase } from "@/lib/supabase";
 import {
-  amIStaff,
+  AdminFrame,
+  Empty,
+  Note,
+  PanelHeading,
+  PanelSpinner,
+  Pill,
+  TONE,
+  Tabs,
+  money,
+  shortDate,
+} from "@/components/admin/ui";
+import { friendlyLoadError, withDeadline } from "@/lib/network";
+import {
   clearPaymentReview,
   fetchAdminMetrics,
   fetchIdentityQueue,
   fetchPaymentIssues,
-  fetchUserDetail,
-  searchUsers,
+  listAccounts,
   setIdentityStatus,
-  setSuspended,
   statusLabel,
+  verificationBreakdown,
+  type AccountRow,
   type AdminMetrics,
   type IdentityQueueRow,
   type PaymentIssueRow,
-  type UserSearchRow,
 } from "@/lib/admin/queries";
 
 type Tab = "queue" | "accounts" | "payments" | "metrics";
+const TAB_IDS: Tab[] = ["queue", "accounts", "payments", "metrics"];
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "queue", label: "Verification" },
-  { id: "accounts", label: "Accounts" },
-  { id: "payments", label: "Payments" },
-  { id: "metrics", label: "Metrics" },
-];
-
-/** Semantic, not decorative — these say "needs you" vs "settled". */
-const TONE: Record<string, string> = {
-  approved: "text-court border-court",
-  declined: "text-foul border-foul",
-  in_review: "text-whistle-ink border-whistle-ink",
-  suspended: "text-foul border-foul",
-  neutral: "text-ink-60 border-ink-20",
-};
-
-/**
- * Refee staff tools.
- *
- * Hiding this page is a courtesy, not the access control: every call it makes
- * is a security-definer function that checks public.admins for itself
- * (migrations 0050/0051). Someone who forces their way onto the page gets a
- * working layout with nothing in it.
- */
+/** Refee staff tools. Access control lives in the database; see AdminFrame. */
 export default function AdminPage() {
   return (
     <Suspense
@@ -59,91 +46,42 @@ export default function AdminPage() {
         </div>
       }
     >
-      <AdminDashboard />
+      <AdminFrame>
+        <AdminDashboard />
+      </AdminFrame>
     </Suspense>
   );
 }
 
 function AdminDashboard() {
-  const [staff, setStaff] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<Tab>("queue");
-
-  useEffect(() => {
-    (async () => {
-      const {
-        data: { session },
-      } = await withDeadline(supabase.auth.getSession());
-      setStaff(await amIStaff(session?.user?.id));
-    })().catch(() => setStaff(false));
-  }, []);
-
-  if (staff === null) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-paper text-signal">
-        <Spinner />
-      </div>
-    );
-  }
-
-  if (!staff) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-paper px-6 text-center">
-        <p
-          className="font-mono-bold text-[10px] uppercase text-ink-60"
-          style={{ letterSpacing: 2 }}
-        >
-          Not available
-        </p>
-        <p className="max-w-sm text-sm text-ink-80">
-          This area is for Refee staff. If you think you should have access, ask
-          someone on the team to add you.
-        </p>
-      </div>
-    );
-  }
+  const router = useRouter();
+  const pathname = usePathname();
+  const params = useSearchParams();
+  // The tab lives in the URL so coming back from an account lands on Accounts.
+  const fromUrl = params.get("tab") as Tab | null;
+  const tab: Tab = fromUrl && TAB_IDS.includes(fromUrl) ? fromUrl : "queue";
+  const setTab = (t: Tab) => router.replace(`${pathname}?tab=${t}`, { scroll: false });
+  const [waiting, setWaiting] = useState<number | null>(null);
 
   return (
-    <div className="min-h-screen bg-paper">
-      <header className="border-b border-ink px-5 py-4">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Wordmark className="text-xl" />
-            <span
-              className="border border-ink px-2 py-1 font-mono-bold text-[9px] uppercase text-ink"
-              style={{ letterSpacing: 1.5 }}
-            >
-              Staff
-            </span>
-          </div>
-        </div>
-      </header>
-      <ZebraRule />
+    <>
+      <Tabs
+        label="Staff tools"
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { id: "queue", label: "Verification", count: waiting },
+          { id: "accounts", label: "Accounts" },
+          { id: "payments", label: "Payments" },
+          { id: "metrics", label: "Metrics" },
+        ]}
+      />
 
-      <div className="mx-auto max-w-5xl px-5 py-6">
-        <div role="tablist" aria-label="Staff tools" className="mb-6 flex border border-ink">
-          {TABS.map((t, i) => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              onClick={() => setTab(t.id)}
-              className={`flex-1 whitespace-nowrap px-3 py-3 font-mono-bold text-[10px] uppercase ${
-                i < TABS.length - 1 ? "border-r border-ink" : ""
-              } ${tab === t.id ? "bg-ink text-paper" : "bg-chalk text-ink-60 hover:text-ink"}`}
-              style={{ letterSpacing: 1.5 }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {tab === "queue" && <QueuePanel />}
-        {tab === "accounts" && <AccountsPanel />}
-        {tab === "payments" && <PaymentsPanel />}
-        {tab === "metrics" && <MetricsPanel />}
-      </div>
-    </div>
+      {tab === "queue" && <QueuePanel onCount={setWaiting} />}
+      {tab === "accounts" && <AccountsPanel />}
+      {tab === "payments" && <PaymentsPanel />}
+      {tab === "metrics" && <MetricsPanel />}
+    </>
   );
 }
 
@@ -151,7 +89,7 @@ function AdminDashboard() {
 /* Verification queue                                                */
 /* ---------------------------------------------------------------- */
 
-function QueuePanel() {
+function QueuePanel({ onCount }: { onCount: (n: number) => void }) {
   const [rows, setRows] = useState<IdentityQueueRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -164,11 +102,14 @@ function QueuePanel() {
     withDeadline(fetchIdentityQueue())
       .then(({ rows: r, error: e }) => {
         if (e) setError(e.message);
-        else setRows(r);
+        else {
+          setRows(r);
+          onCount(r.length);
+        }
       })
       .catch((e) => setError(friendlyLoadError(e)))
       .finally(() => setLoading(false));
-  }, []);
+  }, [onCount]);
 
   useEffect(load, [load]);
 
@@ -304,183 +245,172 @@ function QueuePanel() {
 /* Accounts                                                          */
 /* ---------------------------------------------------------------- */
 
+const PAGE = 50;
+
+const ROLE_FILTERS: { id: string | null; label: string }[] = [
+  { id: null, label: "Everyone" },
+  { id: "referee", label: "Referees" },
+  { id: "director", label: "Directors" },
+  { id: "assignor", label: "Assignors" },
+];
+
 function AccountsPanel() {
   const [query, setQuery] = useState("");
-  const [rows, setRows] = useState<UserSearchRow[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
+  const [rows, setRows] = useState<AccountRow[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
-  const [note, setNote] = useState<string | null>(null);
+  // Only the newest search may write results, so a slow early one can't
+  // overwrite what the person typed last.
+  const latest = useRef(0);
 
-  const run = async () => {
-    if (!query.trim()) return;
+  const load = useCallback((q: string, r: string | null) => {
+    const ticket = ++latest.current;
     setLoading(true);
     setError(null);
-    setOpenId(null);
-    setDetail(null);
-    const { rows: r, error: e } = await searchUsers(query.trim());
-    setLoading(false);
-    setSearched(true);
+    withDeadline(listAccounts({ query: q, role: r, limit: PAGE, offset: 0 }))
+      .then(({ rows: next, total: t, error: e }) => {
+        if (ticket !== latest.current) return;
+        if (e) setError(e.message);
+        else {
+          setRows(next);
+          setTotal(t);
+        }
+      })
+      .catch((e) => ticket === latest.current && setError(friendlyLoadError(e)))
+      .finally(() => ticket === latest.current && setLoading(false));
+  }, []);
+
+  // Search as they type, after a short pause.
+  useEffect(() => {
+    const t = setTimeout(() => load(query, role), query ? 250 : 0);
+    return () => clearTimeout(t);
+  }, [query, role, load]);
+
+  const more = async () => {
+    setLoadingMore(true);
+    const { rows: next, error: e } = await listAccounts({ query, role, limit: PAGE, offset: rows.length });
+    setLoadingMore(false);
     if (e) setError(e.message);
-    else setRows(r);
-  };
-
-  const open = async (id: string) => {
-    if (openId === id) {
-      setOpenId(null);
-      setDetail(null);
-      return;
-    }
-    setOpenId(id);
-    setDetail(null);
-    const { detail: d } = await fetchUserDetail(id);
-    setDetail(d);
-  };
-
-  // Suspending asks for a reason inline; it goes on the record against the
-  // staff member who did it, so it is not an afterthought in a dialog.
-  const [suspending, setSuspending] = useState<string | null>(null);
-  const [reason, setReason] = useState("");
-
-  const applySuspend = async (row: UserSearchRow) => {
-    const currentlySuspended = Boolean(row.suspended_at);
-    if (!currentlySuspended && !reason.trim()) return;
-    setNote(null);
-    const { error: e } = await setSuspended(
-      row.user_id,
-      !currentlySuspended,
-      currentlySuspended ? null : reason.trim()
-    );
-    if (e) setNote(e.message);
-    else {
-      setNote(currentlySuspended ? "Account reinstated." : "Account suspended.");
-      setSuspending(null);
-      setReason("");
-      void run();
-    }
+    else setRows((prev) => [...prev, ...next]);
   };
 
   return (
     <div>
       <PanelHeading
-        title="Find an account"
-        sub="Name, phone, email or user id. Suspending stops someone taking or posting work — it never deletes them."
+        title="Accounts"
+        sub="Everyone on Refee, newest first. Open one to edit it, see it as they do, check the money, or switch it off."
       />
 
-      <div className="mb-5 flex gap-2">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <input
+          type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void run()}
-          placeholder="Search…"
+          placeholder="Search name, email, phone, city or id"
           aria-label="Search accounts"
-          className="flex-1 border border-ink bg-chalk px-3 py-3 text-sm text-ink outline-none focus:border-signal"
+          className="min-w-0 flex-1 border border-ink bg-chalk px-3 py-3 text-sm text-ink outline-none focus:border-signal"
         />
-        <AppButton label={loading ? "…" : "Search"} onClick={() => void run()} disabled={loading} />
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by role">
+          {ROLE_FILTERS.map((f) => (
+            <button
+              key={f.label}
+              type="button"
+              aria-pressed={role === f.id}
+              onClick={() => setRole(f.id)}
+              className={`border px-3 py-2 font-mono-bold text-[10px] uppercase ${
+                role === f.id ? "border-ink bg-ink text-paper" : "border-ink-20 text-ink-60 hover:border-ink hover:text-ink"
+              }`}
+              style={{ letterSpacing: 1.2 }}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {note && <Note text={note} />}
-      {error && <LoadError message={error} onRetry={() => void run()} />}
+      {error && <LoadError message={error} onRetry={() => load(query, role)} />}
 
-      {searched && rows.length === 0 && !loading && !error && (
-        <Empty text="Nobody matched that." />
+      {!error && (
+        <p className="mb-2 font-mono text-[10px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+          {loading ? "Loading…" : `Showing ${rows.length} of ${total}`}
+        </p>
+      )}
+
+      {!loading && !error && rows.length === 0 && (
+        <Empty text={query ? "Nobody matched that." : "No accounts yet."} />
       )}
 
       {rows.length > 0 && (
-        <div className="border border-ink bg-ink" style={{ display: "grid", gap: 1 }}>
-          {rows.map((r) => (
-            <div key={r.user_id} className="bg-chalk p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-display text-lg font-black tracking-tight text-ink">
-                    {r.display_name ?? "Unnamed"}
-                  </p>
-                  <p className="mt-0.5 font-mono text-[10px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
-                    {[r.primary_role, r.city && r.state ? `${r.city}, ${r.state}` : null, r.phone, r.email]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Pill
-                    label={statusLabel(r.identity_status)}
-                    tone={TONE[r.identity_status] ?? TONE.neutral}
-                  />
-                  {r.suspended_at && <Pill label="Suspended" tone={TONE.suspended} />}
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <AppButton
-                  label={openId === r.user_id ? "Hide detail" : "Open"}
-                  variant="secondary"
-                  onClick={() => void open(r.user_id)}
-                />
-                <AppButton
-                  label={r.suspended_at ? "Reinstate" : "Suspend"}
-                  variant={r.suspended_at ? "court" : "danger"}
-                  onClick={() => {
-                    if (r.suspended_at) {
-                      void applySuspend(r);
-                    } else {
-                      setReason("");
-                      setSuspending(r.user_id);
-                    }
-                  }}
-                />
-              </div>
-
-              {suspending === r.user_id && (
-                <div className="mt-3 border border-foul bg-foul/5 p-3">
-                  <label
-                    htmlFor={`susp-${r.user_id}`}
-                    className="block font-mono-bold text-[9px] uppercase text-ink-60"
-                    style={{ letterSpacing: 1.5 }}
+        <div className={`border border-ink-20 bg-chalk ${loading ? "opacity-60" : ""}`}>
+          <div
+            className="hidden grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto] gap-4 border-b border-ink-20 px-4 py-2 font-mono-bold text-[9px] uppercase text-ink-60 md:grid"
+            style={{ letterSpacing: 1.5 }}
+          >
+            <span>Person</span>
+            <span>Roles</span>
+            <span>Location</span>
+            <span>Joined</span>
+            <span className="text-right">Status</span>
+          </div>
+          <ul>
+            {rows.map((r) => (
+              <li key={r.user_id} className="border-b border-ink-10 last:border-b-0">
+                <Link
+                  href={`/admin/accounts/${r.user_id}`}
+                  className="grid grid-cols-1 gap-2 px-4 py-3 hover:bg-paper md:grid-cols-[minmax(0,2.2fr)_minmax(0,1.2fr)_minmax(0,1.2fr)_minmax(0,1fr)_auto] md:items-center md:gap-4"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate font-display text-base font-black tracking-tight text-ink">
+                      {r.display_name ?? "Unnamed"}
+                    </span>
+                    <span className="block truncate text-xs text-ink-60">{r.email ?? r.phone ?? "No contact"}</span>
+                    {/* On a phone the columns fold into one line under the name. */}
+                    <span className="mt-1 block truncate text-xs text-ink-80 md:hidden">
+                      {[
+                        (r.roles.length ? r.roles : [r.primary_role ?? ""]).filter(Boolean).join(" · "),
+                        r.city && r.state ? `${r.city}, ${r.state}` : null,
+                        `joined ${shortDate(r.created_at)}`,
+                      ]
+                        .filter(Boolean)
+                        .join(" — ")}
+                    </span>
+                  </span>
+                  <span
+                    className="hidden truncate font-mono text-[10px] uppercase text-ink-80 md:block"
+                    style={{ letterSpacing: 1 }}
                   >
-                    Why — recorded against your name
-                  </label>
-                  <textarea
-                    id={`susp-${r.user_id}`}
-                    value={reason}
-                    onChange={(e) => setReason(e.target.value)}
-                    rows={2}
-                    autoFocus
-                    className="mt-2 w-full border border-ink bg-chalk px-3 py-2 text-sm text-ink outline-none focus:border-signal"
-                  />
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <AppButton
-                      label="Confirm suspend"
-                      variant="danger"
-                      disabled={!reason.trim()}
-                      onClick={() => void applySuspend(r)}
-                    />
-                    <AppButton
-                      label="Cancel"
-                      variant="secondary"
-                      onClick={() => {
-                        setSuspending(null);
-                        setReason("");
-                      }}
-                    />
-                  </div>
-                </div>
-              )}
+                    {(r.roles.length ? r.roles : [r.primary_role ?? "—"]).join(" · ")}
+                  </span>
+                  <span className="hidden truncate text-xs text-ink-80 md:block">
+                    {r.city && r.state ? `${r.city}, ${r.state}` : "—"}
+                  </span>
+                  <span className="hidden text-xs text-ink-60 md:block">{shortDate(r.created_at)}</span>
+                  <span className="flex flex-wrap gap-1.5 md:justify-end">
+                    {r.deactivated ? (
+                      <Pill label="Deactivated" tone={TONE.suspended} />
+                    ) : r.suspended_at ? (
+                      <Pill label="Suspended" tone={TONE.suspended} />
+                    ) : null}
+                    <Pill label={statusLabel(r.identity_status)} tone={TONE[r.identity_status] ?? TONE.neutral} />
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-              {openId === r.user_id && (
-                <div className="mt-4 border-t border-ink-20 pt-4">
-                  {detail === null ? (
-                    <PanelSpinner />
-                  ) : (
-                    <pre className="overflow-x-auto whitespace-pre-wrap break-words font-mono text-[11px] leading-5 text-ink-80">
-                      {JSON.stringify(detail, null, 2)}
-                    </pre>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+      {rows.length < total && !loading && (
+        <div className="mt-4 flex justify-center">
+          <AppButton
+            label={loadingMore ? "Loading…" : `Show more (${total - rows.length} left)`}
+            variant="secondary"
+            disabled={loadingMore}
+            onClick={() => void more()}
+          />
         </div>
       )}
     </div>
@@ -626,6 +556,16 @@ function PaymentsPanel() {
 /* Metrics                                                           */
 /* ---------------------------------------------------------------- */
 
+const VERIFICATION_COLOR: Record<string, string> = {
+  approved: "bg-court",
+  in_review: "bg-whistle",
+  in_progress: "bg-signal",
+  declined: "bg-foul",
+  expired: "bg-ink-40",
+  abandoned: "bg-ink-40",
+  unstarted: "bg-ink-20",
+};
+
 function MetricsPanel() {
   const [m, setM] = useState<AdminMetrics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -649,126 +589,151 @@ function MetricsPanel() {
   if (error) return <LoadError message={error} onRetry={load} />;
   if (!m) return <Empty text="No numbers yet." />;
 
+  const verification = verificationBreakdown(m.verification);
+  const verifiedPct = verification.find((v) => v.status === "approved")?.pct ?? 0;
+  const roleTotal = m.users.referees + m.users.directors + m.users.assignors;
+
   return (
-    <div className="flex flex-col gap-6">
-      <StatGroup
-        title="People"
-        stats={[
-          { label: "Total", value: m.users.total },
-          { label: "Referees", value: m.users.referees },
-          { label: "Directors", value: m.users.directors },
-          { label: "Assignors", value: m.users.assignors },
-          { label: "New this week", value: m.users.new_7d },
-          { label: "Suspended", value: m.suspended },
-        ]}
-      />
-      <StatGroup
-        title="Games"
-        stats={[
-          { label: "Open", value: m.games.open },
-          { label: "Upcoming", value: m.games.upcoming },
-          { label: "Completed (30d)", value: m.games.completed_30d },
-          { label: "Unfilled in 7 days", value: m.games.unfilled_next_7d },
-        ]}
-      />
-      <StatGroup
-        title="Money"
-        stats={[
-          { label: "Owed to crew", value: `$${Number(m.money.owed_to_crew).toLocaleString()}` },
-          { label: "Paid (30d)", value: `$${Number(m.money.paid_30d).toLocaleString()}` },
-          { label: "Needs review", value: m.money.needs_review },
-        ]}
-      />
-      <StatGroup
-        title="Verification"
-        stats={Object.entries(m.verification).map(([k, v]) => ({
-          label: statusLabel(k),
-          value: v,
-        }))}
-      />
+    <div className="flex flex-col gap-5">
+      {/* The four numbers to look at first. */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Kpi label="People" value={m.users.total} sub={`+${m.users.new_7d} this week`} />
+        <Kpi label="Open games" value={m.games.open} sub={`${m.games.unfilled_next_7d} unfilled in the next 7 days`} warn={m.games.unfilled_next_7d > 0} />
+        <Kpi label="Owed to crew" value={money(m.money.owed_to_crew)} sub={`${money(m.money.paid_30d)} paid in 30 days`} />
+        <Kpi label="Needs a person" value={m.money.needs_review} sub="payment issues to review" warn={m.money.needs_review > 0} />
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <MetricCard title="People">
+          <Bar
+            parts={[
+              { label: "Referees", value: m.users.referees, color: "bg-signal" },
+              { label: "Directors", value: m.users.directors, color: "bg-court" },
+              { label: "Assignors", value: m.users.assignors, color: "bg-whistle" },
+            ]}
+            total={roleTotal}
+          />
+          <Rows
+            rows={[
+              { label: "Referees", value: m.users.referees, dot: "bg-signal" },
+              { label: "Directors", value: m.users.directors, dot: "bg-court" },
+              { label: "Assignors", value: m.users.assignors, dot: "bg-whistle" },
+              { label: "New this week", value: m.users.new_7d },
+              { label: "Suspended", value: m.suspended, warn: m.suspended > 0 },
+            ]}
+          />
+        </MetricCard>
+
+        <MetricCard title="Verification" aside={`${verifiedPct}% verified`}>
+          <Bar
+            parts={verification.map((v) => ({
+              label: statusLabel(v.status),
+              value: v.count,
+              color: VERIFICATION_COLOR[v.status] ?? "bg-ink-20",
+            }))}
+            total={verification.reduce((s, v) => s + v.count, 0)}
+          />
+          {verification.length === 0 ? (
+            <p className="text-sm text-ink-60">Nobody has started a check yet.</p>
+          ) : (
+            <Rows
+              rows={verification.map((v) => ({
+                label: statusLabel(v.status),
+                value: v.count,
+                dot: VERIFICATION_COLOR[v.status] ?? "bg-ink-20",
+                warn: v.status === "in_review" && v.count > 0,
+              }))}
+            />
+          )}
+        </MetricCard>
+
+        <MetricCard title="Games">
+          <Rows
+            rows={[
+              { label: "Open for applications", value: m.games.open },
+              { label: "Upcoming", value: m.games.upcoming },
+              { label: "Completed in the last 30 days", value: m.games.completed_30d },
+              { label: "Unfilled in the next 7 days", value: m.games.unfilled_next_7d, warn: m.games.unfilled_next_7d > 0 },
+            ]}
+          />
+        </MetricCard>
+
+        <MetricCard title="Money">
+          <Rows
+            rows={[
+              { label: "Owed to crew", value: money(m.money.owed_to_crew) },
+              { label: "Paid out in the last 30 days", value: money(m.money.paid_30d) },
+              { label: "Payment issues to review", value: m.money.needs_review, warn: m.money.needs_review > 0 },
+            ]}
+          />
+        </MetricCard>
+      </div>
     </div>
   );
 }
 
-/* ---------------------------------------------------------------- */
-/* Pieces                                                            */
-/* ---------------------------------------------------------------- */
-
-function StatGroup({
-  title,
-  stats,
-}: {
-  title: string;
-  stats: { label: string; value: number | string }[];
-}) {
+function Kpi({ label, value, sub, warn }: { label: string; value: number | string; sub: string; warn?: boolean }) {
   return (
-    <section>
-      <h2 className="mb-3 font-mono-bold text-[10px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
-        {title}
-      </h2>
-      <div className="grid grid-cols-2 gap-px border border-ink bg-ink sm:grid-cols-3 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="bg-chalk p-4">
-            <p
-              className="font-display text-3xl font-black tracking-tight text-ink"
-              style={{ fontVariantNumeric: "tabular-nums" }}
-            >
-              {s.value}
-            </p>
-            <p className="mt-1 font-mono text-[9px] uppercase leading-snug text-ink-60" style={{ letterSpacing: 1 }}>
-              {s.label}
-            </p>
-          </div>
-        ))}
+    <div className={`border bg-chalk p-4 ${warn ? "border-whistle-ink" : "border-ink-20"}`}>
+      <p className="font-mono-bold text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1.5 }}>
+        {label}
+      </p>
+      <p
+        className="mt-2 font-display text-3xl font-black tracking-tight text-ink sm:text-4xl"
+        style={{ fontVariantNumeric: "tabular-nums" }}
+      >
+        {value}
+      </p>
+      <p className={`mt-1 text-xs ${warn ? "text-whistle-ink" : "text-ink-60"}`}>{sub}</p>
+    </div>
+  );
+}
+
+function MetricCard({ title, aside, children }: { title: string; aside?: string; children: React.ReactNode }) {
+  return (
+    <section className="border border-ink-20 bg-chalk p-4">
+      <div className="mb-4 flex items-baseline justify-between gap-3">
+        <h3 className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.8 }}>
+          {title}
+        </h3>
+        {aside && <span className="font-mono text-[10px] uppercase text-ink-60">{aside}</span>}
       </div>
+      <div className="flex flex-col gap-4">{children}</div>
     </section>
   );
 }
 
-function PanelHeading({ title, sub }: { title: string; sub: string }) {
+/** A single stacked bar showing how a whole splits up. */
+function Bar({ parts, total }: { parts: { label: string; value: number; color: string }[]; total: number }) {
+  if (total <= 0) return null;
   return (
-    <div className="mb-5">
-      <h2 className="font-display text-2xl font-black tracking-tight text-ink">{title}</h2>
-      <p className="mt-1 max-w-2xl text-sm leading-relaxed text-ink-60">{sub}</p>
+    <div className="flex h-2.5 w-full overflow-hidden bg-ink-10" role="img" aria-label={parts.map((p) => `${p.label} ${p.value}`).join(", ")}>
+      {parts
+        .filter((p) => p.value > 0)
+        .map((p) => (
+          <span key={p.label} className={p.color} style={{ width: `${(p.value / total) * 100}%` }} />
+        ))}
     </div>
   );
 }
 
-function Pill({ label, tone }: { label: string; tone: string }) {
+function Rows({ rows }: { rows: { label: string; value: number | string; dot?: string; warn?: boolean }[] }) {
   return (
-    <span
-      className={`border px-2 py-1 font-mono-bold text-[9px] uppercase ${tone}`}
-      style={{ letterSpacing: 1.2 }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function Note({ text }: { text: string }) {
-  return (
-    <p
-      role="status"
-      className="mb-4 border border-ink-20 bg-chalk px-4 py-3 font-mono text-[11px] uppercase text-ink"
-      style={{ letterSpacing: 1 }}
-    >
-      {text}
-    </p>
-  );
-}
-
-function Empty({ text }: { text: string }) {
-  return (
-    <p className="border border-dashed border-ink-20 px-4 py-10 text-center text-sm text-ink-60">
-      {text}
-    </p>
-  );
-}
-
-function PanelSpinner() {
-  return (
-    <div className="flex justify-center py-10 text-signal">
-      <Spinner />
-    </div>
+    <dl className="divide-y divide-ink-10">
+      {rows.map((r) => (
+        <div key={r.label} className="flex items-center justify-between gap-3 py-2">
+          <dt className="flex items-center gap-2 text-sm text-ink-80">
+            {r.dot && <span className={`inline-block h-2 w-2 ${r.dot}`} aria-hidden />}
+            {r.label}
+          </dt>
+          <dd
+            className={`font-display text-lg font-black tracking-tight ${r.warn ? "text-whistle-ink" : "text-ink"}`}
+            style={{ fontVariantNumeric: "tabular-nums" }}
+          >
+            {r.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }

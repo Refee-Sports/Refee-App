@@ -1,4 +1,5 @@
 import { supabase } from "../client";
+import { invokeErrorMessage } from "../payments/queries";
 
 // The staff tools. Every one of these is a call into a security-definer
 // function that checks membership of public.admins for itself (0050/0051) —
@@ -193,4 +194,258 @@ export function statusLabel(status: string): string {
     default:
       return status;
   }
+}
+
+// ── Accounts ────────────────────────────────────────────────────────────────
+
+export type AccountRow = UserSearchRow & {
+  roles: string[];
+  deactivated: boolean;
+  total_count: number;
+};
+
+export type AccountDetail = {
+  user_id: string;
+  display_name: string | null;
+  first_name: string | null;
+  legal_first_name: string | null;
+  legal_last_name: string | null;
+  legal_name: string | null;
+  phone: string | null;
+  email: string | null;
+  date_of_birth: string | null;
+  primary_role: string | null;
+  roles: string[];
+  city: string | null;
+  state: string | null;
+  home_zip: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  organizations: { id: string; org_name: string; org_type: string | null; city: string | null; state: string | null }[];
+  identity: {
+    status: string;
+    reason: string | null;
+    decided_at: string | null;
+    verified_at: string | null;
+    session_id: string | null;
+  };
+  payout_account: { status: string | null; connected: boolean };
+  suspension: { suspended_at: string | null; reason: string | null };
+  deactivated: boolean;
+  is_staff: boolean;
+  badges: {
+    is_verified: boolean;
+    is_active: boolean;
+    rating: number | null;
+    rating_count: number | null;
+    games_called_total: number | null;
+  };
+  work: { assignments: number; accepted: number; unpaid_owed: number; games_posted: number };
+  recent_staff_actions: { action: string; detail: Record<string, unknown>; at: string; by: string | null }[];
+};
+
+/** Fields staff can change for someone (admin_update_profile, 0074). */
+export const EDITABLE_FIELDS = [
+  "first_name",
+  "legal_first_name",
+  "legal_last_name",
+  "date_of_birth",
+  "phone",
+  "city",
+  "state",
+  "home_zip",
+  "org_name",
+] as const;
+
+export type EditableField = (typeof EDITABLE_FIELDS)[number];
+export type ProfileForm = Partial<Record<EditableField, string | null>>;
+export type ProfileChanges = Partial<Record<EditableField, string | null>>;
+
+/** Where each field starts in the edit form. */
+export function profileFormFrom(d: AccountDetail): Record<EditableField, string> {
+  return {
+    first_name: d.first_name ?? "",
+    legal_first_name: d.legal_first_name ?? "",
+    legal_last_name: d.legal_last_name ?? "",
+    date_of_birth: d.date_of_birth ?? "",
+    phone: d.phone ?? "",
+    city: d.city ?? "",
+    state: (d.state ?? "").trim(),
+    home_zip: d.home_zip ?? "",
+    org_name: d.organizations?.[0]?.org_name ?? "",
+  };
+}
+
+/**
+ * Only what staff actually changed, trimmed: a blank field means "remove it",
+ * and states are upper-cased so "tx" over "TX" isn't a change.
+ */
+export function profileChanges(before: AccountDetail, form: ProfileForm): ProfileChanges {
+  const start = profileFormFrom(before);
+  const out: ProfileChanges = {};
+  for (const key of EDITABLE_FIELDS) {
+    if (!(key in form)) continue;
+    let next = (form[key] ?? "").trim();
+    if (key === "state") next = next.toUpperCase();
+    const prev = key === "state" ? start[key].toUpperCase() : start[key];
+    if (next !== prev) out[key] = next === "" ? null : next;
+  }
+  return out;
+}
+
+/** Every account, or a search over them, a page at a time. */
+export async function listAccounts(opts: {
+  query?: string;
+  role?: string | null;
+  limit?: number;
+  offset?: number;
+}): Promise<{ rows: AccountRow[]; total: number; error: Error | null }> {
+  const { data, error } = await supabase.rpc("admin_list_accounts", {
+    p_query: opts.query?.trim() || null,
+    p_role: opts.role ?? null,
+    p_limit: opts.limit ?? 50,
+    p_offset: opts.offset ?? 0,
+  });
+  if (error) return { rows: [], total: 0, error: new Error(error.message) };
+  const rows = (data ?? []) as AccountRow[];
+  return { rows, total: Number(rows[0]?.total_count ?? 0), error: null };
+}
+
+export async function fetchAccount(
+  userId: string
+): Promise<{ account: AccountDetail | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc("admin_user_detail", { p_user: userId });
+  if (error) return { account: null, error: new Error(error.message) };
+  return { account: (data ?? null) as AccountDetail | null, error: null };
+}
+
+/** Saves staff's edits. Returns {field: {from, to}} for what changed. */
+export async function updateProfile(
+  userId: string,
+  changes: ProfileChanges,
+  reason?: string | null
+): Promise<{ changed: Record<string, { from: unknown; to: unknown }>; error: Error | null }> {
+  const { data, error } = await supabase.rpc("admin_update_profile", {
+    p_user: userId,
+    p_changes: changes,
+    p_reason: reason ?? null,
+  });
+  if (error) return { changed: {}, error: new Error(error.message) };
+  return { changed: (data ?? {}) as Record<string, { from: unknown; to: unknown }>, error: null };
+}
+
+// ── Money ───────────────────────────────────────────────────────────────────
+
+export type RefereeLedgerLine = {
+  assignment_id: string;
+  job_id: string;
+  title: string | null;
+  org_name: string | null;
+  starts_at: string | null;
+  job_status: string | null;
+  role: string | null;
+  status: string | null;
+  amount_due: number | null;
+  payout_status: string | null;
+  paid_at: string | null;
+  stripe_transfer_id: string | null;
+};
+
+export type DirectorChargeLine = {
+  job_id: string;
+  title: string | null;
+  starts_at: string | null;
+  status: string | null;
+  pay_total: number | null;
+  payment_status: string | null;
+  prepaid_at: string | null;
+  prepaid_crew_cents: number | null;
+  prepaid_fee_cents: number | null;
+  refunded_amount_cents: number | null;
+  dispute_status: string | null;
+  requires_review: boolean | null;
+  review_reason: string | null;
+  payment_intent_id: string | null;
+  stripe_charge_id: string | null;
+  crew_owed: number;
+};
+
+export type AccountFinances = {
+  payout_account: { status: string | null; connected: boolean; stripe_account_id: string | null } | null;
+  referee: {
+    paid_total: number;
+    pending_total: number;
+    processing_total: number;
+    failed_total: number;
+    lines: RefereeLedgerLine[];
+  } | null;
+  director: {
+    org_names: string[];
+    charged_cents: number;
+    fees_cents: number;
+    refunded_cents: number;
+    disputes: number;
+    needs_review: number;
+    crew_owed: number;
+    jobs: DirectorChargeLine[];
+  } | null;
+};
+
+export async function fetchUserFinances(
+  userId: string
+): Promise<{ finances: AccountFinances | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc("admin_user_finances", { p_user: userId });
+  if (error) return { finances: null, error: new Error(error.message) };
+  return { finances: (data ?? null) as AccountFinances | null, error: null };
+}
+
+// ── Sign-in actions (admin-account edge function) ───────────────────────────
+
+export type AdminAccountAction = "view_as" | "deactivate" | "reactivate";
+
+/**
+ * View as, deactivate, reactivate. These need the auth admin API, so they go
+ * through the admin-account edge function, which checks staff membership the
+ * same way the database functions do.
+ */
+export async function adminAccountAction(
+  action: AdminAccountAction,
+  userId: string,
+  reason?: string | null
+): Promise<{ tokenHash: string | null; error: Error | null }> {
+  const { data, error } = await supabase.functions.invoke("admin-account", {
+    body: { action, userId, reason: reason ?? null },
+  });
+  if (error) return { tokenHash: null, error: new Error(await invokeErrorMessage(error)) };
+  if (data?.error) return { tokenHash: null, error: new Error(String(data.error)) };
+  return { tokenHash: (data?.tokenHash as string | undefined) ?? null, error: null };
+}
+
+/**
+ * The page that signs in as someone. The token rides in the fragment, which
+ * browsers never send to a server, so it can't end up in a request log.
+ */
+export function viewAsUrl(origin: string, tokenHash: string): string {
+  return `${origin.replace(/\/$/, "")}/auth/view-as#token_hash=${encodeURIComponent(tokenHash)}`;
+}
+
+// ── Metrics ─────────────────────────────────────────────────────────────────
+
+const VERIFICATION_ORDER = ["approved", "in_review", "in_progress", "declined", "expired", "abandoned", "unstarted"];
+
+/** Verification statuses as shares of everyone, for a stacked bar. */
+export function verificationBreakdown(
+  counts: Record<string, number>
+): { status: string; count: number; pct: number }[] {
+  const entries = Object.entries(counts).filter(([, n]) => Number(n) > 0);
+  const total = entries.reduce((sum, [, n]) => sum + Number(n), 0);
+  if (total === 0) return [];
+  const rank = (s: string) => {
+    const i = VERIFICATION_ORDER.indexOf(s);
+    return i === -1 ? VERIFICATION_ORDER.length : i;
+  };
+  return entries
+    .sort(([a], [b]) => rank(a) - rank(b))
+    .map(([status, n]) => ({ status, count: Number(n), pct: Math.round((Number(n) / total) * 100) }));
 }

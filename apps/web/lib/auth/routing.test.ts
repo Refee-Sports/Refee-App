@@ -101,4 +101,17 @@ describe("routeRedirect", () => {
       })
     ).toBe("/auth/welcome");
   });
+
+  it("leaves the staff view-as page alone while it swaps the session, signed in or not", () => {
+    for (const signedIn of [true, false]) {
+      expect(
+        routeRedirect({
+          ...dualRoleReferee,
+          roles: [...dualRoleReferee.roles],
+          signedIn,
+          pathname: "/auth/view-as",
+        })
+      ).toBeNull();
+    }
+  });
 });

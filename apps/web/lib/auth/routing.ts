@@ -33,6 +33,10 @@ export function routeRedirect({
   primaryRole,
   roles,
 }: RouteAuthState): string | null {
+  // Staff "view as" swaps whoever is signed in for someone else; sending the
+  // page to the old session's home would stop it mid-swap.
+  if (pathname.startsWith("/auth/view-as")) return null;
+
   const inAuthGroup = pathname.startsWith("/auth");
   const inOnboardingGroup = pathname.startsWith("/onboarding");
   const inAppGroup = pathname.startsWith("/app");

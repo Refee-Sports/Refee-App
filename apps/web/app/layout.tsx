@@ -3,6 +3,7 @@ import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { RouteGate } from "@/components/providers/RouteGate";
+import { ViewingAsBanner } from "@/components/admin/ViewingAsBanner";
 
 const interTight = Inter_Tight({
   subsets: ["latin"],
@@ -71,6 +72,7 @@ export default function RootLayout({
       {/* font-body (500) matches the mobile app's Inter Tight body weight */}
       <body className="font-body">
         <AuthProvider>
+          <ViewingAsBanner />
           <RouteGate>{children}</RouteGate>
         </AuthProvider>
       </body>
