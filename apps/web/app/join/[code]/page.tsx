@@ -89,7 +89,7 @@ export default function JoinRosterPage() {
       ) : state === "invalid" ? (
         <div>
           <h1 className="font-display text-ink" style={{ fontSize: 34, lineHeight: "38px", letterSpacing: -1 }}>
-            THAT CODE<br /><span className="text-foul">DOESN&apos;T WORK.</span>
+            THAT CODE<br /><span className="text-foul-ink">DOESN&apos;T WORK.</span>
           </h1>
           <p className="mt-3 text-[14px] leading-5 text-ink-80">
             {error ?? "It may have been replaced. Ask the assignor for their current QR code."}
@@ -109,7 +109,7 @@ export default function JoinRosterPage() {
             They&apos;ll be able to offer you games, and you&apos;ll see the games they open to their roster. You can also be on other
             rosters, and you can leave any time.
           </p>
-          {error ? <p className="mt-3 font-mono text-[10px] uppercase text-foul" role="alert">{error}</p> : null}
+          {error ? <p className="mt-3 font-mono text-[10px] uppercase text-foul-ink" role="alert">{error}</p> : null}
           <button
             type="button"
             onClick={() => void join()}

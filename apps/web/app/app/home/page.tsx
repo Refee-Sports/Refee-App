@@ -94,7 +94,7 @@ export default function RefereeHomePage() {
           />
           <span
             className={`font-mono-bold text-[9px] uppercase ${
-              profile?.is_available ? "text-court" : "text-ink-40"
+              profile?.is_available ? "text-court-ink" : "text-ink-40"
             }`}
             style={{ letterSpacing: 1.5 }}
           >

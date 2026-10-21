@@ -159,8 +159,8 @@ export default function Verify() {
           </Pressable>
         </View>
 
-        {error && <Text className="text-foul font-mono text-xs mt-3 uppercase text-center">{error}</Text>}
-        {notice && !error && <Text className="text-court font-mono text-xs mt-3 uppercase text-center">{notice}</Text>}
+        {error && <Text className="text-foul-ink font-mono text-xs mt-3 uppercase text-center">{error}</Text>}
+        {notice && !error && <Text className="text-court-ink font-mono text-xs mt-3 uppercase text-center">{notice}</Text>}
 
         <View className="border-t border-b border-ink-20 mt-6 py-3 flex-row justify-between items-center">
           {secondsLeft > 0 ? (

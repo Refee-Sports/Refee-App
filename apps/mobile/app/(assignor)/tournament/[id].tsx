@@ -132,7 +132,7 @@ export default function AssignorTournamentDetail() {
             <Text className="font-mono text-[9px] text-ink-60 uppercase mt-2" style={{ letterSpacing: 1 }}>
               {tournament.venue_city}, {tournament.venue_state} · {tournament.total_games ?? "—"} GAMES
             </Text>
-            <View className={`border mt-5 px-4 py-3 ${accepted ? "border-court bg-court/10" : "border-signal bg-signal/10"}`}>
+            <View className={`border mt-5 px-4 py-3 ${accepted ? "border-court bg-court/10" : "border-signal bg-signal-tint"}`}>
               <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
                 {accepted ? "✓ YOU ARE THE ASSIGNOR" : `STATUS · ${proposal?.status ?? tournament.assignor_status}`}
               </Text>
@@ -153,7 +153,7 @@ export default function AssignorTournamentDetail() {
                 <Pressable onPress={() => void submit()} disabled={saving} className="bg-ink py-3.5 items-center active:opacity-75">
                   {saving ? <ActivityIndicator color="#E5E1D6" /> : <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>SUBMIT PROPOSAL</Text>}
                 </Pressable>
-                {proposal?.status === "submitted" && <Pressable onPress={withdraw} className="py-3 items-center"><Text className="font-mono-bold text-[9px] text-foul uppercase">WITHDRAW PROPOSAL</Text></Pressable>}
+                {proposal?.status === "submitted" && <Pressable onPress={withdraw} className="py-3 items-center"><Text className="font-mono-bold text-[9px] text-foul-ink uppercase">WITHDRAW PROPOSAL</Text></Pressable>}
               </View>
             )}
 
@@ -192,7 +192,7 @@ export default function AssignorTournamentDetail() {
           </Pressable>
         )}
       />
-      {error && <Text className="text-foul font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
+      {error && <Text className="text-foul-ink font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
     </View>
   );
 }

@@ -298,7 +298,7 @@ export default function Onboarding() {
         >
           {error && (
             <Text
-              className="text-foul font-mono text-[10px] uppercase mb-3"
+              className="text-foul-ink font-mono text-[10px] uppercase mb-3"
               style={{ letterSpacing: 1 }}
             >
               {error}
@@ -489,7 +489,7 @@ function SportStep({ form, set }: { form: FormData; set: StringSetter }) {
               key={s.id}
               onPress={() => set("sportId")(s.id)}
               className={`border-[1.5px] px-4 py-4 flex-row items-center justify-between active:opacity-70
-                ${selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"}`}
+                ${selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"}`}
             >
               <Text
                 className={`font-mono-bold text-sm ${selected ? "text-signal" : "text-ink"}`}
@@ -622,7 +622,7 @@ function CertStep({
               <Pressable
                 onPress={() => onToggle(body.id)}
                 className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                  ${selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"}`}
+                  ${selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"}`}
               >
                 <View className="flex-1 pr-3">
                   <Text
@@ -716,7 +716,7 @@ function LevelStep({
                     key={level.id}
                     onPress={() => onToggle(level.id)}
                     className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                      ${selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"}`}
+                      ${selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"}`}
                   >
                     <Text
                       className={`font-mono text-sm ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
@@ -763,7 +763,7 @@ function StyledInput({
         {...props}
       />
       {error ? (
-        <Text className="text-foul font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
           {error}
         </Text>
       ) : hint ? (

@@ -131,7 +131,7 @@ export default function AssignorTournaments() {
           )}
         />
       )}
-      {error && <Text className="text-foul font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
+      {error && <Text className="text-foul-ink font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
     </View>
   );
 }

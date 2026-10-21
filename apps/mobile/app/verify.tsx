@@ -197,7 +197,7 @@ export default function Verify() {
 
       {error ? (
         <Text
-          className="mt-4 text-foul font-mono text-[10px] uppercase"
+          className="mt-4 text-foul-ink font-mono text-[10px] uppercase"
           style={{ letterSpacing: 1 }}
         >
           {error}

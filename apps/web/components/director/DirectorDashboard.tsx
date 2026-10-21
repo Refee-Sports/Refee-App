@@ -41,7 +41,7 @@ export function DirectorDashboard({ data }: { data: Dashboard }) {
                   </span>
                 </span>
                 <span
-                  className={`font-mono-bold text-[10px] uppercase ${g.urgent ? "text-foul" : "text-ink"}`}
+                  className={`font-mono-bold text-[10px] uppercase ${g.urgent ? "text-foul-ink" : "text-ink"}`}
                   style={{ letterSpacing: 1 }}
                   title={g.urgent ? "Within the next 7 days" : undefined}
                 >

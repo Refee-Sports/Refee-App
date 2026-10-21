@@ -124,7 +124,7 @@ export default function SignIn() {
             onApple={() => runOAuth("apple")}
           />
           {oauthError ? (
-            <Text className="text-foul font-mono text-xs mt-3 uppercase">{oauthError}</Text>
+            <Text className="text-foul-ink font-mono text-xs mt-3 uppercase">{oauthError}</Text>
           ) : null}
           <View className="flex-row items-center gap-3 mt-5 mb-2">
             <View className="flex-1 h-px bg-ink/15" />
@@ -174,7 +174,7 @@ export default function SignIn() {
             style={{ fontSize: 14 }}
           />
 
-          {error && <Text className="text-foul font-mono text-xs mt-3 uppercase">{error}</Text>}
+          {error && <Text className="text-foul-ink font-mono text-xs mt-3 uppercase">{error}</Text>}
 
           <Text className="text-ink-60 font-mono text-[9px] mt-4 uppercase" style={{ letterSpacing: 1.4 }}>
             BY CONTINUING YOU AGREE TO REFEE&apos;S TERMS &amp; PRIVACY POLICY.

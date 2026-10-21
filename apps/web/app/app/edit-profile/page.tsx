@@ -326,7 +326,7 @@ export default function EditProfilePage() {
                   onClick={() => set("travelRadius")(String(r))}
                   aria-pressed={selected}
                   className={`flex flex-1 flex-col items-center border-[1.5px] py-3.5 hover:opacity-80 ${
-                    selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                    selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
                   }`}
                 >
                   <span
@@ -479,7 +479,7 @@ export default function EditProfilePage() {
       <div className="action-bar sticky bottom-0">
         {error && (
           <p
-            className="mb-3 font-mono text-[10px] uppercase text-foul"
+            className="mb-3 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {error}

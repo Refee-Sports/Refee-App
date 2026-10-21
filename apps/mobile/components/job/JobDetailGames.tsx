@@ -36,7 +36,7 @@ export function JobDetailGames({ job }: Props) {
               </Text>
             </View>
             <Text
-              className="text-court font-display uppercase"
+              className="text-court-ink font-display uppercase"
               style={{ fontSize: 16, letterSpacing: -0.3, fontWeight: "900" }}
             >
               ${job.payPerGame}

@@ -86,7 +86,7 @@ export default function AccountPage() {
             {methods.map((method) => (
               <div key={method.provider} className="flex items-center justify-between border-b border-ink-20 py-3 last:border-0">
                 <span className="font-mono text-xs uppercase">{method.label}</span>
-                <span className="font-mono-bold text-[10px] uppercase text-court">Linked ✓</span>
+                <span className="font-mono-bold text-[10px] uppercase text-court-ink">Linked ✓</span>
               </div>
             ))}
           </div>
@@ -104,10 +104,10 @@ export default function AccountPage() {
           </div>
         </section>
 
-        {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul">{error}</p> : null}
+        {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul-ink">{error}</p> : null}
 
         <section className="mt-10 border border-foul p-5">
-          <h2 className="font-mono-bold text-xs uppercase text-foul">Delete account</h2>
+          <h2 className="font-mono-bold text-xs uppercase text-foul-ink">Delete account</h2>
           <p className="mt-3 text-sm leading-6 text-ink-70">
             This permanently removes your sign-in, profile, verification data, avatar, roles and device tokens. Historical transaction records may be retained in anonymized form. Active games or unresolved payments must be handled first.
           </p>

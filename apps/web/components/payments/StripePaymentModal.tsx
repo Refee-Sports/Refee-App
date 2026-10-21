@@ -28,7 +28,7 @@ export function StripePaymentModal(props: Props) {
       <Backdrop onCancel={props.onCancel}>
         <div className="border-[1.5px] border-ink bg-paper p-5">
           <p
-            className="font-mono-bold text-[10px] uppercase text-foul"
+            className="font-mono-bold text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 2 }}
           >
             Stripe not configured
@@ -177,7 +177,7 @@ function PaymentForm({
         <PaymentElement />
         {error ? (
           <p
-            className="mt-3 font-mono text-[10px] uppercase text-foul"
+            className="mt-3 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {error}

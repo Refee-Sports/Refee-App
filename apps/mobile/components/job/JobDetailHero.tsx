@@ -41,7 +41,7 @@ export function JobDetailHero({ job }: Props) {
             style={{ letterSpacing: 1.4 }}
           >
             {job.org}
-            {job.orgVerified ? <Text className="text-court"> ✓</Text> : null}
+            {job.orgVerified ? <Text className="text-court-ink"> ✓</Text> : null}
           </Text>
         </View>
         <View className="items-end">
@@ -85,7 +85,7 @@ export function JobDetailHero({ job }: Props) {
               {lab}
             </Text>
             <Text
-              className={`font-display uppercase ${court ? "text-court" : "text-ink"}`}
+              className={`font-display uppercase ${court ? "text-court-ink" : "text-ink"}`}
               style={{ fontSize: 16, letterSpacing: -0.3, fontWeight: "900" }}
             >
               {val}

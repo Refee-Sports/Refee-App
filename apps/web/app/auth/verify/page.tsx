@@ -141,12 +141,12 @@ function VerifyInner() {
         </div>
 
         {error && (
-          <p className="mt-3 text-center font-mono text-xs uppercase text-foul" role="alert">
+          <p className="mt-3 text-center font-mono text-xs uppercase text-foul-ink" role="alert">
             {error}
           </p>
         )}
         {notice && !error && (
-          <p className="mt-3 text-center font-mono text-xs uppercase text-court">{notice}</p>
+          <p className="mt-3 text-center font-mono text-xs uppercase text-court-ink">{notice}</p>
         )}
 
         <div className="mt-6 flex items-center justify-between border-b border-t border-ink-20 py-3">

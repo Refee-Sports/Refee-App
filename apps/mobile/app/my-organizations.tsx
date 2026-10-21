@@ -187,7 +187,7 @@ export default function MyOrganizations() {
                   className="border border-foul px-2.5 py-2 active:opacity-70"
                 >
                   {busyId === roster.roster_id ? <ActivityIndicator size="small" color="#E53E3E" /> : (
-                    <Text className="font-mono-bold text-[8px] text-foul" style={{ letterSpacing: 1 }}>LEAVE</Text>
+                    <Text className="font-mono-bold text-[8px] text-foul-ink" style={{ letterSpacing: 1 }}>LEAVE</Text>
                   )}
                 </Pressable>
               </View>
@@ -223,7 +223,7 @@ export default function MyOrganizations() {
             Scanned a QR code with your camera? It opens Refee here automatically.
           </Text>
 
-          {error ? <Text className="text-foul font-mono text-[10px] uppercase mt-4">{error}</Text> : null}
+          {error ? <Text className="text-foul-ink font-mono text-[10px] uppercase mt-4">{error}</Text> : null}
         </ScrollView>
       )}
     </View>

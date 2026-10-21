@@ -74,7 +74,7 @@ export default function JoinRoster() {
         <View>
           <Text className="text-ink font-display" style={{ fontSize: 34, lineHeight: 38, letterSpacing: -1 }}>
             THAT CODE{"\n"}
-            <Text className="text-foul">DOESN&apos;T WORK.</Text>
+            <Text className="text-foul-ink">DOESN&apos;T WORK.</Text>
           </Text>
           <Text className="text-ink-80 mt-3" style={{ fontSize: 14, lineHeight: 20 }}>
             {error ?? "It may have been replaced. Ask the assignor for their current QR code."}

@@ -75,8 +75,8 @@ const config: Config = {
         },
 
         // Text-safe status colors and pressed states
-        "court-ink": "#00733F", // green text (4.57:1 on paper)
-        "foul-ink": "#B3202C", // red text + destructive fills (5.09:1 on paper)
+        "court-ink": { DEFAULT: "#00733F", dark: "#00D982" }, // green text (4.57:1 on paper)
+        "foul-ink": { DEFAULT: "#B3202C", dark: "#FF4757" }, // red text + destructive fills (5.09:1 on paper)
         "ink-press": "#2B3440", // pressed primary button
         "hi-vis-press": "#B1D61F", // pressed hi-vis button
         "chalk-press": "#E9E5DA", // pressed option rows, big choice, cards

@@ -373,12 +373,12 @@ function CreateTournamentInner() {
               </label>
             </div>
             {readNote ? (
-              <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court" style={{ letterSpacing: 1 }}>
+              <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court-ink" style={{ letterSpacing: 1 }}>
                 {readNote}
               </p>
             ) : null}
             {readError ? (
-              <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>
+              <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul-ink" style={{ letterSpacing: 1 }}>
                 {readError}
               </p>
             ) : null}
@@ -580,7 +580,7 @@ function CreateTournamentInner() {
                     setProblems([]);
                     setReadNote(null);
                   }}
-                  className="font-mono-bold text-[9px] uppercase text-ink-60 hover:text-foul"
+                  className="font-mono-bold text-[9px] uppercase text-ink-60 hover:text-foul-ink"
                   style={{ letterSpacing: 1.5 }}
                 >
                   Don&apos;t add games
@@ -633,7 +633,7 @@ function CreateTournamentInner() {
       <div className="action-bar sticky bottom-0">
         {error && (
           <p
-            className="mb-3 font-mono text-[10px] uppercase text-foul"
+            className="mb-3 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {error}

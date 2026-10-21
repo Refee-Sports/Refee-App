@@ -71,7 +71,7 @@ export default function AssignorProfilePage() {
         </span>
         <span className="font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
           {profile.is_verified ? (
-            <span className="font-mono-bold text-court">✓ {verificationLabel(true)}</span>
+            <span className="font-mono-bold text-court-ink">✓ {verificationLabel(true)}</span>
           ) : (
             verificationLabel(false)
           )}

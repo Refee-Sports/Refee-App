@@ -107,7 +107,7 @@ export default function RoleSelectPage() {
               onClick={() => setSelected(role.id)}
               aria-pressed={isSelected}
               className={`border-2 px-5 py-5 text-left hover:opacity-90 ${
-                isSelected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                isSelected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
               }`}
             >
               <div className="mb-3 flex items-start justify-between">

@@ -184,7 +184,7 @@ export function RosterInvitePanel({ onChanged }: { onChanged?: () => void }) {
               </div>
             </>
           ) : codeError ? (
-            <p className="font-mono text-[10px] uppercase text-foul">{codeError}</p>
+            <p className="font-mono text-[10px] uppercase text-foul-ink">{codeError}</p>
           ) : (
             <span className="py-10 text-signal"><Spinner /></span>
           )}
@@ -239,14 +239,14 @@ export function RosterInvitePanel({ onChanged }: { onChanged?: () => void }) {
             {inviting ? <Spinner /> : emails.length > 0 ? `Invite ${emails.length}` : "Invite"}
           </button>
         </div>
-        {emailError ? <p className="mt-2 font-mono text-[10px] uppercase text-foul" role="alert">{emailError}</p> : null}
+        {emailError ? <p className="mt-2 font-mono text-[10px] uppercase text-foul-ink" role="alert">{emailError}</p> : null}
         {results ? (
           <ul className="mt-3 max-h-48 overflow-auto border border-ink-20">
             {results.map((r) => (
               <li key={r.email} className="border-b border-ink-20 px-3 py-2 last:border-b-0">
                 <span className="block truncate font-mono-bold text-[10px] text-ink">{r.email}</span>
                 <span
-                  className={`block font-mono text-[8px] uppercase ${r.result === "invalid" || r.result === "self" ? "text-foul" : "text-ink-60"}`}
+                  className={`block font-mono text-[8px] uppercase ${r.result === "invalid" || r.result === "self" ? "text-foul-ink" : "text-ink-60"}`}
                   style={{ letterSpacing: 1 }}
                 >
                   {RESULT_LABEL[r.result]}
@@ -290,8 +290,8 @@ export function RosterInvitePanel({ onChanged }: { onChanged?: () => void }) {
         >
           {sending ? <Spinner /> : "Send message blast"}
         </button>
-        {blastError ? <p className="mt-2 font-mono text-[10px] uppercase text-foul" role="alert">{blastError}</p> : null}
-        {blastNote ? <p className="mt-2 font-mono text-[10px] uppercase text-court">{blastNote}</p> : null}
+        {blastError ? <p className="mt-2 font-mono text-[10px] uppercase text-foul-ink" role="alert">{blastError}</p> : null}
+        {blastNote ? <p className="mt-2 font-mono text-[10px] uppercase text-court-ink">{blastNote}</p> : null}
       </section>
     </div>
   );

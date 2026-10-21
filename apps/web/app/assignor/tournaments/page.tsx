@@ -132,7 +132,7 @@ export default function AssignorTournamentsPage() {
       )}
 
       {error ? (
-        <p className="mb-4 px-5 text-center font-mono text-[10px] uppercase text-foul sm:px-0">{error}</p>
+        <p className="mb-4 px-5 text-center font-mono text-[10px] uppercase text-foul-ink sm:px-0">{error}</p>
       ) : null}
     </div>
   );

@@ -176,7 +176,7 @@ export default function EditDetailsScreen() {
           />
 
           {error ? (
-            <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul text-[13px]">{error}</Text>
+            <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul-ink text-[13px]">{error}</Text>
           ) : null}
 
           <Pressable onPress={save} disabled={saving} className="mt-6 bg-ink py-4 active:opacity-80 disabled:opacity-50">

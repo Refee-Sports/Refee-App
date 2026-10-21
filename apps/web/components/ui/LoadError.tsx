@@ -7,7 +7,7 @@ export function LoadError({ message, onRetry }: { message: string; onRetry: () =
       role="alert"
       className="mx-5 flex flex-col items-center border border-foul bg-foul/10 px-6 py-10 text-center sm:mx-0"
     >
-      <p className="font-mono-bold text-[11px] uppercase text-foul" style={{ letterSpacing: 1.5 }}>
+      <p className="font-mono-bold text-[11px] uppercase text-foul-ink" style={{ letterSpacing: 1.5 }}>
         Couldn&apos;t load this page
       </p>
       <p className="mt-2 max-w-sm text-[13px] leading-5 text-ink">{message}</p>

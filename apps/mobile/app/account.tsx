@@ -105,7 +105,7 @@ export default function AccountScreen() {
             {methods.map((method) => (
               <View key={method.provider} className="py-4 border-b border-ink-20 flex-row justify-between">
                 <Text className="font-mono text-[11px] uppercase">{method.label}</Text>
-                <Text className="font-mono-bold text-[10px] uppercase text-court">Linked ✓</Text>
+                <Text className="font-mono-bold text-[10px] uppercase text-court-ink">Linked ✓</Text>
               </View>
             ))}
             <View className="mt-4 gap-3">
@@ -127,11 +127,11 @@ export default function AccountScreen() {
           </View>
 
           {error ? (
-            <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul text-[13px]">{error}</Text>
+            <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul-ink text-[13px]">{error}</Text>
           ) : null}
 
           <View className="mt-10 border border-foul p-5">
-            <Text className="font-mono-bold text-[11px] uppercase text-foul">Delete account</Text>
+            <Text className="font-mono-bold text-[11px] uppercase text-foul-ink">Delete account</Text>
             <Text className="mt-3 text-ink-70 text-[13px] leading-[20px]">
               This permanently removes your sign-in, profile, verification data, avatar, roles and device tokens. Historical transaction records may be retained in anonymized form. Active games or unresolved payments must be handled first.
             </Text>

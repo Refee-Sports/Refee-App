@@ -152,7 +152,7 @@ export function RoleSwitcher() {
                   key={role}
                   onPress={() => void switchTo(role)}
                   disabled={busy !== null}
-                  className="rounded-md border border-ink px-5 py-3.5 active:bg-ink/10 active:scale-[0.97]"
+                  className="rounded-md border border-ink px-5 py-3.5 active:bg-ink-10 active:scale-[0.97]"
                 >
                   <Text
                     className="text-ink font-mono-bold text-[12px]"
@@ -180,7 +180,7 @@ export function RoleSwitcher() {
                 key={role}
                 onPress={() => void take(role)}
                 disabled={busy !== null}
-                className="rounded-md border border-ink px-5 py-3.5 active:bg-ink/10 active:scale-[0.97]"
+                className="rounded-md border border-ink px-5 py-3.5 active:bg-ink-10 active:scale-[0.97]"
               >
                 <Text
                   className="text-ink font-mono-bold text-[12px]"
@@ -224,7 +224,7 @@ export function RoleSwitcher() {
                     setOrgForm((f) => (f ? { ...f, orgType: t.id } : f));
                   }}
                   accessibilityState={{ selected }}
-                  className={`rounded-full border-[1.5px] px-3 py-2.5 active:scale-[0.96] ${selected ? "border-signal bg-signal/10 active:bg-signal-tint-press" : "border-ink active:bg-chalk-press"}`}
+                  className={`rounded-full border-[1.5px] px-3 py-2.5 active:scale-[0.96] ${selected ? "border-signal bg-signal-tint active:bg-signal-tint-press" : "border-ink active:bg-chalk-press"}`}
                 >
                   <Text
                     className={`font-mono-bold text-[10px] ${selected ? "text-signal" : "text-ink"}`}
@@ -251,7 +251,7 @@ export function RoleSwitcher() {
             <Pressable
               onPress={() => setOrgForm(null)}
               disabled={busy !== null}
-              className="rounded-md border border-ink px-4 py-3.5 active:bg-ink/10 active:scale-[0.97]"
+              className="rounded-md border border-ink px-4 py-3.5 active:bg-ink-10 active:scale-[0.97]"
             >
               <Text className="text-ink font-mono-bold text-[12px]" style={{ letterSpacing: 2 }}>
                 CANCEL
@@ -263,7 +263,7 @@ export function RoleSwitcher() {
 
       {error ? (
         <Text
-          className="mt-3 text-foul font-mono text-[10px] uppercase"
+          className="mt-3 text-foul-ink font-mono text-[10px] uppercase"
           style={{ letterSpacing: 1 }}
         >
           {error}

@@ -254,7 +254,7 @@ export default function JobDetailScreen() {
       >
         {!availability.available && unavailable ? (
           <View className="mt-4 border border-foul bg-foul/10 px-4 py-3" accessibilityRole="alert">
-            <Text className="font-mono-bold text-[10px] text-foul uppercase" style={{ letterSpacing: 1.5 }}>
+            <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>
               NO LONGER AVAILABLE
             </Text>
             <Text className="text-ink-80 mt-1" style={{ fontSize: 13, lineHeight: 18 }}>

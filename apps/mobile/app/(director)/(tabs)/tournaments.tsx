@@ -124,7 +124,7 @@ export default function TournamentsScreen() {
         <View className="mx-5 mb-4 border border-foul bg-foul/10">
           <View className="px-4 py-2.5 border-b border-foul/30 flex-row items-center gap-2">
             <Feather name="credit-card" size={13} color="#E63946" />
-            <Text className="font-mono-bold text-[10px] text-foul uppercase" style={{ letterSpacing: 1.5 }}>
+            <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>
               {paymentIssues.length} PAYMENT ISSUE{paymentIssues.length !== 1 ? "S" : ""}
             </Text>
           </View>
@@ -245,7 +245,7 @@ export default function TournamentsScreen() {
       )}
 
       {error && (
-        <Text className="text-foul font-mono text-xs text-center px-5 mb-4" style={{ letterSpacing: 0.5 }}>
+        <Text className="text-foul-ink font-mono text-xs text-center px-5 mb-4" style={{ letterSpacing: 0.5 }}>
           {error}
         </Text>
       )}

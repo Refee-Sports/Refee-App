@@ -106,7 +106,7 @@ export function LegalIdentity() {
           placeholder="MM/DD/YYYY"
           className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${identity.dobLocked ? "bg-chalk text-ink-60" : "bg-paper"}`}
         />
-        {dobError ? <Text className="mt-2 text-foul text-[12px]">{dobError}</Text> : null}
+        {dobError ? <Text className="mt-2 text-foul-ink text-[12px]">{dobError}</Text> : null}
         {namesEditable || !identity.dobLocked ? (
           <Pressable
             disabled={saving || (!identity.dobLocked && (!dob.iso || !!dobError))}
@@ -121,7 +121,7 @@ export function LegalIdentity() {
       </View>
 
       {message ? (
-        <Text className={`mt-3 text-[13px] ${message.ok ? "text-court" : "text-foul"}`}>{message.text}</Text>
+        <Text className={`mt-3 text-[13px] ${message.ok ? "text-court-ink" : "text-foul-ink"}`}>{message.text}</Text>
       ) : null}
     </View>
   );

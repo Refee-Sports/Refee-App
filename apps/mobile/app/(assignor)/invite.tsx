@@ -173,7 +173,7 @@ export default function InviteToRoster() {
               </View>
             </>
           ) : codeError ? (
-            <Text className="text-foul font-mono text-[10px] uppercase">{codeError}</Text>
+            <Text className="text-foul-ink font-mono text-[10px] uppercase">{codeError}</Text>
           ) : (
             <ActivityIndicator color="#1F4FCC" />
           )}
@@ -235,7 +235,7 @@ export default function InviteToRoster() {
                   {r.email}
                 </Text>
                 <Text
-                  className={`font-mono text-[8px] uppercase mt-0.5 ${r.result === "invalid" || r.result === "self" ? "text-foul" : "text-ink-60"}`}
+                  className={`font-mono text-[8px] uppercase mt-0.5 ${r.result === "invalid" || r.result === "self" ? "text-foul-ink" : "text-ink-60"}`}
                   style={{ letterSpacing: 1 }}
                 >
                   {RESULT_LABEL[r.result]}

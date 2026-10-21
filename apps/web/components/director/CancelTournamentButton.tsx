@@ -56,7 +56,7 @@ export function CancelTournamentButton({
         type="button"
         onClick={() => void cancel()}
         disabled={busy}
-        className="w-full border-[1.5px] border-foul py-3.5 font-mono-bold text-[10px] uppercase text-foul hover:bg-foul/5 disabled:opacity-40"
+        className="w-full border-[1.5px] border-foul py-3.5 font-mono-bold text-[10px] uppercase text-foul-ink hover:bg-foul/5 disabled:opacity-40"
         style={{ letterSpacing: 1.5 }}
       >
         {busy ? <Spinner /> : "Cancel entire event"}

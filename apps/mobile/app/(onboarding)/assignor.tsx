@@ -198,7 +198,7 @@ export default function AssignorOnboarding() {
         >
           {error && (
             <Text
-              className="text-foul font-mono text-[10px] uppercase mb-3"
+              className="text-foul-ink font-mono text-[10px] uppercase mb-3"
               style={{ letterSpacing: 1 }}
             >
               {error}
@@ -375,7 +375,7 @@ function DInput({
         {...props}
       />
       {error ? (
-        <Text className="text-foul font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
           {error}
         </Text>
       ) : null}

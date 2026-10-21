@@ -109,7 +109,7 @@ export default function SignInPage() {
               availability={availability}
             />
             {oauthError ? (
-              <p className="mt-3 font-mono text-xs uppercase text-foul">{oauthError}</p>
+              <p className="mt-3 font-mono text-xs uppercase text-foul-ink">{oauthError}</p>
             ) : null}
             <div className="mb-2 mt-5 flex items-center gap-3">
               <span className="h-px flex-1 bg-ink/15" />
@@ -173,7 +173,7 @@ export default function SignInPage() {
             />
 
             {error && (
-              <p className="mt-3 font-mono text-xs uppercase text-foul" role="alert">
+              <p className="mt-3 font-mono text-xs uppercase text-foul-ink" role="alert">
                 {error}
               </p>
             )}

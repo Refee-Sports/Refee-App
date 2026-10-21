@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 
 const TONES = {
   signal: "text-signal",
-  court: "text-court",
+  court: "text-court-ink",
   whistle: "text-whistle-ink",
   hiVis: "text-hi-vis-dark",
 } as const;

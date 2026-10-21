@@ -69,7 +69,7 @@ export function DirectorDashboard({ userId }: { userId: string }) {
                 </Text>
               </View>
               <Text
-                className={`font-mono-bold text-[10px] uppercase ${g.urgent ? "text-foul" : "text-ink"}`}
+                className={`font-mono-bold text-[10px] uppercase ${g.urgent ? "text-foul-ink" : "text-ink"}`}
                 style={{ letterSpacing: 1 }}
               >
                 {g.urgent ? "! " : ""}

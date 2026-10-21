@@ -11,7 +11,7 @@ export function SetupNotice() {
   return (
     <div className="m-5 border-[1.5px] border-foul bg-chalk p-5">
       <p
-        className="font-mono-bold text-[10px] uppercase text-foul"
+        className="font-mono-bold text-[10px] uppercase text-foul-ink"
         style={{ letterSpacing: 2 }}
       >
         Backend not configured

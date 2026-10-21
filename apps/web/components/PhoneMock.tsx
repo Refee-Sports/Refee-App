@@ -40,7 +40,7 @@ export function PhoneMock() {
               <p className="kicker whitespace-nowrap">Jobs near you</p>
               <span className="inline-flex shrink-0 items-center gap-1.5">
                 <span className="dot dot-pulse bg-court" />
-                <span className="whitespace-nowrap font-mono text-[9px] font-bold uppercase tracking-widest text-court">
+                <span className="whitespace-nowrap font-mono text-[9px] font-bold uppercase tracking-widest text-court-ink">
                   On duty
                 </span>
               </span>
@@ -142,7 +142,7 @@ function JobCard({
           </p>
         </div>
         <div className="text-right leading-none">
-          <span className="font-display text-xl font-black tracking-tight text-court">
+          <span className="font-display text-xl font-black tracking-tight text-court-ink">
             ${pay}
           </span>
         </div>

@@ -148,7 +148,7 @@ export default function Jobs() {
         <Pressable
           onPress={toggleFilterPanel}
           className={`w-9 h-9 border items-center justify-center active:opacity-70 ${
-            filterPanelOpen || filtersActive ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+            filterPanelOpen || filtersActive ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
           }`}
           accessibilityLabel="Filters"
         >
@@ -177,7 +177,7 @@ export default function Jobs() {
           onPress={handleLocationToggle}
           disabled={locating}
           className={`flex-row items-center gap-1 px-2 py-1 border active:opacity-70 ${
-            locationMode === "near_me" ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+            locationMode === "near_me" ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
           }`}
           accessibilityLabel="Toggle location mode"
         >
@@ -225,7 +225,7 @@ export default function Jobs() {
 
         {!loading && error && tab === "available" ? (
           <Text
-            className="text-foul font-mono text-[10px] uppercase px-1 py-2 mb-2"
+            className="text-foul-ink font-mono text-[10px] uppercase px-1 py-2 mb-2"
             style={{ letterSpacing: 1 }}
           >
             {usedMockForAvailable ? `${error} — showing offline demo list.` : `Couldn't load jobs: ${error}`}

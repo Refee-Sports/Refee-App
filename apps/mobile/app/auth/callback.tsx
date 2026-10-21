@@ -23,7 +23,7 @@ export default function AuthCallback() {
       {error ? (
         <>
           <Text className="font-display text-ink text-center" style={{ fontSize: 30 }}>SIGN-IN LINK FAILED</Text>
-          <Text className="font-mono text-[10px] text-foul uppercase text-center mt-3" style={{ letterSpacing: 1 }}>{error}</Text>
+          <Text className="font-mono text-[10px] text-foul-ink uppercase text-center mt-3" style={{ letterSpacing: 1 }}>{error}</Text>
           <Pressable onPress={() => router.replace("/(auth)/sign-in")} className="bg-ink px-6 py-4 mt-6 active:opacity-75">
             <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>REQUEST A NEW LINK</Text>
           </Pressable>

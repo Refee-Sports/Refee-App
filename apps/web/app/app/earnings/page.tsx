@@ -22,7 +22,7 @@ const PAYOUT_COLOR: Record<LedgerRow["payout"], string> = {
   paid: "text-ink",
   processing: "text-signal",
   pending: "text-ink-60",
-  failed: "text-foul",
+  failed: "text-foul-ink",
 };
 
 /** Every game a referee worked, what it paid, and where that money is. */
@@ -84,7 +84,7 @@ export default function EarningsPage() {
             Paid means sent to your Stripe account. Stripe moves it to your bank on its own schedule, usually within 2 business days.
           </p>
           {error ? (
-            <p className="mt-3 border border-foul bg-foul/10 p-3 text-[13px] text-foul" role="alert">{error}</p>
+            <p className="mt-3 border border-foul bg-foul/10 p-3 text-[13px] text-foul-ink" role="alert">{error}</p>
           ) : null}
 
           {rows.length > 0 ? (

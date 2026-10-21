@@ -155,7 +155,7 @@ export default function AssignorRosterPage() {
       </div>
 
       {error ? (
-        <p className="mx-5 mb-3 font-mono text-[10px] uppercase text-foul sm:mx-0" role="alert">
+        <p className="mx-5 mb-3 font-mono text-[10px] uppercase text-foul-ink sm:mx-0" role="alert">
           {error}
         </p>
       ) : null}
@@ -239,7 +239,7 @@ function PersonRow({
         disabled={busy}
         onClick={onClick}
         className={`border px-2.5 py-2 hover:opacity-80 disabled:opacity-50 ${
-          destructive ? "border-foul text-foul" : "border-ink bg-ink text-paper"
+          destructive ? "border-foul text-foul-ink" : "border-ink bg-ink text-paper"
         }`}
       >
         {busy ? (

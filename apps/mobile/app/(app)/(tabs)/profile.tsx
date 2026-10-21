@@ -782,7 +782,7 @@ export default function Profile() {
       {/* ── Sign out ─────────────────────────────────────────────── */}
       <View className="mx-5 mt-10">
         <Pressable onPress={signOut} className="border border-foul py-4 active:opacity-70">
-          <Text className="text-foul text-center font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
+          <Text className="text-foul-ink text-center font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
             SIGN OUT
           </Text>
         </Pressable>
@@ -879,7 +879,7 @@ function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
       <View className="flex-1 pr-3">
         {game.needsReconfirm && (
           <Text
-            className="font-mono-bold text-[8px] text-foul uppercase mb-1"
+            className="font-mono-bold text-[8px] text-foul-ink uppercase mb-1"
             style={{ letterSpacing: 1.5 }}
           >
             ⚠ DETAILS CHANGED — TAP TO RE-CONFIRM

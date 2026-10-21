@@ -51,7 +51,7 @@ export function ChangeEmail() {
       <Text className="font-mono-bold text-[11px] uppercase">Email</Text>
       <Text className="mt-3 font-mono text-[13px]">{current ?? "No email on this account"}</Text>
       {done ? (
-        <Text className="mt-2 text-court text-[13px]">Email updated. Use it next time you sign in with a code.</Text>
+        <Text className="mt-2 text-court-ink text-[13px]">Email updated. Use it next time you sign in with a code.</Text>
       ) : null}
 
       {step === "idle" ? (
@@ -125,7 +125,7 @@ export function ChangeEmail() {
       ) : null}
 
       {error ? (
-        <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul text-[13px]">{error}</Text>
+        <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul-ink text-[13px]">{error}</Text>
       ) : null}
     </View>
   );

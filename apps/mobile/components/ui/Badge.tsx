@@ -21,7 +21,7 @@ const styles: Record<Variant, { bg: string; text: string; border: string }> = {
   live: { bg: "bg-hi-vis", text: "text-ink", border: "border-ink" },
   confirmed: { bg: "bg-transparent", text: "text-court-ink", border: "border-court" },
   signal: { bg: "bg-transparent", text: "text-signal", border: "border-signal" },
-  warn: { bg: "bg-transparent", text: "text-whistle", border: "border-whistle" },
+  warn: { bg: "bg-transparent", text: "text-whistle-ink", border: "border-whistle" },
   foul: { bg: "bg-transparent", text: "text-foul-ink", border: "border-foul" },
   neutral: { bg: "bg-transparent", text: "text-ink", border: "border-ink" },
   ink: { bg: "bg-ink", text: "text-paper", border: "border-ink" },
@@ -58,7 +58,7 @@ export function Badge({ label, variant = "neutral", pulse, withDot }: Props) {
 
   return (
     <View
-      className={`${s.bg} ${s.border} border rounded-full flex-row items-center gap-1.5 px-2 py-1`}
+      className={`${s.bg} ${s.border} border rounded-full flex-row items-center gap-1.5 px-2.5 py-[5px]`}
     >
       {withDot && (pulse ? <PulseDot color={dotColor} /> : (
         <View

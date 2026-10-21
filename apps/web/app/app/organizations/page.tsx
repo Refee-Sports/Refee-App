@@ -87,7 +87,7 @@ export default function OrganizationsPage() {
         <div className="flex justify-center py-12 text-signal"><Spinner /></div>
       ) : (
         <div className="px-5 sm:px-0 lg:max-w-2xl">
-          {error ? <p className="mb-3 font-mono text-[10px] uppercase text-foul" role="alert">{error}</p> : null}
+          {error ? <p className="mb-3 font-mono text-[10px] uppercase text-foul-ink" role="alert">{error}</p> : null}
 
           {invites.length > 0 ? (
             <section className="mb-6">
@@ -151,7 +151,7 @@ export default function OrganizationsPage() {
                   type="button"
                   disabled={busyId !== null}
                   onClick={() => void leave(roster)}
-                  className="border border-foul px-2.5 py-2 font-mono-bold text-[8px] uppercase text-foul hover:opacity-80 disabled:opacity-50"
+                  className="border border-foul px-2.5 py-2 font-mono-bold text-[8px] uppercase text-foul-ink hover:opacity-80 disabled:opacity-50"
                   style={{ letterSpacing: 1 }}
                 >
                   {busyId === roster.roster_id ? <Spinner /> : "Leave"}

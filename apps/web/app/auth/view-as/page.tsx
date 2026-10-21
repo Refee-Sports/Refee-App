@@ -46,7 +46,7 @@ export default function ViewAsPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-paper px-6 text-center">
       {error ? (
         <>
-          <p className="font-mono-bold text-[10px] uppercase text-foul" style={{ letterSpacing: 2 }}>
+          <p className="font-mono-bold text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 2 }}>
             Couldn&apos;t sign in
           </p>
           <p className="max-w-sm text-sm text-ink-80">{error}</p>

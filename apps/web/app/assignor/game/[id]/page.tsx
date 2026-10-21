@@ -200,7 +200,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
         </p>
 
         {error ? (
-          <p className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul" role="alert">
+          <p className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink" role="alert">
             {error}
           </p>
         ) : null}
@@ -228,7 +228,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
               ))}
             </div>
             {mode === "self_assign" ? (
-              <p className="mb-5 border border-signal bg-signal/10 px-4 py-3 font-mono text-[9px] uppercase text-ink" style={{ letterSpacing: 1 }}>
+              <p className="mb-5 border border-signal bg-signal-tint px-4 py-3 font-mono text-[9px] uppercase text-ink" style={{ letterSpacing: 1 }}>
                 Accepted roster referees can claim this game until the crew is full. Conflicts and capacity are
                 checked atomically.
               </p>
@@ -252,7 +252,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
                     type="button"
                     disabled={busyId !== null}
                     onClick={() => void remove(m)}
-                    className="border border-foul px-2.5 py-2 font-mono-bold text-[8px] uppercase text-foul disabled:opacity-50"
+                    className="border border-foul px-2.5 py-2 font-mono-bold text-[8px] uppercase text-foul-ink disabled:opacity-50"
                   >
                     {busyId === m.id ? <Spinner /> : "Remove"}
                   </button>
@@ -334,7 +334,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
               type="button"
               onClick={() => void cancel()}
               disabled={busyId !== null}
-              className="border-[1.5px] border-foul py-3.5 font-mono-bold text-[10px] uppercase text-foul hover:bg-foul/5 disabled:opacity-40"
+              className="border-[1.5px] border-foul py-3.5 font-mono-bold text-[10px] uppercase text-foul-ink hover:bg-foul/5 disabled:opacity-40"
               style={{ letterSpacing: 1.5 }}
             >
               {busyId === "cancel" ? <Spinner /> : "Cancel game"}
@@ -348,7 +348,7 @@ export default function AssignorGamePage({ params }: { params: Promise<{ id: str
               type="button"
               onClick={() => void removeGame()}
               disabled={deleting}
-              className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+              className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul-ink disabled:opacity-50"
               style={{ letterSpacing: 2 }}
             >
               {deleting ? "Deleting…" : "Delete game"}

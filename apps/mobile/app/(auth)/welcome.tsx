@@ -163,7 +163,7 @@ export default function Welcome() {
 
         {oauthError ? (
           <Text
-            className="text-foul font-mono text-[11px] mt-3 uppercase"
+            className="text-foul-ink font-mono text-[11px] mt-3 uppercase"
             style={{ letterSpacing: 0.5 }}
           >
             {oauthError}

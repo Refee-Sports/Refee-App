@@ -64,11 +64,11 @@ export function HeadshotStep({
           )}
         </View>
         {photo ? (
-          <Text className="text-court font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.5 }}>
+          <Text className="text-court-ink font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.5 }}>
             ✓ LOOKS GOOD
           </Text>
         ) : (
-          <Text className="text-foul font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.5 }}>
+          <Text className="text-foul-ink font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.5 }}>
             PHOTO REQUIRED TO CONTINUE
           </Text>
         )}

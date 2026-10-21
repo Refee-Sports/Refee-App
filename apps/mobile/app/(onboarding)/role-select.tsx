@@ -140,7 +140,7 @@ export default function RoleSelect() {
               key={role.id}
               onPress={() => handleSelect(role.id)}
               className={`border-[2px] px-5 py-5 active:opacity-80 ${
-                isSelected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                isSelected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
               }`}
             >
               <View className="flex-row items-start justify-between mb-3">

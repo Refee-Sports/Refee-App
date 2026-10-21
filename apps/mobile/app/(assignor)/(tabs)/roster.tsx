@@ -211,7 +211,7 @@ export default function AssignorRoster() {
           )}
         />
       )}
-      {error && <Text className="text-foul font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
+      {error && <Text className="text-foul-ink font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
     </View>
   );
 }
@@ -242,7 +242,7 @@ function PersonRow({
       </View>
       <Pressable disabled={busy} onPress={onPress} className={`border px-2.5 py-2 active:opacity-70 ${destructive ? "border-foul" : "border-ink bg-ink"}`}>
         {busy ? <ActivityIndicator size="small" color={destructive ? "#E53E3E" : "#E5E1D6"} /> : (
-          <Text className={`font-mono-bold text-[8px] ${destructive ? "text-foul" : "text-paper"}`} style={{ letterSpacing: 1 }}>{action}</Text>
+          <Text className={`font-mono-bold text-[8px] ${destructive ? "text-foul-ink" : "text-paper"}`} style={{ letterSpacing: 1 }}>{action}</Text>
         )}
       </Pressable>
     </View>

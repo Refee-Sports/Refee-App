@@ -109,23 +109,23 @@ export function ScheduleImporter({ tournamentId }: { tournamentId: string }) {
           {fileName && <Text className="font-mono text-[9px] text-ink-60 mt-3" numberOfLines={1}>{fileName.toUpperCase()}</Text>}
         </View>
 
-        {error && <View className="border border-foul bg-foul/10 px-4 py-3 mt-3"><Text className="font-mono-bold text-[9px] text-foul uppercase">{error}</Text></View>}
-        {preview?.fileErrors.map((message) => <View key={message} className="border border-foul bg-foul/10 px-4 py-3 mt-3"><Text className="font-mono text-[9px] text-foul uppercase">{message}</Text></View>)}
+        {error && <View className="border border-foul bg-foul/10 px-4 py-3 mt-3"><Text className="font-mono-bold text-[9px] text-foul-ink uppercase">{error}</Text></View>}
+        {preview?.fileErrors.map((message) => <View key={message} className="border border-foul bg-foul/10 px-4 py-3 mt-3"><Text className="font-mono text-[9px] text-foul-ink uppercase">{message}</Text></View>)}
 
         {preview && preview.rows.length > 0 && (
           <View className="mt-6">
             <View className="flex-row justify-between items-center mb-3">
               <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>PREVIEW · {preview.rows.length} GAMES</Text>
-              <Text className={`font-mono-bold text-[9px] uppercase ${invalidCount ? "text-foul" : "text-court"}`}>{invalidCount ? `${invalidCount} INVALID` : "READY"}</Text>
+              <Text className={`font-mono-bold text-[9px] uppercase ${invalidCount ? "text-foul-ink" : "text-court-ink"}`}>{invalidCount ? `${invalidCount} INVALID` : "READY"}</Text>
             </View>
             {preview.rows.map((row) => (
               <View key={row.rowNumber} className={`border bg-chalk p-3 mb-2 ${row.errors.length ? "border-foul" : "border-ink"}`}>
                 <View className="flex-row justify-between gap-3">
                   <Text className="font-mono-bold text-[10px] text-ink uppercase flex-1" numberOfLines={1}>ROW {row.rowNumber} · {row.homeTeam || "?"} VS {row.awayTeam || "?"}</Text>
-                  <Text className={`font-mono-bold text-[8px] ${row.errors.length ? "text-foul" : "text-court"}`}>{row.errors.length ? "FIX" : "OK"}</Text>
+                  <Text className={`font-mono-bold text-[8px] ${row.errors.length ? "text-foul-ink" : "text-court-ink"}`}>{row.errors.length ? "FIX" : "OK"}</Text>
                 </View>
                 <Text className="font-mono text-[8px] text-ink-40 mt-1 uppercase">{row.localWhen}</Text>
-                {row.errors.map((message) => <Text key={message} className="font-mono text-[8px] text-foul mt-1 uppercase">• {message}</Text>)}
+                {row.errors.map((message) => <Text key={message} className="font-mono text-[8px] text-foul-ink mt-1 uppercase">• {message}</Text>)}
               </View>
             ))}
           </View>

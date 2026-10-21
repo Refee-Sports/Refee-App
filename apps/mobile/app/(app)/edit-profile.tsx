@@ -379,7 +379,7 @@ export default function EditProfile() {
                     set("travelRadius")(r);
                   }}
                   className={`flex-1 py-3.5 items-center border-[1.5px] active:opacity-70 ${
-                    selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                    selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
                   }`}
                 >
                   <Text
@@ -449,7 +449,7 @@ export default function EditProfile() {
                   <Pressable
                     onPress={() => toggleCert(body.id)}
                     className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                      ${selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"}`}
+                      ${selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"}`}
                   >
                     <View className="flex-1 pr-3">
                       <Text
@@ -514,7 +514,7 @@ export default function EditProfile() {
                       key={level.id}
                       onPress={() => toggleLevel(level.id)}
                       className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                        ${selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"}`}
+                        ${selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"}`}
                     >
                       <Text
                         className={`font-mono text-sm ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
@@ -532,7 +532,7 @@ export default function EditProfile() {
         </FormSection>
 
         {error && (
-          <Text className="text-foul font-mono text-xs mx-5 mb-4 uppercase">{error}</Text>
+          <Text className="text-foul-ink font-mono text-xs mx-5 mb-4 uppercase">{error}</Text>
         )}
     </ScrollScreen>
   );
@@ -611,7 +611,7 @@ function FieldInput({
         {...props}
       />
       {error ? (
-        <Text className="text-foul font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
           {error}
         </Text>
       ) : hint ? (

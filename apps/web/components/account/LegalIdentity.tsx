@@ -103,7 +103,7 @@ export function LegalIdentity() {
             autoComplete="bday"
             className={`mt-2 w-full border border-ink px-3 py-3 font-mono text-sm outline-none focus:border-signal ${identity.dobLocked ? "bg-chalk text-ink-60" : "bg-paper"}`}
           />
-          {dobError ? <span className="mt-2 block text-xs text-foul">{dobError}</span> : null}
+          {dobError ? <span className="mt-2 block text-xs text-foul-ink">{dobError}</span> : null}
         </label>
         {namesEditable || !identity.dobLocked ? (
           <div className="flex items-end">
@@ -119,7 +119,7 @@ export function LegalIdentity() {
         ) : null}
       </div>
 
-      {message ? <p className={`mt-3 text-sm ${message.ok ? "text-court" : "text-foul"}`}>{message.text}</p> : null}
+      {message ? <p className={`mt-3 text-sm ${message.ok ? "text-court-ink" : "text-foul-ink"}`}>{message.text}</p> : null}
     </section>
   );
 }

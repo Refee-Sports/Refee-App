@@ -41,8 +41,8 @@ const base = cn(
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-ink text-paper border-ink active:bg-ink-press active:border-ink-press",
   "hi-vis": "bg-hi-vis text-ink border-ink active:bg-hi-vis-press",
-  secondary: "bg-transparent text-ink border-ink active:bg-ink/10",
-  danger: "bg-transparent text-foul-ink border-foul-ink active:bg-ink/10",
+  secondary: "bg-transparent text-ink border-ink active:bg-ink-10",
+  danger: "bg-transparent text-foul-ink border-foul-ink active:bg-ink-10",
   "danger-fill": "bg-foul-ink text-white border-foul-ink active:bg-[#961A24]",
   court: "bg-court text-ink border-ink",
 };

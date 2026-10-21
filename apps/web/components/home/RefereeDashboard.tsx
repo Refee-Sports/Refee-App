@@ -18,7 +18,7 @@ export function NextGamePanel({ data }: { data: RefereeDashboardData }) {
       <SectionHeader>{`Next game · ${countdownLabel(next.startsAt)}`}</SectionHeader>
       <Link href={`/app/job/${next.jobId}`} className="mx-5 block border border-ink bg-chalk px-4 py-3.5 hover:opacity-80 sm:mx-0">
         {next.needsReconfirm ? (
-          <span className="mb-1.5 block font-mono-bold text-[9px] uppercase text-foul" style={{ letterSpacing: 1.5 }}>
+          <span className="mb-1.5 block font-mono-bold text-[9px] uppercase text-foul-ink" style={{ letterSpacing: 1.5 }}>
             ! The organizer changed this game · re-confirm
           </span>
         ) : null}

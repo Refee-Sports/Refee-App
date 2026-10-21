@@ -174,7 +174,7 @@ export function EditDetailsForm({ role }: { role: "director" | "assignor" }) {
         days.
       </p>
 
-      {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul">{error}</p> : null}
+      {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul-ink">{error}</p> : null}
 
       <button
         type="submit"

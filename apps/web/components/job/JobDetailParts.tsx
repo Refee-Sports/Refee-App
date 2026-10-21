@@ -81,7 +81,7 @@ export function JobDetailHero({ job }: { job: JobDetail }) {
             style={{ letterSpacing: 1.4 }}
           >
             {job.org}
-            {job.orgVerified ? <span className="text-court"> ✓</span> : null}
+            {job.orgVerified ? <span className="text-court-ink"> ✓</span> : null}
           </span>
         </div>
         <div className="flex shrink-0 flex-col items-end">
@@ -118,7 +118,7 @@ export function JobDetailHero({ job }: { job: JobDetail }) {
               {label}
             </span>
             <span
-              className={`block font-display uppercase ${court ? "text-court" : "text-ink"}`}
+              className={`block font-display uppercase ${court ? "text-court-ink" : "text-ink"}`}
               style={{ fontSize: 16, letterSpacing: -0.3 }}
             >
               {value}
@@ -375,7 +375,7 @@ function CrewRow({
       </span>
       <span
         className={`shrink-0 font-mono-bold text-[9px] uppercase ${
-          open ? "bg-hi-vis px-1.5 py-0.5 text-ink" : locked ? "text-court" : "text-ink-60"
+          open ? "bg-hi-vis px-1.5 py-0.5 text-ink" : locked ? "text-court-ink" : "text-ink-60"
         }`}
         style={{ letterSpacing: 1.4 }}
       >
@@ -448,7 +448,7 @@ export function JobDetailGames({ job }: { job: JobDetail }) {
               </span>
             </span>
             <span
-              className="shrink-0 font-display uppercase text-court"
+              className="shrink-0 font-display uppercase text-court-ink"
               style={{ fontSize: 16, letterSpacing: -0.3 }}
             >
               ${job.payPerGame}
@@ -498,7 +498,7 @@ export function JobDetailSpecs({ job }: { job: JobDetail }) {
 
 export function JobDetailHirerNote({ note }: { note: string }) {
   return (
-    <div className="mb-4 border-l-[3px] border-signal bg-signal/10 px-3.5 py-4">
+    <div className="mb-4 border-l-[3px] border-signal bg-signal-tint px-3.5 py-4">
       <p
         className="mb-2 font-mono-bold text-[9px] uppercase text-signal"
         style={{ letterSpacing: 1.8 }}

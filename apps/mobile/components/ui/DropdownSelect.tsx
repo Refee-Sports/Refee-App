@@ -68,7 +68,7 @@ export function DropdownSelect({
                       setOpen(false);
                     }}
                     className={`px-5 py-3.5 flex-row items-center justify-between border-b border-ink-20 ${
-                      isSelected ? "bg-signal/10 active:bg-signal-tint-press" : "active:bg-chalk-press"
+                      isSelected ? "bg-signal-tint active:bg-signal-tint-press" : "active:bg-chalk-press"
                     }`}
                   >
                     <Text

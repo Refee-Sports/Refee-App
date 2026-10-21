@@ -450,7 +450,7 @@ function CreateGameInner() {
               </label>
             </div>
             {aiNote ? (
-              <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court" style={{ letterSpacing: 1 }}>
+              <p className="mt-2 font-mono text-[9px] uppercase leading-4 text-court-ink" style={{ letterSpacing: 1 }}>
                 {aiNote}
               </p>
             ) : null}
@@ -486,7 +486,7 @@ function CreateGameInner() {
               </div>
             ) : null}
             {aiError ? (
-              <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>
+              <p role="alert" className="mt-2 font-mono text-[9px] uppercase leading-4 text-foul-ink" style={{ letterSpacing: 1 }}>
                 {aiError}
               </p>
             ) : null}
@@ -813,7 +813,7 @@ function CreateGameInner() {
       <div className="action-bar sticky bottom-0">
         {error && (
           <p
-            className="mb-3 font-mono text-[10px] uppercase text-foul"
+            className="mb-3 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {error}
@@ -821,7 +821,7 @@ function CreateGameInner() {
         )}
         {reconfirmNote && (
           <p
-            className="mb-3 font-mono text-[10px] uppercase text-whistle"
+            className="mb-3 font-mono text-[10px] uppercase text-whistle-ink"
             style={{ letterSpacing: 1 }}
           >
             {reconfirmNote}

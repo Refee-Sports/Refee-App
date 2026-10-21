@@ -90,7 +90,7 @@ export function RouteGate({ children }: { children: React.ReactNode }) {
 function AuthLoadError({ message, retry }: { message: string; retry: () => void }) {
   return (
     <div className="form-shell flex flex-col items-center justify-center gap-4 px-6 text-center">
-      <p className="font-mono-bold text-xs uppercase text-foul">We couldn&apos;t load your account.</p>
+      <p className="font-mono-bold text-xs uppercase text-foul-ink">We couldn&apos;t load your account.</p>
       <p className="max-w-sm text-sm text-ink-80">{message}</p>
       <button
         type="button"

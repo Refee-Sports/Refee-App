@@ -185,7 +185,7 @@ export function RoleSwitcher() {
                   aria-pressed={selected}
                   onClick={() => setOrgForm((f) => (f ? { ...f, orgType: t.id } : f))}
                   className={`border-[1.5px] px-3 py-2.5 font-mono-bold text-[10px] ${
-                    selected ? "border-signal bg-signal/10 text-signal" : "border-ink text-ink"
+                    selected ? "border-signal bg-signal-tint text-signal" : "border-ink text-ink"
                   }`}
                   style={{ letterSpacing: 1 }}
                 >
@@ -207,7 +207,7 @@ export function RoleSwitcher() {
 
       {error && (
         <p
-          className="mt-3 font-mono text-[10px] uppercase text-foul"
+          className="mt-3 font-mono text-[10px] uppercase text-foul-ink"
           style={{ letterSpacing: 1 }}
         >
           {error}

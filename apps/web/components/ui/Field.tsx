@@ -43,7 +43,7 @@ export function TextField({ error, hint, className = "", ...props }: FieldProps)
     <>
       <input
         {...props}
-        className={`${FIELD} disabled:opacity-50 ${error ? "border-foul-ink" : "border-ink"} ${className}`}
+        className={`${FIELD} disabled:opacity-40 ${error ? "border-foul-ink" : "border-ink"} ${className}`}
         style={{ fontSize: 14, ...props.style }}
       />
       {error ? (
@@ -148,7 +148,7 @@ export function OptionRow({
       aria-pressed={selected}
       className={`flex w-full items-center justify-between rounded-md border-[1.5px] px-4 py-3.5 text-left active:scale-[0.98] ${CHOICE} ${choiceState(selected)} ${
         selected
-          ? "border-signal bg-signal/10"
+          ? "border-signal bg-signal-tint"
           : `${dim ? "border-ink-20" : "border-ink"} bg-chalk`
       }`}
     >
@@ -162,7 +162,7 @@ export function OptionRow({
         {sublabel ? (
           <span
             className={`mt-0.5 block truncate font-mono text-[9px] ${
-              selected ? "text-signal/70" : "text-ink-60"
+              "text-ink-60"
             }`}
             style={{ letterSpacing: 0.5 }}
           >
@@ -274,15 +274,16 @@ export function Chip({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`rounded-full border-[1.5px] px-4 py-3 active:scale-[0.96] ${CHOICE} ${choiceState(selected)} ${
-        selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+      className={`group min-h-[36px] rounded-full border px-4 py-2.5 active:scale-[0.96] ${CHOICE} ${
+        selected
+          ? "border-signal bg-signal-tint hover:shadow-ring-hover-selected active:bg-signal-tint-press"
+          : "border-ink-20 bg-transparent hover:shadow-ring-hover active:border-ink-40 active:bg-ink-10"
       }`}
     >
       <span
-        className={`font-mono text-[11px] ${
-          selected ? "font-mono-bold text-signal" : "text-ink"
+        className={`font-mono-bold text-[10px] uppercase tracking-[0.14em] ${
+          selected ? "text-signal" : "text-ink-60 group-active:text-ink-80"
         }`}
-        style={{ letterSpacing: 1 }}
       >
         {label}
       </span>
@@ -307,8 +308,8 @@ export function BigChoice({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex flex-1 flex-col items-center rounded-md border-[1.5px] py-4 active:scale-[0.97] ${CHOICE} ${choiceState(selected)} ${
-        selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+      className={`flex flex-1 flex-col items-center rounded-md border-[1.5px] py-4 active:scale-[0.96] ${CHOICE} ${choiceState(selected)} ${
+        selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
       }`}
     >
       <span
@@ -319,7 +320,7 @@ export function BigChoice({
       </span>
       <span
         className={`font-mono-bold text-[9px] uppercase ${
-          selected ? "text-signal/70" : "text-ink-40"
+          selected ? "text-signal" : "text-ink-60"
         }`}
         style={{ letterSpacing: 2 }}
       >
@@ -349,18 +350,17 @@ export function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`group relative h-6 w-11 shrink-0 rounded-full border border-ink transition-[box-shadow] duration-[120ms] ease-out focus-visible:outline-none focus-visible:shadow-ring-focus disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none motion-reduce:transition-none ${
-        checked ? "bg-ink hover:shadow-ring-hover-selected" : "bg-ink/15 hover:shadow-ring-hover"
+      className={`group relative h-7 w-[50px] shrink-0 rounded-full border border-ink transition-[box-shadow] duration-[120ms] ease-out focus-visible:outline-none focus-visible:shadow-ring-focus disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none motion-reduce:transition-none ${
+        `hover:shadow-ring-hover ${checked ? "bg-ink" : "bg-ink-10"}`
       }`}
     >
       {/* Anchored to the side it rests on, so stretching while held grows it
           toward the middle: 18px → 24px. */}
       <span
-        className="absolute top-[2px] h-[18px] w-[18px] rounded-full transition-[width] duration-[120ms] ease-out group-active:w-6 group-active:duration-0 motion-reduce:transition-none group-disabled:w-[18px]"
-        style={{
-          ...(checked ? { right: 2 } : { left: 2 }),
-          backgroundColor: checked ? "#C9F031" : "#E5E1D6",
-        }}
+        className={`absolute top-[4px] h-[18px] w-[18px] rounded-full border transition-[width] duration-[120ms] ease-out group-active:w-6 group-active:duration-0 motion-reduce:transition-none group-disabled:w-[18px] ${
+          checked ? "border-hi-vis bg-hi-vis" : "border-ink-40 bg-paper"
+        }`}
+        style={checked ? { right: 4 } : { left: 4 }}
       />
     </button>
   );

@@ -19,7 +19,7 @@ const styles: Record<Variant, string> = {
   live: "bg-hi-vis text-ink border-ink",
   confirmed: "bg-transparent text-court-ink border-court",
   signal: "bg-transparent text-signal border-signal",
-  warn: "bg-transparent text-whistle border-whistle",
+  warn: "bg-transparent text-whistle-ink border-whistle",
   foul: "bg-transparent text-foul-ink border-foul",
   neutral: "bg-transparent text-ink border-ink",
   ink: "bg-ink text-paper border-ink",
@@ -28,7 +28,7 @@ const styles: Record<Variant, string> = {
 export function Badge({ label, variant = "neutral", pulse, withDot }: Props) {
   return (
     <span
-      className={`${styles[variant]} inline-flex items-center gap-1.5 rounded-full border px-2 py-1 font-mono-bold text-[9px] uppercase`}
+      className={`${styles[variant]} inline-flex items-center gap-1.5 rounded-full border px-2.5 py-[5px] font-mono-bold text-[9px] uppercase`}
       style={{ letterSpacing: 1.5 }}
     >
       {withDot && (

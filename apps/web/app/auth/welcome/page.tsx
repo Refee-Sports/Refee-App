@@ -127,7 +127,7 @@ export default function WelcomePage() {
 
           {oauthError ? (
             <p
-              className="mt-3 border border-foul/40 bg-foul/10 px-3 py-2.5 text-[12px] leading-5 text-foul"
+              className="mt-3 border border-foul/40 bg-foul/10 px-3 py-2.5 text-[12px] leading-5 text-foul-ink"
               role="alert"
             >
               {oauthError}

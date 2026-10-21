@@ -130,7 +130,7 @@ export default function VerifyPage() {
 
       {error && (
         <p
-          className="mt-4 font-mono text-[10px] uppercase text-foul"
+          className="mt-4 font-mono text-[10px] uppercase text-foul-ink"
           style={{ letterSpacing: 1 }}
         >
           {error}

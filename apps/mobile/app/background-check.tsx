@@ -19,9 +19,9 @@ import { pickBackgroundCheckFile } from "@/lib/roster/files";
 
 const STATE_STYLE = {
   none: { bg: "bg-chalk", border: "border-ink-20", text: "text-ink-60", title: "NO BACKGROUND CHECK ON FILE" },
-  valid: { bg: "bg-court/10", border: "border-court", text: "text-court", title: "BACKGROUND CHECK UPLOADED" },
+  valid: { bg: "bg-court/10", border: "border-court", text: "text-court-ink", title: "BACKGROUND CHECK UPLOADED" },
   expiring: { bg: "bg-hi-vis", border: "border-ink", text: "text-ink", title: "EXPIRING SOON" },
-  expired: { bg: "bg-foul/10", border: "border-foul", text: "text-foul", title: "UPLOAD EXPIRED" },
+  expired: { bg: "bg-foul/10", border: "border-foul", text: "text-foul-ink", title: "UPLOAD EXPIRED" },
 } as const;
 
 /**
@@ -159,7 +159,7 @@ export default function BackgroundCheckScreen() {
           </View>
 
           {state === "expiring" || state === "expired" ? (
-            <Text className="text-foul font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.2 }}>
+            <Text className="text-foul-ink font-mono-bold text-[10px] uppercase mt-3" style={{ letterSpacing: 1.2 }}>
               {state === "expired"
                 ? "Your upload has expired. Upload a new one so it shows as on file."
                 : "Upload a new one before this expires so there's no gap."}
@@ -189,12 +189,12 @@ export default function BackgroundCheckScreen() {
                 <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>VIEW MY FILE</Text>
               </Pressable>
               <Pressable onPress={remove} className="flex-1 border border-foul py-3 items-center active:opacity-70">
-                <Text className="text-foul font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>REMOVE</Text>
+                <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>REMOVE</Text>
               </Pressable>
             </View>
           ) : null}
 
-          {error ? <Text className="text-foul font-mono text-[10px] uppercase mt-4">{error}</Text> : null}
+          {error ? <Text className="text-foul-ink font-mono text-[10px] uppercase mt-4">{error}</Text> : null}
         </ScrollView>
       )}
     </View>

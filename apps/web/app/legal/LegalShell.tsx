@@ -29,7 +29,7 @@ export function LegalShell({
           className="mb-8 border-l-4 border-foul bg-foul/5 px-5 py-4"
         >
           <p
-            className="font-mono-bold text-[10px] uppercase text-foul"
+            className="font-mono-bold text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1.5 }}
           >
             Draft — not legal advice, not yet reviewed

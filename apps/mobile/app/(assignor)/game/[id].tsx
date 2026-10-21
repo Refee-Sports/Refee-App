@@ -237,7 +237,7 @@ export default function AssignorGameDetail() {
             </View>
 
             {mode === "self_assign" && (
-              <View className="border border-signal bg-signal/10 px-4 py-3 mb-5">
+              <View className="border border-signal bg-signal-tint px-4 py-3 mb-5">
                 <Text className="font-mono text-[9px] text-ink uppercase" style={{ letterSpacing: 1 }}>
                   Accepted roster referees can claim this game until the crew is full. Conflicts and capacity are checked atomically.
                 </Text>
@@ -257,7 +257,7 @@ export default function AssignorGameDetail() {
                   {busyId === `dm:${member.ref_id}` ? <ActivityIndicator size="small" color="#08111C" /> : <Feather name="message-square" size={12} color="#08111C" />}
                 </Pressable>
                 <Pressable disabled={busyId !== null} onPress={() => remove(member)} className="border border-foul px-2.5 py-2">
-                  {busyId === member.id ? <ActivityIndicator size="small" color="#E53E3E" /> : <Text className="font-mono-bold text-[8px] text-foul">REMOVE</Text>}
+                  {busyId === member.id ? <ActivityIndicator size="small" color="#E53E3E" /> : <Text className="font-mono-bold text-[8px] text-foul-ink">REMOVE</Text>}
                 </Pressable>
               </View>
             ))}
@@ -319,7 +319,7 @@ export default function AssignorGameDetail() {
               className="border-[1.5px] border-foul py-3.5 items-center active:opacity-80 disabled:opacity-40"
             >
               {busyId === "cancel" ? <ActivityIndicator color="#E63946" /> : (
-                <Text className="font-mono-bold text-[10px] text-foul uppercase" style={{ letterSpacing: 1.5 }}>CANCEL GAME</Text>
+                <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>CANCEL GAME</Text>
               )}
             </Pressable>
           </View>
@@ -336,7 +336,7 @@ export default function AssignorGameDetail() {
           </View>
         )}
       />
-      {error && <Text className="text-foul font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
+      {error && <Text className="text-foul-ink font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}
     </View>
   );
 }

@@ -13,10 +13,10 @@ import { amIStaff } from "@/lib/admin/queries";
 
 /** Semantic, not decorative — these say "needs you" vs "settled". */
 export const TONE: Record<string, string> = {
-  approved: "text-court border-court",
-  declined: "text-foul border-foul",
+  approved: "text-court-ink border-court",
+  declined: "text-foul-ink border-foul",
   in_review: "text-whistle-ink border-whistle-ink",
-  suspended: "text-foul border-foul",
+  suspended: "text-foul-ink border-foul",
   neutral: "text-ink-60 border-ink-20",
 };
 
@@ -158,7 +158,7 @@ export function Note({ text, tone = "neutral" }: { text: string; tone?: "neutral
     <p
       role="status"
       className={`mb-4 border px-4 py-3 font-mono text-[11px] uppercase ${
-        tone === "error" ? "border-foul bg-foul/5 text-foul" : "border-ink-20 bg-chalk text-ink"
+        tone === "error" ? "border-foul bg-foul/5 text-foul-ink" : "border-ink-20 bg-chalk text-ink"
       }`}
       style={{ letterSpacing: 1 }}
     >

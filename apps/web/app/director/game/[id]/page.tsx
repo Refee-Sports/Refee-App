@@ -495,7 +495,7 @@ export default function DirectorGameDetailPage({
       </div>
 
       {notice ? (
-        <div className="mx-5 mb-4 flex items-start justify-between gap-3 border border-signal bg-signal/10 px-4 py-3">
+        <div className="mx-5 mb-4 flex items-start justify-between gap-3 border border-signal bg-signal-tint px-4 py-3">
           <p className="flex-1 font-mono text-[10px] uppercase text-ink-80" style={{ letterSpacing: 1 }}>
             {notice}
           </p>
@@ -522,7 +522,7 @@ export default function DirectorGameDetailPage({
       {isCancelled && (
         <div className="mx-5 mb-4 border border-foul bg-foul/10 px-4 py-3">
           <p
-            className="font-mono-bold text-[11px] uppercase text-foul"
+            className="font-mono-bold text-[11px] uppercase text-foul-ink"
             style={{ letterSpacing: 1.5 }}
           >
             ✕ Game cancelled
@@ -555,7 +555,7 @@ export default function DirectorGameDetailPage({
           </span>
           <span className="flex-1">
             <span
-              className="block font-mono-bold text-[11px] uppercase text-court"
+              className="block font-mono-bold text-[11px] uppercase text-court-ink"
               style={{ letterSpacing: 1.2 }}
             >
               Completed
@@ -572,7 +572,7 @@ export default function DirectorGameDetailPage({
 
       {/* Booking charge — collected when the game was created */}
       {isPrepaid ? (
-        <div className="mx-5 mb-4 flex items-start gap-3 border border-court bg-court/10 px-4 py-3 text-court">
+        <div className="mx-5 mb-4 flex items-start gap-3 border border-court bg-court/10 px-4 py-3 text-court-ink">
           <span className="mt-px">
             <Icon name="check-circle" size={14} />
           </span>
@@ -714,7 +714,7 @@ export default function DirectorGameDetailPage({
               Crew messages
             </span>
             <span
-              className="font-mono-bold text-[9px] uppercase text-court"
+              className="font-mono-bold text-[9px] uppercase text-court-ink"
               style={{ letterSpacing: 1.2 }}
             >
               ✓ SEEN {seenCount(crewThread.receipts, crewThread.lastMessageAt)}/
@@ -742,7 +742,7 @@ export default function DirectorGameDetailPage({
               const seen = hasSeenLatest(r.lastReadAt, crewThread.lastMessageAt);
               return (
                 <span key={r.refId} className="flex items-center gap-1">
-                  <span className={seen ? "text-court" : "text-ink-40"}>
+                  <span className={seen ? "text-court-ink" : "text-ink-40"}>
                     <Icon name={seen ? "check-circle" : "circle"} size={11} />
                   </span>
                   <span
@@ -778,7 +778,7 @@ export default function DirectorGameDetailPage({
           <button
             type="button"
             onClick={handleCancelGame}
-            className="border border-foul py-3 text-center text-foul hover:bg-foul hover:text-paper"
+            className="border border-foul py-3 text-center text-foul-ink hover:bg-foul hover:text-paper"
           >
             <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
               Cancel game
@@ -789,7 +789,7 @@ export default function DirectorGameDetailPage({
               type="button"
               onClick={() => void handleDeleteGame()}
               disabled={deleting}
-              className="py-2.5 text-center font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+              className="py-2.5 text-center font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul-ink disabled:opacity-50"
               style={{ letterSpacing: 2 }}
             >
               {deleting ? "Deleting…" : "Delete game"}
@@ -1213,7 +1213,7 @@ function ApplicantCard({
             </span>
           )}
           <span
-            className={`block truncate font-mono text-[9px] uppercase ${rate.rate != null && rate.rate < 90 ? "text-foul" : "text-ink-60"}`}
+            className={`block truncate font-mono text-[9px] uppercase ${rate.rate != null && rate.rate < 90 ? "text-foul-ink" : "text-ink-60"}`}
             style={{ letterSpacing: 1 }}
             title={rate.detail}
           >
@@ -1221,7 +1221,7 @@ function ApplicantCard({
           </span>
           {applicant.late_minutes != null && applicant.status === "accepted" && (
             <span
-              className="block font-mono-bold text-[9px] uppercase text-foul"
+              className="block font-mono-bold text-[9px] uppercase text-foul-ink"
               style={{ letterSpacing: 1 }}
             >
               ⏱ Running ~{applicant.late_minutes} min late
@@ -1245,7 +1245,7 @@ function ApplicantCard({
             className="flex-1 border-r border-ink-20 py-2.5 text-center hover:opacity-70 disabled:opacity-40"
           >
             <span
-              className="font-mono-bold text-[10px] uppercase text-foul"
+              className="font-mono-bold text-[10px] uppercase text-foul-ink"
               style={{ letterSpacing: 1.5 }}
             >
               Decline
@@ -1307,7 +1307,7 @@ function ApplicantCard({
             <button
               type="button"
               onClick={onNoShow}
-              className="flex flex-1 items-center justify-center gap-1.5 border-l border-ink-20 py-2.5 text-foul hover:opacity-70"
+              className="flex flex-1 items-center justify-center gap-1.5 border-l border-ink-20 py-2.5 text-foul-ink hover:opacity-70"
             >
               <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
                 No-show
@@ -1315,7 +1315,7 @@ function ApplicantCard({
             </button>
           )}
           {rated && (
-            <span className="flex flex-1 items-center justify-center gap-1.5 border-l border-ink-20 py-2.5 text-court">
+            <span className="flex flex-1 items-center justify-center gap-1.5 border-l border-ink-20 py-2.5 text-court-ink">
               <span className="text-[10px]">✓</span>
               <span
                 className="font-mono-bold text-[10px] uppercase"

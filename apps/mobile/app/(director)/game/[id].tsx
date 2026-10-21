@@ -490,7 +490,7 @@ export default function GameDetail() {
           {/* Cancelled banner */}
           {isCancelled && (
             <View className="mx-5 mb-4 border border-foul bg-foul/10 px-4 py-3">
-              <Text className="text-foul font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
+              <Text className="text-foul-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
                 ✕ GAME CANCELLED
               </Text>
             </View>
@@ -498,7 +498,7 @@ export default function GameDetail() {
 
           {paymentLockedForReview && (
             <View className="mx-5 mb-4 border border-whistle bg-whistle/10 px-4 py-3">
-              <Text className="text-whistle font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
+              <Text className="text-whistle-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
                 ! PAYMENT REVIEW REQUIRED
               </Text>
               <Text className="text-ink font-mono text-[9px] uppercase mt-1" style={{ letterSpacing: 1 }}>
@@ -667,7 +667,7 @@ export default function GameDetail() {
                 onPress={handleCancelGame}
                 className="border border-foul py-3 items-center active:opacity-70"
               >
-                <Text className="text-foul font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
+                <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
                   CANCEL GAME
                 </Text>
               </Pressable>
@@ -994,7 +994,7 @@ function ApplicantCard({
             </Text>
           )}
           <Text
-            className={`font-mono text-[9px] uppercase mt-0.5 ${rate.rate != null && rate.rate < 90 ? "text-foul" : "text-ink-60"}`}
+            className={`font-mono text-[9px] uppercase mt-0.5 ${rate.rate != null && rate.rate < 90 ? "text-foul-ink" : "text-ink-60"}`}
             numberOfLines={1}
             style={{ letterSpacing: 1 }}
             accessibilityLabel={`${rate.label}. ${rate.detail}`}
@@ -1024,7 +1024,7 @@ function ApplicantCard({
             disabled={actioning}
             className="flex-1 py-2.5 items-center border-r border-ink-20 active:opacity-70"
           >
-            <Text className="text-foul font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+            <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
               DECLINE
             </Text>
           </Pressable>
@@ -1073,7 +1073,7 @@ function ApplicantCard({
               onPress={onNoShow}
               className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20 active:opacity-70"
             >
-              <Text className="text-foul font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+              <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
                 NO-SHOW
               </Text>
             </Pressable>

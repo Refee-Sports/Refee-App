@@ -192,7 +192,7 @@ export default function CreateTournament() {
           style={{ paddingBottom: insets.bottom + 16 }}
         >
           {error && (
-            <Text className="text-foul font-mono text-[10px] uppercase mb-3" style={{ letterSpacing: 1 }}>
+            <Text className="text-foul-ink font-mono text-[10px] uppercase mb-3" style={{ letterSpacing: 1 }}>
               {error}
             </Text>
           )}
@@ -267,7 +267,7 @@ export default function CreateTournament() {
               key={r.id}
               onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, ruleset: r.id })); }}
               className={`border-[1.5px] px-4 py-3 active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
               }`}
             >
               <Text
@@ -313,7 +313,7 @@ export default function CreateTournament() {
                 setForm((f) => ({ ...f, gameFormat: opt.id, periodMinutes: "" }));
               }}
               className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
               }`}
             >
               <Text className={`font-display ${selected ? "text-signal" : "text-ink"}`} style={{ fontSize: 28, letterSpacing: -1 }}>
@@ -455,7 +455,7 @@ function FInput({
         {...props}
       />
       {error && (
-        <Text className="text-foul font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
           {error}
         </Text>
       )}

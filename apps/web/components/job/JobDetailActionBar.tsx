@@ -46,7 +46,7 @@ export function JobDetailActionBar({
         </div>
         {error ? (
           <p
-            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
             role="alert"
           >
@@ -56,7 +56,7 @@ export function JobDetailActionBar({
         <div className="mt-3 flex gap-2.5">
           <div className="flex flex-1 items-center justify-center border border-court bg-court/15 py-4">
             <span
-              className="font-mono-bold text-xs uppercase text-court"
+              className="font-mono-bold text-xs uppercase text-court-ink"
               style={{ letterSpacing: 2 }}
             >
               Accepted · On crew
@@ -128,7 +128,7 @@ export function JobDetailActionBar({
         </div>
         {error ? (
           <p
-            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
             role="alert"
           >
@@ -136,7 +136,7 @@ export function JobDetailActionBar({
           </p>
         ) : null}
         <p
-          className="mb-2.5 mt-3 text-center font-mono-bold text-[10px] uppercase text-foul"
+          className="mb-2.5 mt-3 text-center font-mono-bold text-[10px] uppercase text-foul-ink"
           style={{ letterSpacing: 1.5 }}
         >
           ⚠ The organizer changed the time, venue, or pay
@@ -146,7 +146,7 @@ export function JobDetailActionBar({
             type="button"
             onClick={onDecline}
             disabled={actionLoading || !canMutate}
-            className={`flex items-center justify-center border-[1.5px] border-foul-ink px-4 py-4 active:bg-ink/10 ${ACT}`}
+            className={`flex items-center justify-center border-[1.5px] border-foul-ink px-4 py-4 active:bg-ink-10 ${ACT}`}
           >
             <span
               className="font-mono-bold text-xs uppercase text-foul-ink"
@@ -182,7 +182,7 @@ export function JobDetailActionBar({
         </div>
         {error ? (
           <p
-            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
             role="alert"
           >
@@ -230,7 +230,7 @@ export function JobDetailActionBar({
         </div>
         {error ? (
           <p
-            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
             role="alert"
           >
@@ -256,7 +256,7 @@ export function JobDetailActionBar({
       </div>
       {error ? (
         <p
-          className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+          className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
           style={{ letterSpacing: 1 }}
           role="alert"
         >
@@ -268,7 +268,7 @@ export function JobDetailActionBar({
           type="button"
           onClick={onDecline}
           disabled={actionLoading || !canMutate}
-          className={`flex items-center justify-center border-[1.5px] border-ink px-4 py-4 active:bg-ink/10 ${ACT}`}
+          className={`flex items-center justify-center border-[1.5px] border-ink px-4 py-4 active:bg-ink-10 ${ACT}`}
         >
           <span
             className="font-mono-bold text-xs uppercase text-ink"

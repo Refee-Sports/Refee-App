@@ -64,7 +64,7 @@ export function RefereeDashboard({ userId }: { userId: string }) {
             accessibilityRole="button"
           >
             {next.needsReconfirm ? (
-              <Text className="font-mono-bold text-[9px] text-foul uppercase mb-1.5" style={{ letterSpacing: 1.5 }}>
+              <Text className="font-mono-bold text-[9px] text-foul-ink uppercase mb-1.5" style={{ letterSpacing: 1.5 }}>
                 ! THE ORGANIZER CHANGED THIS GAME · RE-CONFIRM
               </Text>
             ) : null}

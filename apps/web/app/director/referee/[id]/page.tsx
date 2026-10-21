@@ -156,7 +156,7 @@ export default function RefereePublicProfilePage({
             {ref.city.toUpperCase()}, {ref.state}
           </span>
           <span
-            className={`mt-1 block font-mono text-[9px] uppercase ${ref.is_verified ? "font-mono-bold text-court" : "text-ink-60"}`}
+            className={`mt-1 block font-mono text-[9px] uppercase ${ref.is_verified ? "font-mono-bold text-court-ink" : "text-ink-60"}`}
             style={{ letterSpacing: 1.5 }}
           >
             {ref.is_verified ? "✓ " : ""}
@@ -212,7 +212,7 @@ export default function RefereePublicProfilePage({
                 key={i}
                 className="flex items-center gap-1.5 border border-ink bg-chalk px-2.5 py-1.5"
               >
-                <span className="text-[10px] text-court">✓</span>
+                <span className="text-[10px] text-court-ink">✓</span>
                 <span
                   className="font-mono text-[9px] uppercase text-ink"
                   style={{ letterSpacing: 1.5 }}

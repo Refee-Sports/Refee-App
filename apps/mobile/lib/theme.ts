@@ -16,6 +16,7 @@ export const colors = {
     court: "#00A85C",
     whistle: "#F5B90B",
     foul: "#E63946",
+    whistleInk: "#7A5700", // warning text on paper (5.04:1)
     courtInk: "#00733F", // green text (4.57:1 on paper)
     foulInk: "#B3202C", // red text + destructive fills (5.09:1 on paper)
     inkPress: "#2B3440", // pressed primary button
@@ -34,6 +35,12 @@ export const colors = {
     court: "#00D982",
     whistle: "#FFD24A",
     foul: "#FF4757",
+    courtInk: "#00D982", // reuses court-dark (10.74:1 on dark paper)
+    foulInk: "#FF4757", // reuses foul-dark (6.01:1 on dark paper)
+    inkPress: "#2B3440",
+    hiVisPress: "#B1D61F",
+    chalkPress: "#E9E5DA",
+    signalTintPress: "rgba(31, 79, 204, 0.18)",
   },
 } as const;
 

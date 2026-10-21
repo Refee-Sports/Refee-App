@@ -40,7 +40,7 @@ export function UnderAgeNotice({ dateOfBirth }: { dateOfBirth: string }) {
       </p>
 
       {status === "done" ? (
-        <p className="mt-3 font-mono-bold text-[10px] uppercase text-court" style={{ letterSpacing: 1.2 }}>
+        <p className="mt-3 font-mono-bold text-[10px] uppercase text-court-ink" style={{ letterSpacing: 1.2 }}>
           You&apos;re on the list. We&apos;ll use the email on your account.
         </p>
       ) : (
@@ -56,7 +56,7 @@ export function UnderAgeNotice({ dateOfBirth }: { dateOfBirth: string }) {
       )}
 
       {error ? (
-        <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }} role="alert">
+        <p className="mt-2 font-mono text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 1 }} role="alert">
           {error}
         </p>
       ) : null}

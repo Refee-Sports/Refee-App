@@ -68,16 +68,16 @@ export function HeadshotStep({
           )}
         </div>
         {file ? (
-          <p className="mt-3 font-mono-bold text-[10px] uppercase text-court" style={{ letterSpacing: 1.5 }}>
+          <p className="mt-3 font-mono-bold text-[10px] uppercase text-court-ink" style={{ letterSpacing: 1.5 }}>
             ✓ Looks good
           </p>
         ) : (
-          <p className="mt-3 font-mono-bold text-[10px] uppercase text-foul" style={{ letterSpacing: 1.5 }}>
+          <p className="mt-3 font-mono-bold text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 1.5 }}>
             Photo required to continue
           </p>
         )}
         {error ? (
-          <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
+          <p className="mt-2 font-mono text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 1 }}>
             {error}
           </p>
         ) : null}

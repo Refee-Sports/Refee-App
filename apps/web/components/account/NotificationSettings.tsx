@@ -82,7 +82,7 @@ export function NotificationSettings() {
             </label>
           ))}
       </div>
-      {error ? <p className="mt-3 text-sm text-foul">{error}</p> : null}
+      {error ? <p className="mt-3 text-sm text-foul-ink">{error}</p> : null}
     </section>
   );
 }

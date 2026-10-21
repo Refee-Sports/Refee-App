@@ -48,7 +48,7 @@ function CrewRow({ initials, name, role, status, locked, open }: CrewRowProps) {
       </View>
       <Text
         className={`font-mono-bold text-[9px] uppercase ${
-          open ? "text-ink bg-hi-vis px-1.5 py-0.5" : locked ? "text-court" : "text-ink-60"
+          open ? "text-ink bg-hi-vis px-1.5 py-0.5" : locked ? "text-court-ink" : "text-ink-60"
         }`}
         style={{ letterSpacing: 1.4 }}
       >

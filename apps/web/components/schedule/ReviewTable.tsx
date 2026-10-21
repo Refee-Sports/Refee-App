@@ -163,11 +163,11 @@ export function ReviewTable({
                   </span>
                 ) : null}
                 {row.include && errors.length > 0 ? (
-                  <span className="block font-mono text-[9px] uppercase text-foul" style={{ letterSpacing: 0.8 }}>
+                  <span className="block font-mono text-[9px] uppercase text-foul-ink" style={{ letterSpacing: 0.8 }}>
                     {errors.join(" · ")}
                   </span>
                 ) : row.include ? (
-                  <span className="block font-mono-bold text-[9px] uppercase text-court">Ready</span>
+                  <span className="block font-mono-bold text-[9px] uppercase text-court-ink">Ready</span>
                 ) : null}
                 {row.notes ? <span className="mt-1 block text-[11px] leading-4 text-ink-60">{row.notes}</span> : null}
               </td>

@@ -40,7 +40,7 @@ export function JobDetailActionBar({
         </View>
         <View className="flex-row gap-2.5">
           <View className="flex-1 bg-court/15 border border-court py-4 items-center justify-center">
-            <Text className="text-court font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
+            <Text className="text-court-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
               ACCEPTED · ON CREW
             </Text>
           </View>
@@ -98,7 +98,7 @@ export function JobDetailActionBar({
           <ZebraRule variant="signal" thin noMargin />
         </View>
         <Text
-          className="text-foul font-mono-bold text-[10px] uppercase mb-2.5 text-center"
+          className="text-foul-ink font-mono-bold text-[10px] uppercase mb-2.5 text-center"
           style={{ letterSpacing: 1.5 }}
         >
           ⚠ THE ORGANIZER CHANGED THE TIME, VENUE, OR PAY
@@ -107,7 +107,7 @@ export function JobDetailActionBar({
           <Pressable
             onPress={onDecline}
             disabled={actionLoading || !canMutate}
-            className="rounded-md border-[1.5px] border-foul-ink py-4 px-4 items-center justify-center active:bg-ink/10 active:scale-[0.97] disabled:opacity-40"
+            className="rounded-md border-[1.5px] border-foul-ink py-4 px-4 items-center justify-center active:bg-ink-10 active:scale-[0.97] disabled:opacity-40"
           >
             <Text className="text-foul-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
               DROP OUT
@@ -193,7 +193,7 @@ export function JobDetailActionBar({
         <Pressable
           onPress={onDecline}
           disabled={actionLoading || !canMutate}
-          className="rounded-md border-[1.5px] border-ink py-4 px-4 items-center justify-center active:bg-ink/10 active:scale-[0.97] disabled:opacity-40"
+          className="rounded-md border-[1.5px] border-ink py-4 px-4 items-center justify-center active:bg-ink-10 active:scale-[0.97] disabled:opacity-40"
         >
           <Text className="text-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
             DECLINE

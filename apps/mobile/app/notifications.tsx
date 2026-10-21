@@ -126,7 +126,7 @@ export default function NotificationsScreen() {
           </View>
 
           {error ? (
-            <Text className="text-foul font-mono text-[10px] uppercase mt-4" style={{ letterSpacing: 1 }}>
+            <Text className="text-foul-ink font-mono text-[10px] uppercase mt-4" style={{ letterSpacing: 1 }}>
               {error}
             </Text>
           ) : null}

@@ -284,7 +284,7 @@ export default function TournamentDetailPage({
           role="status"
           className="mx-5 mb-3 flex items-center justify-between gap-3 border border-court bg-court/10 px-4 py-3 sm:mx-0"
         >
-          <span className="font-mono-bold text-[10px] uppercase text-court" style={{ letterSpacing: 1.5 }}>
+          <span className="font-mono-bold text-[10px] uppercase text-court-ink" style={{ letterSpacing: 1.5 }}>
             {importedCount} game{importedCount !== 1 ? "s" : ""} imported from your schedule
           </span>
           <button type="button" onClick={() => setImportedCount(0)} aria-label="Dismiss" className="text-ink-60 hover:text-ink">
@@ -303,7 +303,7 @@ export default function TournamentDetailPage({
           >
             <span className="min-w-0 flex-1">
               <span
-                className="block font-mono-bold text-[10px] uppercase text-court"
+                className="block font-mono-bold text-[10px] uppercase text-court-ink"
                 style={{ letterSpacing: 1.5 }}
               >
                 Game added{addedCharged ? " · card charged" : ""}
@@ -420,14 +420,14 @@ export default function TournamentDetailPage({
             type="button"
             onClick={() => void handleDeleteTournament()}
             disabled={deleting}
-            className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+            className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul-ink disabled:opacity-50"
             style={{ letterSpacing: 2 }}
           >
             {deleting ? "Deleting…" : "Delete tournament"}
           </button>
         )}
         {deleteError ? (
-          <p role="alert" className="mt-2 font-mono text-[10px] uppercase leading-4 text-foul" style={{ letterSpacing: 1 }}>
+          <p role="alert" className="mt-2 font-mono text-[10px] uppercase leading-4 text-foul-ink" style={{ letterSpacing: 1 }}>
             {deleteError}
           </p>
         ) : null}

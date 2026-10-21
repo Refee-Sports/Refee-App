@@ -249,7 +249,7 @@ export function ScheduleImport({
 
       {missingDetails.length > 0 ? (
         <div role="alert" className="mx-5 mb-5 border border-foul bg-foul/10 px-4 py-3.5 sm:mx-0">
-          <p className="font-mono-bold text-[10px] uppercase text-foul" style={{ letterSpacing: 1.5 }}>
+          <p className="font-mono-bold text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 1.5 }}>
             Finish the tournament before importing
           </p>
           <p className="mt-1 text-[13px] leading-5 text-ink">
@@ -306,7 +306,7 @@ export function ScheduleImport({
             choose(e.dataTransfer.files?.[0]);
           }}
           className={`flex flex-col items-center gap-3 border-2 border-dashed px-5 py-8 text-center ${
-            dragging ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+            dragging ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
           }`}
         >
           <Icon name="upload" size={22} />
@@ -353,7 +353,7 @@ export function ScheduleImport({
         {error ? (
           <p
             role="alert"
-            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+            className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {error}

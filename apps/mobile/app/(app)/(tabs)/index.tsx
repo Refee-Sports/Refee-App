@@ -239,7 +239,7 @@ export default function Home() {
           <SectionHeader>{`ROSTER INVITES · ${rosterInvites.length} NEED ACTION`}</SectionHeader>
           <View className="mx-5 gap-3">
             {rosterInvites.map((invite) => (
-              <View key={invite.roster_id} className="border border-signal bg-signal/10 px-4 py-4">
+              <View key={invite.roster_id} className="border border-signal bg-signal-tint px-4 py-4">
                 <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 1 }}>
                   {invite.assignor_name}
                 </Text>

@@ -167,7 +167,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
         </p>
 
         <div
-          className={`mt-5 border px-4 py-3 ${accepted ? "border-court bg-court/10" : "border-signal bg-signal/10"}`}
+          className={`mt-5 border px-4 py-3 ${accepted ? "border-court bg-court/10" : "border-signal bg-signal-tint"}`}
         >
           <span className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.5 }}>
             {accepted ? "✓ You are the assignor" : `Status · ${proposal?.status ?? tournament.assignor_status}`}
@@ -180,7 +180,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
           </p>
         ) : null}
         {error ? (
-          <p className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul" role="alert">
+          <p className="mt-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink" role="alert">
             {error}
           </p>
         ) : null}
@@ -238,7 +238,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
               <button
                 type="button"
                 onClick={() => void withdraw()}
-                className="w-full py-3 font-mono-bold text-[9px] uppercase text-foul hover:opacity-70"
+                className="w-full py-3 font-mono-bold text-[9px] uppercase text-foul-ink hover:opacity-70"
               >
                 Withdraw proposal
               </button>
@@ -296,7 +296,7 @@ export default function AssignorTournamentPage({ params }: { params: Promise<{ i
                 type="button"
                 onClick={() => void removeTournament()}
                 disabled={deleting}
-                className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul disabled:opacity-50"
+                className="font-mono-bold text-[10px] uppercase text-ink-60 hover:text-foul-ink disabled:opacity-50"
                 style={{ letterSpacing: 2 }}
               >
                 {deleting ? "Deleting…" : "Delete tournament"}

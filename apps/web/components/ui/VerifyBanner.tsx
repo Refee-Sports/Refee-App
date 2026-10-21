@@ -26,7 +26,7 @@ export function VerifyBanner() {
     <div
       role="status"
       className={`mx-5 mb-4 flex flex-col gap-3 border px-4 py-3 sm:mx-0 sm:flex-row sm:items-center ${
-        waiting ? "border-ink-20 bg-chalk" : "border-signal bg-signal/10"
+        waiting ? "border-ink-20 bg-chalk" : "border-signal bg-signal-tint"
       }`}
     >
       <p className="flex-1 text-[13px] leading-5 text-ink">{message}</p>

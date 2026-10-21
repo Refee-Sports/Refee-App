@@ -207,7 +207,7 @@ export default function DirectorOnboarding() {
         >
           {error && (
             <Text
-              className="text-foul font-mono text-[10px] uppercase mb-3"
+              className="text-foul-ink font-mono text-[10px] uppercase mb-3"
               style={{ letterSpacing: 1 }}
             >
               {error}
@@ -360,7 +360,7 @@ function OrgStep({
               key={t.id}
               onPress={() => onSelectType(t.id)}
               className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
               }`}
             >
               <Text
@@ -442,7 +442,7 @@ function DInput({
         {...props}
       />
       {error ? (
-        <Text className="text-foul font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
           {error}
         </Text>
       ) : null}

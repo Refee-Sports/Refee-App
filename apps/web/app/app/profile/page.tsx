@@ -285,7 +285,7 @@ export default function RefereeProfilePage() {
 
       {notice ? (
         <p
-          className="mx-5 sm:mx-0 mb-4 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+          className="mx-5 sm:mx-0 mb-4 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
           style={{ letterSpacing: 1 }}
         >
           {notice}
@@ -536,7 +536,7 @@ export default function RefereeProfilePage() {
 
       {/* Payouts */}
       {payoutStatus?.payoutsEnabled ? (
-        <div className="mx-5 sm:mx-0 mb-4 flex items-center gap-2 border border-court bg-court/10 px-4 py-3 text-court">
+        <div className="mx-5 sm:mx-0 mb-4 flex items-center gap-2 border border-court bg-court/10 px-4 py-3 text-court-ink">
           <Icon name="check-circle" size={13} />
           <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
             Payouts ready · pay lands automatically
@@ -664,7 +664,7 @@ export default function RefereeProfilePage() {
                 key={c.id}
                 className="flex items-center gap-1.5 border border-ink bg-chalk px-2.5 py-1.5"
               >
-                <span className="text-[10px] text-court">✓</span>
+                <span className="text-[10px] text-court-ink">✓</span>
                 <span
                   className="font-mono text-[9px] uppercase text-ink"
                   style={{ letterSpacing: 1.5 }}
@@ -788,7 +788,7 @@ export default function RefereeProfilePage() {
         <button
           type="button"
           onClick={signOut}
-          className="w-full border border-foul py-4 text-center text-foul hover:bg-foul hover:text-paper"
+          className="w-full border border-foul py-4 text-center text-foul-ink hover:bg-foul hover:text-paper"
         >
           <span className="font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
             Sign out
@@ -827,7 +827,7 @@ function ScoreCell({
         {value}
       </span>
       <span
-        className={`mt-1 text-center font-mono text-[9px] uppercase ${subCourt ? "text-court" : "text-ink-60"}`}
+        className={`mt-1 text-center font-mono text-[9px] uppercase ${subCourt ? "text-court-ink" : "text-ink-60"}`}
         style={{ letterSpacing: 1.5 }}
       >
         {sub}
@@ -882,7 +882,7 @@ function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
       <Link href={`/app/job/${game.jobId}`} className="min-w-0 flex-1 pr-3 hover:opacity-80">
         {game.needsReconfirm && (
           <span
-            className="mb-1 block font-mono-bold text-[8px] uppercase text-foul"
+            className="mb-1 block font-mono-bold text-[8px] uppercase text-foul-ink"
             style={{ letterSpacing: 1.5 }}
           >
             ⚠ Details changed — tap to re-confirm

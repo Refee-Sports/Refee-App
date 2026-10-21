@@ -29,8 +29,8 @@ const C = {
 const look: Record<ButtonVariant, { bg: string; bgPressed: string; border: string; fg: string }> = {
   primary: { bg: C.ink, bgPressed: "#2B3440", border: C.ink, fg: C.paper },
   "hi-vis": { bg: C.hiVis, bgPressed: "#B1D61F", border: C.ink, fg: C.ink },
-  secondary: { bg: "transparent", bgPressed: "rgba(8,17,28,0.10)", border: C.ink, fg: C.ink },
-  danger: { bg: "transparent", bgPressed: "rgba(8,17,28,0.10)", border: C.foulInk, fg: C.foulInk },
+  secondary: { bg: "transparent", bgPressed: "rgba(8,17,28,0.08)", border: C.ink, fg: C.ink },
+  danger: { bg: "transparent", bgPressed: "rgba(8,17,28,0.08)", border: C.foulInk, fg: C.foulInk },
   "danger-fill": { bg: C.foulInk, bgPressed: "#961A24", border: C.foulInk, fg: "#FFFFFF" },
   court: { bg: C.court, bgPressed: C.court, border: C.ink, fg: C.ink },
 };

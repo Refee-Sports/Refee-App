@@ -61,7 +61,7 @@ export function CancelTournamentButton({
         {busy ? (
           <ActivityIndicator color="#E63946" />
         ) : (
-          <Text className="text-foul font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+          <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
             CANCEL ENTIRE EVENT
           </Text>
         )}

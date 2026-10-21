@@ -117,7 +117,7 @@ export default function DirectorProfilePage() {
         </span>
         <span className="font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 2 }}>
           {hirer.is_verified ? (
-            <span className="font-mono-bold text-court">✓ {verificationLabel(true)}</span>
+            <span className="font-mono-bold text-court-ink">✓ {verificationLabel(true)}</span>
           ) : (
             verificationLabel(false)
           )}
@@ -129,7 +129,7 @@ export default function DirectorProfilePage() {
 
       {notice ? (
         <p
-          className="mx-5 sm:mx-0 mb-4 border border-signal bg-signal/10 px-3 py-2 font-mono text-[10px] uppercase text-ink-80"
+          className="mx-5 sm:mx-0 mb-4 border border-signal bg-signal-tint px-3 py-2 font-mono text-[10px] uppercase text-ink-80"
           style={{ letterSpacing: 1 }}
         >
           {notice}
@@ -219,7 +219,7 @@ export default function DirectorProfilePage() {
         <span className="flex-1 pr-3">
           <span
             className={`block font-mono-bold text-[11px] uppercase ${
-              cardSaved ? "text-court" : "text-paper"
+              cardSaved ? "text-court-ink" : "text-paper"
             }`}
             style={{ letterSpacing: 1.5 }}
           >
@@ -236,7 +236,7 @@ export default function DirectorProfilePage() {
               : "Save a card — crews get paid automatically at completion"}
           </span>
         </span>
-        <span className={cardSaved ? "text-court" : "text-hi-vis"}>
+        <span className={cardSaved ? "text-court-ink" : "text-hi-vis"}>
           {savingCard ? <Spinner /> : <Icon name={cardSaved ? "check-circle" : "credit-card"} size={16} />}
         </span>
       </button>

@@ -264,7 +264,7 @@ function DirectorHome() {
       {autoPayNote ? (
         <div className="mx-5 mb-4 border border-court bg-court/10 px-4 py-3 sm:mx-0">
           <p
-            className="font-mono-bold text-[10px] uppercase text-court"
+            className="font-mono-bold text-[10px] uppercase text-court-ink"
             style={{ letterSpacing: 1.5 }}
           >
             Crews paid automatically
@@ -276,7 +276,7 @@ function DirectorHome() {
       {/* Payment problems the director has to act on */}
       {paymentIssues.length > 0 && (
         <div className="mx-5 mb-4 border border-foul bg-foul/10 sm:mx-0" role="region" aria-label="Payment issues">
-          <div className="flex items-center gap-2 border-b border-foul/30 px-4 py-2.5 text-foul">
+          <div className="flex items-center gap-2 border-b border-foul/30 px-4 py-2.5 text-foul-ink">
             <Icon name="credit-card" size={13} />
             <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
               {paymentIssues.length} payment issue{paymentIssues.length !== 1 ? "s" : ""}
@@ -450,7 +450,7 @@ function DirectorHome() {
                 className="mb-3 border border-court bg-court/10 px-4 py-3"
               >
                 <span
-                  className="block font-mono-bold text-[10px] uppercase text-court"
+                  className="block font-mono-bold text-[10px] uppercase text-court-ink"
                   style={{ letterSpacing: 1.5 }}
                 >
                   Game posted{addedCharged ? " · card charged" : ""}
@@ -543,7 +543,7 @@ function ApprovalsPanel({
       {error ? (
         <p
           role="alert"
-          className="mb-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul"
+          className="mb-3 border border-foul bg-foul/10 px-3 py-2 font-mono text-[10px] uppercase text-foul-ink"
           style={{ letterSpacing: 1 }}
         >
           {error}
@@ -613,7 +613,7 @@ function ApprovalGroup({
         ) : null}
         <span
           className={`mt-2 inline-block font-mono-bold text-[9px] uppercase ${
-            slotsLeft === 0 ? "text-foul" : "text-court"
+            slotsLeft === 0 ? "text-foul-ink" : "text-court-ink"
           }`}
           style={{ letterSpacing: 1.4 }}
         >
@@ -692,7 +692,7 @@ function ApprovalRow({
           className="flex-1 border-r border-ink-20 py-2.5 text-center hover:opacity-70 disabled:opacity-40"
         >
           <span
-            className="font-mono-bold text-[10px] uppercase text-foul"
+            className="font-mono-bold text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1.5 }}
           >
             Decline
@@ -838,10 +838,10 @@ function TournamentCard({ tournament }: { tournament: TournamentRow }) {
 }
 
 const PAYOUT_TONE: Record<PayoutTone, string> = {
-  paid: "border-ink-20 text-court",
+  paid: "border-ink-20 text-court-ink",
   held: "border-ink-20 bg-whistle/10 text-ink-80",
   due: "border-ink-20 text-ink-60",
-  overdue: "border-foul/40 bg-foul/10 text-foul",
+  overdue: "border-foul/40 bg-foul/10 text-foul-ink",
   none: "border-ink-20 text-ink-40",
 };
 

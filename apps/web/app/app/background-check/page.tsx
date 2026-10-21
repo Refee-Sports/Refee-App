@@ -20,9 +20,9 @@ import {
 
 const STATE_STYLE = {
   none: { box: "border-ink-20 bg-chalk", text: "text-ink-60", title: "No background check on file" },
-  valid: { box: "border-court bg-court/10", text: "text-court", title: "Background check uploaded" },
+  valid: { box: "border-court bg-court/10", text: "text-court-ink", title: "Background check uploaded" },
   expiring: { box: "border-ink bg-hivis", text: "text-ink", title: "Expiring soon" },
-  expired: { box: "border-foul bg-foul/10", text: "text-foul", title: "Upload expired" },
+  expired: { box: "border-foul bg-foul/10", text: "text-foul-ink", title: "Upload expired" },
 } as const;
 
 /**
@@ -141,7 +141,7 @@ export default function BackgroundCheckPage() {
           </div>
 
           {state === "expiring" || state === "expired" ? (
-            <p className="mt-3 font-mono-bold text-[10px] uppercase text-foul" style={{ letterSpacing: 1.2 }}>
+            <p className="mt-3 font-mono-bold text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 1.2 }}>
               {state === "expired"
                 ? "Your upload has expired. Upload a new one so it shows as on file."
                 : "Upload a new one before this expires so there's no gap."}
@@ -179,7 +179,7 @@ export default function BackgroundCheckPage() {
               <button
                 type="button"
                 onClick={() => void remove()}
-                className="flex-1 border border-foul py-3 font-mono-bold text-[10px] uppercase text-foul hover:opacity-80"
+                className="flex-1 border border-foul py-3 font-mono-bold text-[10px] uppercase text-foul-ink hover:opacity-80"
                 style={{ letterSpacing: 1.5 }}
               >
                 Remove
@@ -187,7 +187,7 @@ export default function BackgroundCheckPage() {
             </div>
           ) : null}
 
-          {error ? <p className="mt-4 font-mono text-[10px] uppercase text-foul" role="alert">{error}</p> : null}
+          {error ? <p className="mt-4 font-mono text-[10px] uppercase text-foul-ink" role="alert">{error}</p> : null}
         </div>
       )}
     </div>

@@ -254,7 +254,7 @@ export default function RefereeOnboardingPage() {
       <div className="action-bar sticky bottom-0">
         {error && (
           <p
-            className="mb-3 font-mono text-[10px] uppercase text-foul"
+            className="mb-3 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {error}
@@ -338,7 +338,7 @@ function NameStep({ form, set }: { form: FormData; set: SetFn }) {
         max={new Date().toISOString().slice(0, 10)}
       />
       {dateOfBirthError(form.dateOfBirth) ? (
-        <p className="mt-2 font-mono text-[10px] uppercase text-foul" style={{ letterSpacing: 1 }}>
+        <p className="mt-2 font-mono text-[10px] uppercase text-foul-ink" style={{ letterSpacing: 1 }}>
           {dateOfBirthError(form.dateOfBirth)}
         </p>
       ) : (

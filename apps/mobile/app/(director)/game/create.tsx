@@ -279,7 +279,7 @@ export default function CreateGame() {
           style={{ paddingBottom: insets.bottom + 16 }}
         >
           {error && (
-            <Text className="text-foul font-mono text-[10px] uppercase mb-3" style={{ letterSpacing: 1 }}>
+            <Text className="text-foul-ink font-mono text-[10px] uppercase mb-3" style={{ letterSpacing: 1 }}>
               {error}
             </Text>
           )}
@@ -349,7 +349,7 @@ export default function CreateGame() {
               key={l.id}
               onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, level: l.id })); }}
               className={`border-[1.5px] px-4 py-3 flex-row items-center justify-between active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
               }`}
             >
               <Text
@@ -381,7 +381,7 @@ export default function CreateGame() {
               key={r.id}
               onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, ruleset: r.id })); }}
               className={`border-[1.5px] px-4 py-3 active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
               }`}
             >
               <Text
@@ -422,7 +422,7 @@ export default function CreateGame() {
               key={n}
               onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, crewSize: n })); }}
               className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
               }`}
             >
               <Text
@@ -512,7 +512,7 @@ export default function CreateGame() {
                 }));
               }}
               className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
-                selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
+                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
               }`}
             >
               <Text
@@ -699,7 +699,7 @@ function FInput({
         {...props}
       />
       {error && (
-        <Text className="text-foul font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
+        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
           {error}
         </Text>
       )}

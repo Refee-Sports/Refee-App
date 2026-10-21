@@ -95,7 +95,7 @@ export default function JobsFeedPage() {
           aria-expanded={filterPanelOpen}
           className={`relative flex h-9 w-9 items-center justify-center border ${
             filterPanelOpen || filtersActive
-              ? "border-signal bg-signal/10 text-signal"
+              ? "border-signal bg-signal-tint text-signal"
               : "border-ink bg-chalk text-ink"
           }`}
         >
@@ -123,7 +123,7 @@ export default function JobsFeedPage() {
           aria-label="Toggle location mode"
           className={`flex items-center gap-1 border px-2 py-1 ${
             locationMode === "near_me"
-              ? "border-signal bg-signal/10 text-signal"
+              ? "border-signal bg-signal-tint text-signal"
               : "border-ink-20 bg-chalk text-ink"
           }`}
         >
@@ -164,7 +164,7 @@ export default function JobsFeedPage() {
 
         {!loading && error && tab === "available" ? (
           <p
-            className="mb-2 px-1 py-2 font-mono text-[10px] uppercase text-foul"
+            className="mb-2 px-1 py-2 font-mono text-[10px] uppercase text-foul-ink"
             style={{ letterSpacing: 1 }}
           >
             {usedMockForAvailable

@@ -48,7 +48,7 @@ export function ChangeEmail() {
     <section className="mt-8 border border-ink bg-chalk p-5">
       <h2 className="font-mono-bold text-xs uppercase">Email</h2>
       <p className="mt-3 font-mono text-sm">{current ?? "No email on this account"}</p>
-      {done ? <p className="mt-2 text-sm text-court">Email updated. Use it next time you sign in with a code.</p> : null}
+      {done ? <p className="mt-2 text-sm text-court-ink">Email updated. Use it next time you sign in with a code.</p> : null}
 
       {step === "idle" ? (
         <button
@@ -124,7 +124,7 @@ export function ChangeEmail() {
         </div>
       ) : null}
 
-      {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul">{error}</p> : null}
+      {error ? <p className="mt-4 border border-foul bg-foul/10 p-3 text-sm text-foul-ink">{error}</p> : null}
     </section>
   );
 }

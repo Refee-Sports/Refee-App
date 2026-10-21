@@ -99,7 +99,7 @@ function Hero() {
 
 // Spelled out so Tailwind can see each class; see TRACK_ACCENT below.
 const PATH_ACCENT = {
-  hi: { kicker: "!text-court", hover: "group-hover:bg-hi-vis" },
+  hi: { kicker: "!text-court-ink", hover: "group-hover:bg-hi-vis" },
   whistle: {
     kicker: "!text-whistle-ink",
     hover: "group-hover:bg-whistle",
