@@ -50,6 +50,28 @@ module.exports = {
           20: "rgba(8, 17, 28, 0.18)",
           10: "rgba(8, 17, 28, 0.08)",
         },
+
+        // Text-safe status colors and pressed states
+        "court-ink": "#00733F", // green text (4.57:1 on paper)
+        "foul-ink": "#B3202C", // red text + destructive fills (5.09:1 on paper)
+        "ink-press": "#2B3440", // pressed primary button
+        "hi-vis-press": "#B1D61F", // pressed hi-vis button
+        "chalk-press": "#E9E5DA", // pressed option rows, big choice, cards
+        "signal-tint-press": "rgba(31, 79, 204, 0.18)", // pressed selected choice
+      },
+      // Rounded scale. ZebraRule stays square.
+      borderRadius: {
+        sm: "10px", // fields, selects
+        md: "12px", // buttons, option rows, big choice
+        lg: "18px", // cards, sheets
+        full: "9999px", // badges, chips, toggles
+      },
+      boxShadow: {
+        hard: "4px 4px 0 #08111C",
+        "ring-hover": "0 0 0 3px #E5E1D6, 0 0 0 5px #08111C",
+        "ring-hover-selected": "0 0 0 3px #E5E1D6, 0 0 0 5px #1F4FCC",
+        "ring-focus": "0 0 0 2px #E5E1D6, 0 0 0 4px #1F4FCC",
+        "glow-field-focus": "0 0 0 3px rgba(31, 79, 204, 0.25)",
       },
       fontFamily: {
         // Display = Inter Tight Black (heavy, condensed; scoreboard energy)

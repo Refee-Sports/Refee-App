@@ -26,10 +26,10 @@ export function DropdownSelect({
           Haptics.selectionAsync();
           setOpen(true);
         }}
-        className="border-[1.5px] border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
+        className="rounded-sm border-[1.5px] border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:bg-chalk-press"
       >
         <Text
-          className={`font-mono text-[14px] ${selected ? "text-ink" : "text-ink-40"}`}
+          className={`font-mono text-[14px] ${selected ? "text-ink" : "text-ink-60"}`}
         >
           {selected?.label ?? placeholder}
         </Text>
@@ -42,7 +42,7 @@ export function DropdownSelect({
           style={{ backgroundColor: "rgba(8,17,28,0.5)" }}
           onPress={() => setOpen(false)}
         >
-          <Pressable className="bg-paper border-t-2 border-ink" style={{ maxHeight: "60%" }}>
+          <Pressable className="bg-paper border-t-2 border-ink rounded-t-lg overflow-hidden" style={{ maxHeight: "60%" }}>
             <View className="px-5 py-3 border-b border-ink-20 flex-row items-center justify-between">
               <Text
                 className="font-mono-bold text-[10px] text-ink-60 uppercase"
@@ -67,8 +67,8 @@ export function DropdownSelect({
                       onSelect(item.value);
                       setOpen(false);
                     }}
-                    className={`px-5 py-3.5 flex-row items-center justify-between border-b border-ink-20 active:opacity-70 ${
-                      isSelected ? "bg-signal/10" : ""
+                    className={`px-5 py-3.5 flex-row items-center justify-between border-b border-ink-20 ${
+                      isSelected ? "bg-signal/10 active:bg-signal-tint-press" : "active:bg-chalk-press"
                     }`}
                   >
                     <Text

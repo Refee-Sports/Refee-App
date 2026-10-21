@@ -145,7 +145,7 @@ export function PanelHeading({ title, sub, right }: { title: string; sub?: strin
 export function Pill({ label, tone }: { label: string; tone: string }) {
   return (
     <span
-      className={`inline-block whitespace-nowrap border px-2 py-1 font-mono-bold text-[9px] uppercase ${tone}`}
+      className={`inline-block whitespace-nowrap rounded-full border px-2 py-1 font-mono-bold text-[9px] uppercase ${tone}`}
       style={{ letterSpacing: 1.2 }}
     >
       {label}
@@ -193,7 +193,7 @@ export function Eyebrow({ children }: { children: ReactNode }) {
 /** A card with a heading, for grouping related facts. */
 export function Card({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <section className="border border-ink-20 bg-chalk">
+    <section className="overflow-hidden rounded-lg border border-ink-20 bg-chalk">
       <div className="flex items-center justify-between gap-3 border-b border-ink-20 px-4 py-3">
         <h3 className="font-mono-bold text-[10px] uppercase text-ink" style={{ letterSpacing: 1.8 }}>
           {title}

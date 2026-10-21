@@ -66,7 +66,29 @@ DESIGN FIDELITY:
   - Display headlines: font-display (Inter Tight 900), uppercase, tight letter spacing
   - Body: default
   - Mono labels (eyebrows, metadata): font-mono-bold, uppercase, wide letter spacing
-- Squared corners (no rounded-anything) unless the design clearly shows curves
+- Rounded scale: rounded-sm 10px (fields, selects), rounded-md 12px (buttons,
+  option rows, big choice), rounded-lg 18px (cards, sheets), rounded-full
+  (badges, chips, toggles, thumbs). ZebraRule stays square.
+- States:
+  - Hover (web, pointer devices only): action buttons lift 2px up-left onto
+    shadow-hard; choices (chips, option rows, big choice, toggles, tappable
+    cards) get shadow-ring-hover (shadow-ring-hover-selected when selected).
+    Text fields and badges have no hover.
+  - Pressed: instant on touch-down, eases back over 120ms. Buttons scale 0.97
+    and darken (ink-press, hi-vis-press). Choices scale 0.96–0.98 and tint
+    (chalk-press, or signal-tint-press when selected). Toggle thumb stretches
+    18px → 24px while held.
+  - Focus (keyboard only): shadow-ring-focus. Fields: signal border +
+    shadow-glow-field-focus.
+  - Loading: width held, spinner replaces the label, taps blocked, accessible
+    label like "Accepting".
+  - Done: court fill with ink label and a check, held ~1s. "Declined" is
+    secondary, never green or red.
+  - Disabled: 40% opacity plus a short reason nearby.
+- Red (foul-ink) only for errors and hard-to-undo actions (cancel a game,
+  remove a ref). Declining a game is NOT danger: use secondary.
+- Green/red text uses court-ink / foul-ink; plain court / foul are for fills.
+- Respect Reduce Motion: skip the scale animations when it's on.
 - 1.5px borders for emphasis (border-[1.5px])
 - 1px borders for default (border)
 

@@ -9,7 +9,7 @@ type Props = {
 
 export function DataCard({ tab, children, className = "" }: Props) {
   return (
-    <View className={`border border-ink bg-chalk mb-3 relative mt-2 ${className}`}>
+    <View className={`rounded-lg border border-ink bg-chalk mb-3 relative mt-2 ${className}`}>
       <View
         className="absolute -top-2.5 left-3 bg-paper px-1.5 z-10"
         style={{ paddingHorizontal: 6 }}

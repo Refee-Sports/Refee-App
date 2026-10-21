@@ -11,7 +11,7 @@ export function DataCard({
   className?: string;
 }) {
   return (
-    <div className={`relative mb-3 mt-2 border border-ink bg-chalk ${className}`}>
+    <div className={`relative mb-3 mt-2 rounded-lg border border-ink bg-chalk ${className}`}>
       <span className="absolute -top-2.5 left-3 z-10 bg-paper px-1.5">
         <span
           className="font-mono-bold text-[8px] uppercase text-ink"

@@ -19,6 +19,10 @@ type Props = {
   onRunningLate?: (minutes: number) => void;
 };
 
+// Action-button states: lift on hover (pointer devices only), push in on press.
+const ACT =
+  "rounded-md transition-[transform,box-shadow,background-color] duration-[120ms] ease-out hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-hard active:translate-x-0 active:translate-y-0 active:scale-[0.97] active:shadow-none active:duration-0 focus-visible:outline-none focus-visible:shadow-ring-focus disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-none disabled:active:scale-100 motion-reduce:transition-none motion-reduce:hover:translate-x-0 motion-reduce:hover:translate-y-0";
+
 /** Port of the app's JobDetailActionBar — one bar per assignment state. */
 export function JobDetailActionBar({
   assignmentStatus,
@@ -142,10 +146,10 @@ export function JobDetailActionBar({
             type="button"
             onClick={onDecline}
             disabled={actionLoading || !canMutate}
-            className="flex items-center justify-center border-[1.5px] border-foul px-4 py-4 hover:opacity-80 disabled:opacity-40"
+            className={`flex items-center justify-center border-[1.5px] border-ink px-4 py-4 active:bg-ink/10 ${ACT}`}
           >
             <span
-              className="font-mono-bold text-xs uppercase text-foul"
+              className="font-mono-bold text-xs uppercase text-ink"
               style={{ letterSpacing: 1.4 }}
             >
               Drop out
@@ -155,7 +159,7 @@ export function JobDetailActionBar({
             type="button"
             onClick={onAccept}
             disabled={actionLoading || !canMutate}
-            className="flex flex-1 items-center justify-center gap-2 bg-court py-4 text-paper hover:opacity-90 disabled:opacity-40"
+            className={`flex flex-1 items-center justify-center gap-2 border-[1.5px] border-court bg-court py-4 text-paper ${ACT}`}
           >
             {actionLoading ? (
               <Spinner />
@@ -264,10 +268,10 @@ export function JobDetailActionBar({
           type="button"
           onClick={onDecline}
           disabled={actionLoading || !canMutate}
-          className="flex items-center justify-center border-[1.5px] border-foul px-4 py-4 hover:opacity-80 disabled:opacity-40"
+          className={`flex items-center justify-center border-[1.5px] border-ink px-4 py-4 active:bg-ink/10 ${ACT}`}
         >
           <span
-            className="font-mono-bold text-xs uppercase text-foul"
+            className="font-mono-bold text-xs uppercase text-ink"
             style={{ letterSpacing: 1.4 }}
           >
             Decline
@@ -277,7 +281,7 @@ export function JobDetailActionBar({
           type="button"
           onClick={onAccept}
           disabled={actionLoading || !canMutate}
-          className="flex flex-1 items-center justify-center gap-2 bg-court py-4 text-paper hover:opacity-90 disabled:opacity-40"
+          className={`flex flex-1 items-center justify-center gap-2 border-[1.5px] border-court bg-court py-4 text-paper ${ACT}`}
         >
           {actionLoading ? (
             <Spinner />

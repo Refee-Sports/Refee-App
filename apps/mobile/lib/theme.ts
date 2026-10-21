@@ -16,6 +16,12 @@ export const colors = {
     court: "#00A85C",
     whistle: "#F5B90B",
     foul: "#E63946",
+    courtInk: "#00733F", // green text (4.57:1 on paper)
+    foulInk: "#B3202C", // red text + destructive fills (5.09:1 on paper)
+    inkPress: "#2B3440", // pressed primary button
+    hiVisPress: "#B1D61F", // pressed hi-vis button
+    chalkPress: "#E9E5DA", // pressed option rows, big choice, cards
+    signalTintPress: "rgba(31, 79, 204, 0.18)", // pressed selected choice
   },
   // Dark mode
   dark: {

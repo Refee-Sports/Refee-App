@@ -2,6 +2,19 @@
 
 import type { InputHTMLAttributes, ReactNode, TextareaHTMLAttributes } from "react";
 
+// Fields: radius-sm, no hover, signal border + soft glow on focus.
+const FIELD =
+  "w-full rounded-sm border-[1.5px] bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-60 transition-[border-color,box-shadow] duration-[120ms] ease-out focus-visible:border-signal focus-visible:shadow-glow-field-focus motion-reduce:transition-none";
+
+// Choices: "ring to choose" on hover (pointer devices only), instant
+// press-in that eases back over 120ms, keyboard-only focus ring.
+const CHOICE =
+  "transition-[transform,box-shadow,background-color] duration-[120ms] ease-out active:duration-0 focus-visible:outline-none focus-visible:shadow-ring-focus disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100";
+const choiceState = (selected: boolean) =>
+  selected
+    ? "hover:shadow-ring-hover-selected active:bg-signal-tint-press"
+    : "hover:shadow-ring-hover active:bg-chalk-press";
+
 export function Label({
   children,
   className = "",
@@ -30,14 +43,12 @@ export function TextField({ error, hint, className = "", ...props }: FieldProps)
     <>
       <input
         {...props}
-        className={`w-full border-[1.5px] bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-40 focus-visible:shadow-[3px_3px_0_var(--signal)] disabled:opacity-50 ${
-          error ? "border-foul" : "border-ink"
-        } ${className}`}
+        className={`${FIELD} disabled:opacity-50 ${error ? "border-foul-ink" : "border-ink"} ${className}`}
         style={{ fontSize: 14, ...props.style }}
       />
       {error ? (
         <p
-          className="mt-1 font-mono text-[9px] uppercase text-foul"
+          className="mt-1 font-mono text-[9px] uppercase text-foul-ink"
           style={{ letterSpacing: 1 }}
         >
           {error}
@@ -61,7 +72,7 @@ export function TextArea({
   return (
     <textarea
       {...props}
-      className={`w-full border-[1.5px] border-ink bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-40 focus-visible:shadow-[3px_3px_0_var(--signal)] ${className}`}
+      className={`${FIELD} border-ink ${className}`}
       style={{ fontSize: 14, ...props.style }}
     />
   );
@@ -76,7 +87,7 @@ export function AffixField({
 }: FieldProps & { prefix?: string; suffix?: string }) {
   return (
     <>
-      <div className="flex border-[1.5px] border-ink">
+      <div className="flex overflow-hidden rounded-sm border-[1.5px] border-ink transition-[border-color,box-shadow] duration-[120ms] ease-out focus-within:border-signal focus-within:shadow-glow-field-focus motion-reduce:transition-none">
         {prefix ? (
           <span className="flex items-center justify-center bg-ink px-4">
             <span
@@ -89,7 +100,7 @@ export function AffixField({
         ) : null}
         <input
           {...props}
-          className="min-w-0 flex-1 bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-40"
+          className="min-w-0 flex-1 bg-chalk px-4 py-3.5 font-mono text-ink outline-none placeholder:text-ink-60"
           style={{ fontSize: 14, ...props.style }}
         />
         {suffix ? (
@@ -135,7 +146,7 @@ export function OptionRow({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex w-full items-center justify-between border-[1.5px] px-4 py-3.5 text-left hover:opacity-80 ${
+      className={`flex w-full items-center justify-between rounded-md border-[1.5px] px-4 py-3.5 text-left active:scale-[0.98] ${CHOICE} ${choiceState(selected)} ${
         selected
           ? "border-signal bg-signal/10"
           : `${dim ? "border-ink-20" : "border-ink"} bg-chalk`
@@ -181,7 +192,7 @@ export function SelectField({
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full appearance-none border-[1.5px] border-ink bg-chalk px-4 py-3.5 font-mono text-ink outline-none focus-visible:shadow-[3px_3px_0_var(--signal)]"
+        className={`${FIELD} appearance-none border-ink`}
         style={{ fontSize: 14 }}
       >
         {placeholder ? <option value="">{placeholder}</option> : null}
@@ -235,7 +246,7 @@ export function DateField({
       min={min}
       max={max}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full border-[1.5px] border-ink bg-chalk px-4 py-3.5 font-mono text-ink outline-none focus-visible:shadow-[3px_3px_0_var(--signal)]"
+      className={`${FIELD} border-ink`}
       style={{ fontSize: 14 }}
     />
   );
@@ -263,7 +274,7 @@ export function Chip({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={selected}
-      className={`border-[1.5px] px-4 py-3 hover:opacity-80 disabled:opacity-40 ${
+      className={`rounded-full border-[1.5px] px-4 py-3 active:scale-[0.96] ${CHOICE} ${choiceState(selected)} ${
         selected ? "border-signal bg-signal/10" : "border-ink-20 bg-chalk"
       }`}
     >
@@ -296,7 +307,7 @@ export function BigChoice({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex flex-1 flex-col items-center border-[1.5px] py-4 hover:opacity-80 ${
+      className={`flex flex-1 flex-col items-center rounded-md border-[1.5px] py-4 active:scale-[0.97] ${CHOICE} ${choiceState(selected)} ${
         selected ? "border-signal bg-signal/10" : "border-ink bg-chalk"
       }`}
     >
@@ -338,14 +349,16 @@ export function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-6 w-11 shrink-0 border border-ink disabled:opacity-60 ${
-        checked ? "bg-ink" : "bg-ink/15"
+      className={`group relative h-6 w-11 shrink-0 rounded-full border border-ink transition-[box-shadow] duration-[120ms] ease-out focus-visible:outline-none focus-visible:shadow-ring-focus disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none motion-reduce:transition-none ${
+        checked ? "bg-ink hover:shadow-ring-hover-selected" : "bg-ink/15 hover:shadow-ring-hover"
       }`}
     >
+      {/* Anchored to the side it rests on, so stretching while held grows it
+          toward the middle: 18px → 24px. */}
       <span
-        className="absolute top-[2px] h-[18px] w-[18px]"
+        className="absolute top-[2px] h-[18px] w-[18px] rounded-full transition-[width] duration-[120ms] ease-out group-active:w-6 group-active:duration-0 motion-reduce:transition-none group-disabled:w-[18px]"
         style={{
-          left: checked ? 22 : 2,
+          ...(checked ? { right: 2 } : { left: 2 }),
           backgroundColor: checked ? "#C9F031" : "#E5E1D6",
         }}
       />

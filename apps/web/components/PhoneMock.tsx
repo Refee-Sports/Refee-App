@@ -8,10 +8,10 @@ export function PhoneMock() {
   return (
     <div className="relative mx-auto w-full max-w-[288px]">
       {/* Side buttons */}
-      <span className="absolute -left-[2px] top-[104px] h-7 w-[3px] rounded-l-sm bg-ink/70" />
-      <span className="absolute -left-[2px] top-[150px] h-11 w-[3px] rounded-l-sm bg-ink/70" />
-      <span className="absolute -left-[2px] top-[206px] h-11 w-[3px] rounded-l-sm bg-ink/70" />
-      <span className="absolute -right-[2px] top-[168px] h-16 w-[3px] rounded-r-sm bg-ink/70" />
+      <span className="absolute -left-[2px] top-[104px] h-7 w-[3px] rounded-l-[2px] bg-ink/70" />
+      <span className="absolute -left-[2px] top-[150px] h-11 w-[3px] rounded-l-[2px] bg-ink/70" />
+      <span className="absolute -left-[2px] top-[206px] h-11 w-[3px] rounded-l-[2px] bg-ink/70" />
+      <span className="absolute -right-[2px] top-[168px] h-16 w-[3px] rounded-r-[2px] bg-ink/70" />
 
       {/* Titanium frame */}
       <div className="relative rounded-[46px] bg-gradient-to-b from-[#20262e] via-[#0b111a] to-[#04070c] p-[9px] shadow-[0_28px_55px_-18px_rgba(8,17,28,0.55)] ring-1 ring-black/50">

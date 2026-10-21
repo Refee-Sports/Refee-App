@@ -181,22 +181,18 @@ function StatsStrip() {
 /* ------------------------------------------------------------------ */
 const OFFICIAL_STEPS = [
   {
-    n: "01",
     title: "Get verified",
     desc: "ID check and credentials, all in the app. Add a background check if you have one.",
   },
   {
-    n: "02",
     title: "Set availability",
     desc: "Choose your sports, travel distance, and rates. Go on duty when you want work.",
   },
   {
-    n: "03",
     title: "Accept & officiate",
     desc: "Take games near you. Show up, work the game, confirm it's done.",
   },
   {
-    n: "04",
     title: "Get paid",
     desc: "Payouts go through Stripe. Your first bank deposit can take about a week; after that, a couple of business days.",
   },
@@ -204,22 +200,18 @@ const OFFICIAL_STEPS = [
 
 const ASSIGNOR_STEPS = [
   {
-    n: "01",
     title: "Get verified",
     desc: "The same ID check every official passes, so directors know who they're scheduling.",
   },
   {
-    n: "02",
     title: "Take on an event",
     desc: "Directors invite you, or you propose your fee on tournaments that need staffing.",
   },
   {
-    n: "03",
     title: "Build your roster",
     desc: "Bring the officials you already trust, or pull from verified refs near the venue.",
   },
   {
-    n: "04",
     title: "Staff every game",
     desc: "Offer games, track confirmations, and fill gaps before game day.",
   },
@@ -227,22 +219,18 @@ const ASSIGNOR_STEPS = [
 
 const LEAGUE_STEPS = [
   {
-    n: "01",
     title: "Post your games",
     desc: "Sport, level, location, and time. Bulk-import a whole season if you want.",
   },
   {
-    n: "02",
     title: "Officials see it",
     desc: "Officials whose travel range covers the venue see the game and can take it.",
   },
   {
-    n: "03",
     title: "Confirm",
     desc: "Officials accept and you see confirmations. If someone drops out, the slot reopens.",
   },
   {
-    n: "04",
     title: "Pay once",
     desc: "Pay the crew in one charge. Refee sends each official their share.",
   },
@@ -280,9 +268,9 @@ function HowItWorks() {
 // Written out rather than interpolated: Tailwind only ships classes it can
 // see as whole strings in the source.
 const TRACK_ACCENT = {
-  court: { dot: "bg-court", text: "text-court" },
-  whistle: { dot: "bg-whistle", text: "text-whistle-ink" },
-  signal: { dot: "bg-signal", text: "text-signal" },
+  court: { dot: "bg-court" },
+  whistle: { dot: "bg-whistle" },
+  signal: { dot: "bg-signal" },
 } as const;
 
 function StepTrack({
@@ -292,7 +280,7 @@ function StepTrack({
 }: {
   heading: string;
   accent: keyof typeof TRACK_ACCENT;
-  steps: { n: string; title: string; desc: string }[];
+  steps: { title: string; desc: string }[];
 }) {
   const tone = TRACK_ACCENT[accent];
   return (
@@ -303,15 +291,9 @@ function StepTrack({
           {heading}
         </h3>
       </div>
-      <ol className="mt-5 space-y-px overflow-hidden border border-ink bg-ink">
+      <ol className="mt-5 space-y-px overflow-hidden rounded-lg border border-ink bg-ink">
         {steps.map((step) => (
-          <li
-            key={step.n}
-            className="flex gap-4 bg-chalk p-5 transition-colors hover:bg-paper"
-          >
-            <span className={`font-mono text-sm font-bold ${tone.text}`}>
-              {step.n}
-            </span>
+          <li key={step.title} className="bg-chalk p-5">
             <div>
               <p className="font-display text-lg font-black tracking-tight text-ink">
                 {step.title}

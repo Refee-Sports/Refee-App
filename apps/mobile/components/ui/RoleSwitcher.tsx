@@ -119,7 +119,7 @@ export function RoleSwitcher() {
   };
 
   return (
-    <View className="border border-ink bg-chalk p-5">
+    <View className="rounded-lg border border-ink bg-chalk p-5">
       <Text
         className="text-ink-60 font-mono-bold text-[10px] uppercase"
         style={{ letterSpacing: 2 }}
@@ -139,7 +139,7 @@ export function RoleSwitcher() {
               role === primaryRole ? (
                 // Where you are now. Not a disabled button: greyed out reads
                 // as "unavailable" when it means "you are here".
-                <View key={role} className="bg-ink border border-ink px-5 py-3.5">
+                <View key={role} className="rounded-md bg-ink border border-ink px-5 py-3.5">
                   <Text
                     className="text-paper font-mono-bold text-[12px]"
                     style={{ letterSpacing: 2 }}
@@ -152,7 +152,7 @@ export function RoleSwitcher() {
                   key={role}
                   onPress={() => void switchTo(role)}
                   disabled={busy !== null}
-                  className="border border-ink px-5 py-3.5 active:opacity-70"
+                  className="rounded-md border border-ink px-5 py-3.5 active:bg-ink/10 active:scale-[0.97]"
                 >
                   <Text
                     className="text-ink font-mono-bold text-[12px]"
@@ -180,7 +180,7 @@ export function RoleSwitcher() {
                 key={role}
                 onPress={() => void take(role)}
                 disabled={busy !== null}
-                className="border border-ink px-5 py-3.5 active:opacity-70"
+                className="rounded-md border border-ink px-5 py-3.5 active:bg-ink/10 active:scale-[0.97]"
               >
                 <Text
                   className="text-ink font-mono-bold text-[12px]"
@@ -210,7 +210,7 @@ export function RoleSwitcher() {
             autoCapitalize="words"
             autoFocus
             accessibilityLabel="Organization name"
-            className="mt-3 border border-ink bg-paper px-3 py-3 text-ink"
+            className="mt-3 rounded-sm border border-ink bg-paper px-3 py-3 text-ink"
             style={{ fontSize: 15 }}
           />
           <View className="mt-2 flex-row flex-wrap gap-2">
@@ -224,7 +224,7 @@ export function RoleSwitcher() {
                     setOrgForm((f) => (f ? { ...f, orgType: t.id } : f));
                   }}
                   accessibilityState={{ selected }}
-                  className={`border-[1.5px] px-3 py-2.5 ${selected ? "border-signal bg-signal/10" : "border-ink"}`}
+                  className={`rounded-full border-[1.5px] px-3 py-2.5 active:scale-[0.96] ${selected ? "border-signal bg-signal/10 active:bg-signal-tint-press" : "border-ink active:bg-chalk-press"}`}
                 >
                   <Text
                     className={`font-mono-bold text-[10px] ${selected ? "text-signal" : "text-ink"}`}
@@ -240,7 +240,7 @@ export function RoleSwitcher() {
             <Pressable
               onPress={() => void take("director")}
               disabled={busy !== null || !orgForm.orgName.trim() || !orgForm.orgType}
-              className={`flex-1 py-3.5 items-center ${
+              className={`flex-1 rounded-md py-3.5 items-center active:scale-[0.97] ${
                 orgForm.orgName.trim() && orgForm.orgType ? "bg-ink" : "bg-ink-20"
               }`}
             >
@@ -251,7 +251,7 @@ export function RoleSwitcher() {
             <Pressable
               onPress={() => setOrgForm(null)}
               disabled={busy !== null}
-              className="border border-ink px-4 py-3.5 active:opacity-70"
+              className="rounded-md border border-ink px-4 py-3.5 active:bg-ink/10 active:scale-[0.97]"
             >
               <Text className="text-ink font-mono-bold text-[12px]" style={{ letterSpacing: 2 }}>
                 CANCEL

@@ -107,16 +107,16 @@ export function JobDetailActionBar({
           <Pressable
             onPress={onDecline}
             disabled={actionLoading || !canMutate}
-            className="border-[1.5px] border-foul py-4 px-4 items-center justify-center active:opacity-80 disabled:opacity-40"
+            className="rounded-md border-[1.5px] border-ink py-4 px-4 items-center justify-center active:bg-ink/10 active:scale-[0.97] disabled:opacity-40"
           >
-            <Text className="text-foul font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
+            <Text className="text-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
               DROP OUT
             </Text>
           </Pressable>
           <Pressable
             onPress={onAccept}
             disabled={actionLoading || !canMutate}
-            className="flex-1 bg-court py-4 items-center justify-center active:opacity-90 flex-row gap-2 disabled:opacity-40"
+            className="flex-1 rounded-md bg-court py-4 items-center justify-center active:scale-[0.97] flex-row gap-2 disabled:opacity-40"
           >
             {actionLoading ? (
               <ActivityIndicator color="#E5E1D6" />
@@ -193,16 +193,16 @@ export function JobDetailActionBar({
         <Pressable
           onPress={onDecline}
           disabled={actionLoading || !canMutate}
-          className="border-[1.5px] border-foul py-4 px-4 items-center justify-center active:opacity-80 disabled:opacity-40"
+          className="rounded-md border-[1.5px] border-ink py-4 px-4 items-center justify-center active:bg-ink/10 active:scale-[0.97] disabled:opacity-40"
         >
-          <Text className="text-foul font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
+          <Text className="text-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
             DECLINE
           </Text>
         </Pressable>
         <Pressable
           onPress={onAccept}
           disabled={actionLoading || !canMutate}
-          className="flex-1 bg-court py-4 items-center justify-center active:opacity-90 flex-row gap-2 disabled:opacity-40"
+          className="flex-1 rounded-md bg-court py-4 items-center justify-center active:scale-[0.97] flex-row gap-2 disabled:opacity-40"
         >
           {actionLoading ? (
             <ActivityIndicator color="#E5E1D6" />

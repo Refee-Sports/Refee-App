@@ -33,7 +33,7 @@ export function JobCard({ job }: { job: JobListRow }) {
   return (
     <Link
       href={`/app/job/${job.id}`}
-      className="block overflow-hidden border border-ink bg-chalk hover:opacity-90"
+      className="block overflow-hidden rounded-lg border border-ink bg-chalk transition-[transform,box-shadow,background-color] duration-[120ms] ease-out hover:shadow-ring-hover focus-visible:outline-none focus-visible:shadow-ring-focus active:scale-[0.98] active:bg-chalk-press active:duration-0 motion-reduce:transition-none motion-reduce:active:scale-100"
     >
       <CardTopStripe variant={job.variant === "default" ? undefined : job.variant} />
 
