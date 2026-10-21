@@ -50,17 +50,24 @@ export function OptionRow({
         };
       }}
     >
-      <View style={{ flex: 1, paddingRight: 12 }}>
-        <Text className={`font-mono-bold text-sm ${selected ? "text-signal" : "text-ink"}`} style={{ letterSpacing: 1 }}>
-          {label}
-        </Text>
-        {sublabel ? (
-          <Text className="mt-0.5 font-mono text-[9px] text-ink-60" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
-            {sublabel}
-          </Text>
-        ) : null}
-      </View>
-      {selected ? <Feather name="check" size={16} color={choiceLook({ selected, pressed: false }).fg} /> : null}
+      {({ pressed }) => {
+        const fg = choiceLook({ selected, pressed, dim }).fg;
+        return (
+          <>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text className="font-mono-bold text-sm" style={{ letterSpacing: 1, color: fg }}>
+                {label}
+              </Text>
+              {sublabel ? (
+                <Text className="mt-0.5 font-mono text-[9px] text-ink-60" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
+                  {sublabel}
+                </Text>
+              ) : null}
+            </View>
+            {selected ? <Feather name="check" size={16} color={fg} /> : null}
+          </>
+        );
+      }}
     </Tappable>
   );
 }
@@ -152,15 +159,22 @@ export function BigChoice({
         };
       }}
     >
-      <Text className={`font-display ${selected ? "text-signal" : "text-ink"}`} style={{ fontSize: 28, letterSpacing: -1 }}>
-        {num}
-      </Text>
-      <Text
-        className={`font-mono-bold text-[9px] uppercase ${selected ? "text-signal" : "text-ink-60"}`}
-        style={{ letterSpacing: 2 }}
-      >
-        {label}
-      </Text>
+      {({ pressed }) => {
+        const fg = choiceLook({ selected, pressed }).fg;
+        return (
+          <>
+            <Text className="font-display" style={{ fontSize: 28, letterSpacing: -1, color: fg }}>
+              {num}
+            </Text>
+            <Text
+              className="font-mono-bold text-[9px] uppercase"
+              style={{ letterSpacing: 2, color: selected ? fg : palette.ink60 }}
+            >
+              {label}
+            </Text>
+          </>
+        );
+      }}
     </Tappable>
   );
 }

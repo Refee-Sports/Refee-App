@@ -146,7 +146,7 @@ export function OptionRow({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex w-full items-center justify-between rounded-md border-[1.5px] px-4 py-3.5 text-left active:scale-[0.98] ${CHOICE} ${choiceState(selected)} ${
+      className={`group flex w-full items-center justify-between rounded-md border-[1.5px] px-4 py-3.5 text-left active:scale-[0.98] ${CHOICE} ${choiceState(selected)} ${
         selected
           ? "border-signal bg-signal-tint"
           : `${dim ? "border-ink-20" : "border-ink"} bg-chalk`
@@ -154,7 +154,7 @@ export function OptionRow({
     >
       <span className="flex-1 pr-3">
         <span
-          className={`block font-mono-bold text-sm ${selected ? "text-signal" : "text-ink"}`}
+          className={`block font-mono-bold text-sm ${selected ? "text-signal group-active:text-signal-deep" : "text-ink"}`}
           style={{ letterSpacing: 1 }}
         >
           {label}
@@ -170,7 +170,7 @@ export function OptionRow({
           </span>
         ) : null}
       </span>
-      {selected && <span className="font-mono-bold text-base text-signal">✓</span>}
+      {selected && <span className="font-mono-bold text-base text-signal group-active:text-signal-deep">✓</span>}
     </button>
   );
 }
@@ -282,7 +282,7 @@ export function Chip({
     >
       <span
         className={`font-mono-bold text-[10px] uppercase tracking-[0.14em] ${
-          selected ? "text-signal" : "text-ink-60 group-active:text-ink-80"
+          selected ? "text-signal group-active:text-signal-deep" : "text-ink-60 group-active:text-ink-80"
         }`}
       >
         {label}
@@ -308,19 +308,19 @@ export function BigChoice({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`flex flex-1 flex-col items-center rounded-md border-[1.5px] py-4 active:scale-[0.96] ${CHOICE} ${choiceState(selected)} ${
+      className={`group flex flex-1 flex-col items-center rounded-md border-[1.5px] py-4 active:scale-[0.96] ${CHOICE} ${choiceState(selected)} ${
         selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
       }`}
     >
       <span
-        className={`font-display ${selected ? "text-signal" : "text-ink"}`}
+        className={`font-display ${selected ? "text-signal group-active:text-signal-deep" : "text-ink"}`}
         style={{ fontSize: 28, letterSpacing: -1 }}
       >
         {num}
       </span>
       <span
         className={`font-mono-bold text-[9px] uppercase ${
-          selected ? "text-signal" : "text-ink-60"
+          selected ? "text-signal group-active:text-signal-deep" : "text-ink-60"
         }`}
         style={{ letterSpacing: 2 }}
       >

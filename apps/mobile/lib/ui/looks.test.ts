@@ -11,6 +11,7 @@ describe("buttonLook", () => {
     expect(buttonLook("primary", true).bg).toBe(palette.inkPress);
     expect(buttonLook("secondary", false).bg).toBe("transparent");
     expect(buttonLook("secondary", true).bg).toBe(palette.ink10);
+    expect(buttonLook("danger", true)).toMatchObject({ bg: palette.ink10, fg: palette.foulInkPress });
     expect(buttonLook("danger-fill", false)).toEqual({ bg: palette.foulInk, border: palette.foulInk, fg: palette.inkInv });
   });
 });
@@ -34,7 +35,7 @@ describe("choiceLook (OptionRow, BigChoice, cards)", () => {
   });
   it("tints when pressed", () => {
     expect(choiceLook({ selected: false, pressed: true }).bg).toBe(palette.chalkPress);
-    expect(choiceLook({ selected: true, pressed: true }).bg).toBe(palette.signalTintPress);
+    expect(choiceLook({ selected: true, pressed: true })).toMatchObject({ bg: palette.signalTintPress, fg: palette.signalDeep });
   });
 });
 
@@ -45,7 +46,7 @@ describe("chipLook", () => {
     expect(chipLook({ selected: true, pressed: true })).toEqual({
       bg: palette.signalTintPress,
       border: palette.signal,
-      fg: palette.signal,
+      fg: palette.signalDeep,
     });
   });
 });

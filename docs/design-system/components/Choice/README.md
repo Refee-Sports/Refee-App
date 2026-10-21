@@ -6,7 +6,7 @@ Chips are the light member: a 1px `ink-20` outline on a transparent fill with an
 
 States — "ring to choose":
 - **Hover** (pointer devices only): `ring-hover`, or `ring-hover-selected` on a selected item. No movement.
-- **Pressed**: chips and big choice scale to 96%, option rows and cards to 98%, with a `chalk-press` (or `ink-10` on chips) tint; a selected item presses to `signal-tint-press`. A toggle's thumb stretches to 24px while held. Releasing commits the selection; sliding off cancels.
+- **Pressed**: chips and big choice scale to 96%, option rows and cards to 98%, with a `chalk-press` (or `ink-10` on chips) tint; a selected item presses to `signal-tint-press` and its label deepens to `signal-deep` (signal on that tint is only 4.1:1). A toggle's thumb stretches to 24px while held. Releasing commits the selection; sliding off cancels.
 - **Focus**: `ring-focus` on `:focus-visible`.
 - **Disabled**: 40% opacity.
 - **Haptics (mobile)**: light impact on select and on toggle.

@@ -9,11 +9,6 @@ const AA = 4.5;
 // ink-60 mono labels at 9px+ bold measure 4.0:1; the design system accepts
 // that for muted captions only (tokens.json, ink-60).
 const MUTED_CAPTION = 3.9;
-// Pressed tints last only while a finger is down (they ease out over 120ms
-// on release). Two of the design system's pressed fills dip under AA —
-// danger on ink-10 (4.3:1) and signal on signal-tint-press (4.1:1) — so
-// pressed states are held to 4:1. Raising them is a design-system decision.
-const PRESSED = 4.0;
 
 describe("color helpers", () => {
   it("measures contrast like WCAG", () => {
@@ -31,9 +26,14 @@ describe("buttons", () => {
   for (const [name, v] of Object.entries(buttonVariants)) {
     it(`${name}: label reads at rest and pressed`, () => {
       expect(contrast(resolve(v.fg), resolve(v.bg))).toBeGreaterThanOrEqual(AA);
-      expect(contrast(resolve(v.fg), resolve(v.bgPressed))).toBeGreaterThanOrEqual(PRESSED);
+      expect(contrast(resolve(v.fgPressed), resolve(v.bgPressed))).toBeGreaterThanOrEqual(AA);
     });
   }
+
+  it("darkens the label while pressed where the tint would drop it under AA", () => {
+    expect(buttonVariants.danger.fgPressed).toBe("foulInkPress");
+    expect(choice.pressedSelectedFg).toBe("signalDeep");
+  });
 
   it("keeps red for hard-to-undo actions and green for Done", () => {
     expect(buttonVariants.danger).toMatchObject({ fg: "foulInk", border: "foulInk", bg: "transparent" });
@@ -60,7 +60,7 @@ describe("choices and fields", () => {
   it("rest and selected labels read", () => {
     expect(contrast(resolve(choice.rest.fg), resolve(choice.rest.bg))).toBeGreaterThanOrEqual(AA);
     expect(contrast(resolve(choice.selected.fg), resolve(choice.selected.bg))).toBeGreaterThanOrEqual(AA);
-    expect(contrast(resolve(choice.selected.fg), resolve(choice.pressedSelected))).toBeGreaterThanOrEqual(PRESSED);
+    expect(contrast(resolve(choice.pressedSelectedFg), resolve(choice.pressedSelected))).toBeGreaterThanOrEqual(AA);
     expect(contrast(resolve(choice.chip.rest.fg), resolve(choice.chip.rest.bg))).toBeGreaterThanOrEqual(MUTED_CAPTION);
   });
 

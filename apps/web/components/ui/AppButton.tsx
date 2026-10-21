@@ -44,7 +44,7 @@ export const buttonClasses: Record<ButtonVariant, string> = {
   primary: "bg-ink text-paper border-ink active:bg-ink-press active:border-ink-press",
   "hi-vis": "bg-hi-vis text-ink border-ink active:bg-hi-vis-press",
   secondary: "bg-transparent text-ink border-ink active:bg-ink-10",
-  danger: "bg-transparent text-foul-ink border-foul-ink active:bg-ink-10",
+  danger: "bg-transparent text-foul-ink border-foul-ink active:bg-ink-10 active:text-foul-ink-press",
   "danger-fill": "bg-foul-ink text-ink-inv border-foul-ink active:bg-foul-ink-press",
   court: "bg-court text-ink border-ink",
 };

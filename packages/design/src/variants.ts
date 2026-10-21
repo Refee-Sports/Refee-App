@@ -10,18 +10,19 @@ import type { ColorKey } from "./tokens";
 
 export type ButtonVariant = "primary" | "hi-vis" | "secondary" | "danger" | "danger-fill" | "court";
 
-export type ButtonLook = { bg: Fill; bgPressed: Fill; border: ColorKey; fg: ColorKey };
+// fgPressed darkens the label where the pressed tint would drop it under 4.5:1.
+export type ButtonLook = { bg: Fill; bgPressed: Fill; border: ColorKey; fg: ColorKey; fgPressed: ColorKey };
 
 export const buttonVariants: Record<ButtonVariant, ButtonLook> = {
-  primary: { bg: "ink", bgPressed: "inkPress", border: "ink", fg: "paper" },
-  "hi-vis": { bg: "hiVis", bgPressed: "hiVisPress", border: "ink", fg: "ink" },
+  primary: { bg: "ink", bgPressed: "inkPress", border: "ink", fg: "paper", fgPressed: "paper" },
+  "hi-vis": { bg: "hiVis", bgPressed: "hiVisPress", border: "ink", fg: "ink", fgPressed: "ink" },
   // Decline, Cancel: neutral, never red.
-  secondary: { bg: "transparent", bgPressed: "ink10", border: "ink", fg: "ink" },
+  secondary: { bg: "transparent", bgPressed: "ink10", border: "ink", fg: "ink", fgPressed: "ink" },
   // Hard-to-undo only: cancel a game, remove a ref, drop out of a confirmed game.
-  danger: { bg: "transparent", bgPressed: "ink10", border: "foulInk", fg: "foulInk" },
-  "danger-fill": { bg: "foulInk", bgPressed: "foulInkPress", border: "foulInk", fg: "inkInv" },
+  danger: { bg: "transparent", bgPressed: "ink10", border: "foulInk", fg: "foulInk", fgPressed: "foulInkPress" },
+  "danger-fill": { bg: "foulInk", bgPressed: "foulInkPress", border: "foulInk", fg: "inkInv", fgPressed: "inkInv" },
   // The Done state: court fill, ink label.
-  court: { bg: "court", bgPressed: "court", border: "ink", fg: "ink" },
+  court: { bg: "court", bgPressed: "court", border: "ink", fg: "ink", fgPressed: "ink" },
 };
 
 export type BadgeVariant = "live" | "confirmed" | "signal" | "warn" | "foul" | "neutral" | "ink";
@@ -46,6 +47,8 @@ export const choice = {
   selected: { bg: "signalTint", border: "signal", fg: "signal" },
   pressed: "chalkPress",
   pressedSelected: "signalTintPress",
+  /** Signal on signal-tint-press is 4.1:1, so the label deepens while held. */
+  pressedSelectedFg: "signalDeep",
   chip: {
     rest: { bg: "transparent", border: "ink20", fg: "ink60" },
     pressed: { bg: "ink10", border: "ink40", fg: "ink80" },
@@ -57,6 +60,7 @@ export const choice = {
   selected: { bg: Fill; border: ColorKey; fg: ColorKey };
   pressed: ColorKey;
   pressedSelected: ColorKey;
+  pressedSelectedFg: ColorKey;
   chip: { rest: { bg: Fill; border: ColorKey; fg: ColorKey }; pressed: { bg: Fill; border: ColorKey; fg: ColorKey } };
   scale: Record<string, number>;
 };

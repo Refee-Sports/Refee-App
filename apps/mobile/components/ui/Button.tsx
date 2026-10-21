@@ -47,7 +47,6 @@ export function Button({
   const v: ButtonVariant = isDone ? "court" : variant;
   const text = isDone ? doneLabel ?? label : label;
   const inactive = !!disabled || loading;
-  const fg = buttonLook(v, false).fg;
 
   useEffect(() => {
     if (isDone) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -83,22 +82,29 @@ export function Button({
         }}
         {...rest}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 8, opacity: loading ? 0 : 1 }}>
-          {isDone ? <Feather name="check" size={16} color={fg} /> : icon}
-          <Text
-            style={{
-              fontFamily: "JetBrainsMono_700Bold",
-              fontSize: 12,
-              letterSpacing: 1.68, // 0.14em
-              textTransform: "uppercase",
-              color: fg,
-            }}
-          >
-            {text}
-          </Text>
-          {showArrow && !isDone && <Feather name="arrow-right" size={16} color={fg} />}
-        </View>
-        {loading && <ActivityIndicator color={fg} style={{ position: "absolute" }} />}
+        {({ pressed }) => {
+          const fg = buttonLook(v, pressed).fg;
+          return (
+            <>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8, opacity: loading ? 0 : 1 }}>
+                {isDone ? <Feather name="check" size={16} color={fg} /> : icon}
+                <Text
+                  style={{
+                    fontFamily: "JetBrainsMono_700Bold",
+                    fontSize: 12,
+                    letterSpacing: 1.68, // 0.14em
+                    textTransform: "uppercase",
+                    color: fg,
+                  }}
+                >
+                  {text}
+                </Text>
+                {showArrow && !isDone && <Feather name="arrow-right" size={16} color={fg} />}
+              </View>
+              {loading && <ActivityIndicator color={fg} style={{ position: "absolute" }} />}
+            </>
+          );
+        }}
       </Tappable>
       {disabled && disabledReason ? (
         <Text

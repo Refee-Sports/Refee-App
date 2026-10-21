@@ -16,7 +16,7 @@ export type Look = { bg: string; border: string; fg: string };
 
 export function buttonLook(variant: ButtonVariant, pressed: boolean): Look {
   const v = buttonVariants[variant];
-  return { bg: resolve(pressed ? v.bgPressed : v.bg), border: resolve(v.border), fg: resolve(v.fg) };
+  return { bg: resolve(pressed ? v.bgPressed : v.bg), border: resolve(v.border), fg: resolve(pressed ? v.fgPressed : v.fg) };
 }
 
 export function badgeLook(variant: BadgeVariant): Look & { dot: string } {
@@ -28,7 +28,8 @@ export function badgeLook(variant: BadgeVariant): Look & { dot: string } {
 export function choiceLook({ selected, pressed, dim = false }: { selected: boolean; pressed: boolean; dim?: boolean }): Look {
   const base = selected ? choice.selected : dim ? choice.restDim : choice.rest;
   const bg = pressed ? (selected ? choice.pressedSelected : choice.pressed) : base.bg;
-  return { bg: resolve(bg), border: resolve(base.border), fg: resolve(base.fg) };
+  const fg = pressed && selected ? choice.pressedSelectedFg : base.fg;
+  return { bg: resolve(bg), border: resolve(base.border), fg: resolve(fg) };
 }
 
 export function chipLook({ selected, pressed }: { selected: boolean; pressed: boolean }): Look {
@@ -36,7 +37,7 @@ export function chipLook({ selected, pressed }: { selected: boolean; pressed: bo
     return {
       bg: resolve(pressed ? choice.pressedSelected : choice.selected.bg),
       border: resolve(choice.selected.border),
-      fg: resolve(choice.selected.fg),
+      fg: resolve(pressed ? choice.pressedSelectedFg : choice.selected.fg),
     };
   }
   const v = pressed ? choice.chip.pressed : choice.chip.rest;

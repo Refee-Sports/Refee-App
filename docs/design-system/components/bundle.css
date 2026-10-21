@@ -77,6 +77,7 @@
 .btn-hi:not([disabled]):active, .btn-hi.is-press { background: var(--hi-vis-press); }
 .btn-secondary:not([disabled]):active, .btn-secondary.is-press,
 .btn-danger:not([disabled]):active, .btn-danger.is-press { background: var(--ink-10); }
+.btn-danger:not([disabled]):active, .btn-danger.is-press { color: var(--foul-ink-press); }
 
 /* loading — width held, spinner replaces label */
 .btn.is-loading { cursor: progress; pointer-events: none; }
@@ -267,7 +268,7 @@
 a.card:active, .card.is-press { transform: scale(.98); background: var(--chalk-press); transition-duration: 0s; }
 .chip[data-selected="true"]:not([disabled]):active, .chip[data-selected="true"].is-press,
 .option-row[data-selected="true"]:not([disabled]):active, .option-row[data-selected="true"].is-press,
-.big-choice[data-selected="true"]:not([disabled]):active, .big-choice[data-selected="true"].is-press { background: var(--signal-tint-press); border-color: var(--signal); color: var(--signal); }
+.big-choice[data-selected="true"]:not([disabled]):active, .big-choice[data-selected="true"].is-press { background: var(--signal-tint-press); border-color: var(--signal); color: var(--signal-deep); }
 .toggle:not([disabled]):active .thumb, .toggle.is-press .thumb { width: 24px; }
 .toggle[data-checked="true"]:not([disabled]):active .thumb, .toggle[data-checked="true"].is-press .thumb { left: 20px; }
 

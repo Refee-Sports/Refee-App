@@ -18,6 +18,7 @@ describe("AppButton matches @refee/design", () => {
       expect(c).toContain(cls("text", look.fg));
       expect(c).toContain(cls("border", look.border));
       if (look.bgPressed !== look.bg) expect(c).toContain(cls("active:bg", look.bgPressed));
+      if (look.fgPressed !== look.fg) expect(c).toContain(cls("active:text", look.fgPressed));
     });
   }
 });

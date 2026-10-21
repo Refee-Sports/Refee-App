@@ -4,7 +4,7 @@ Variants: `primary` (ink fill, paper label — the default), `hi-vis` (hi-vis fi
 
 States:
 - **Hover** (pointer devices only): lifts 2px up-left onto the `hard` shadow — "lift to act".
-- **Pressed**: scales to 97% instantly; primary darkens to `ink-press`, hi-vis to `hi-vis-press`, outlines fill with `ink-10`. No shadow on touch.
+- **Pressed**: scales to 97% instantly; primary darkens to `ink-press`, hi-vis to `hi-vis-press`, outlines fill with `ink-10`, and a `danger` label deepens to `foul-ink-press` so it stays above 4.5:1. No shadow on touch.
 - **Focus**: `ring-focus` on `:focus-visible`.
 - **Loading**: width held, spinner replaces the label, taps blocked, accessible label announces the action ("Accepting").
 - **Done**: `court` variant with a check and past-tense label ("Accepted", "Live"), held about a second. "Declined" uses `secondary`, not green.
