@@ -479,14 +479,16 @@ export async function createGame(
 export async function fetchGameById(
   id: string
 ): Promise<{ game: DirectorGameRow | null; error: Error | null }> {
+  // Each ref's payout comes along so the game screen and the payment-issues
+  // list read the same thing (payoutDisplay), not just whether the card was charged.
   const { data, error } = await supabase
     .from("jobs")
-    .select("*")
+    .select("*, job_assignments(status, payout_status)")
     .eq("id", id)
     .maybeSingle();
 
   if (error) return { game: null, error: new Error(error.message) };
-  return { game: data as DirectorGameRow | null, error: null };
+  return { game: data ? withStaffing([data])[0] : null, error: null };
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { paymentIssues } from "@refee/core/director/payment-issues";
+import { issuesPanelOpen, paymentIssues } from "@refee/core/director/payment-issues";
 import type { DirectorGameRow } from "@refee/core/director/queries";
 
 const NOW = Date.parse("2026-10-15T12:00:00Z");
@@ -78,5 +78,18 @@ describe("paymentIssues", () => {
       urgent: true,
       message: "Crew payout overdue · was due SAT, OCT 3",
     });
+  });
+});
+
+describe("collapsing the payment-issues panel", () => {
+  it("stays open until the director minimizes it", () => {
+    expect(issuesPanelOpen(null, 3)).toBe(true);
+  });
+  it("stays minimized while the issues are the ones they already saw", () => {
+    expect(issuesPanelOpen(3, 3)).toBe(false);
+    expect(issuesPanelOpen(3, 2)).toBe(false);
+  });
+  it("opens again when a new issue arrives", () => {
+    expect(issuesPanelOpen(3, 4)).toBe(true);
   });
 });

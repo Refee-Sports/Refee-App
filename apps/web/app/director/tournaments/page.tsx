@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { VerifyBanner } from "@/components/ui/VerifyBanner";
@@ -26,7 +26,7 @@ import {
   type TournamentRow,
 } from "@/lib/director/queries";
 import { runAutoPay } from "@/lib/payments/queries";
-import type { PaymentIssue } from "@refee/core/director/payment-issues";
+import { issuesPanelOpen, type PaymentIssue } from "@refee/core/director/payment-issues";
 import { loadDirectorDashboard, type DirectorDashboard as DashboardData } from "@refee/core/director/dashboard";
 import { DirectorDashboard } from "@/components/director/DirectorDashboard";
 import { gameStatusDisplay, isClosedGame, payoutDisplay, type PayoutTone } from "@/lib/director/game-status";
@@ -81,6 +81,8 @@ function isTab(v: string | null): v is Tab {
  * The tab lives in the URL (?tab=) so a reload, the back button, or a shared
  * link lands on the same view. useSearchParams needs a Suspense boundary.
  */
+const ISSUES_MINIMIZED_KEY = "refee.director.paymentIssuesMinimizedAt";
+
 export default function DirectorTournamentsPage() {
   return (
     <Suspense
@@ -108,6 +110,28 @@ function DirectorHome() {
   const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
   const [approvals, setApprovals] = useState<PendingApproval[]>([]);
   const [paymentIssues, setPaymentIssues] = useState<PaymentIssue[]>([]);
+  // How many issues there were when the director minimized the panel; it
+  // reopens when a new one arrives. Remembered in this browser.
+  const [issuesMinimizedAt, setIssuesMinimizedAt] = useState<number | null>(null);
+  useEffect(() => {
+    try {
+      const v = localStorage.getItem(ISSUES_MINIMIZED_KEY);
+      setIssuesMinimizedAt(v === null ? null : Number(v));
+    } catch {
+      /* storage blocked: the panel just starts open */
+    }
+  }, []);
+  const issuesOpen = issuesPanelOpen(issuesMinimizedAt, paymentIssues.length);
+  const toggleIssues = () => {
+    const next = issuesOpen ? paymentIssues.length : null;
+    setIssuesMinimizedAt(next);
+    try {
+      if (next === null) localStorage.removeItem(ISSUES_MINIMIZED_KEY);
+      else localStorage.setItem(ISSUES_MINIMIZED_KEY, String(next));
+    } catch {
+      /* not remembered, nothing else breaks */
+    }
+  };
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -275,14 +299,24 @@ function DirectorHome() {
 
       {/* Payment problems the director has to act on */}
       {paymentIssues.length > 0 && (
-        <div className="mx-5 mb-4 border border-foul bg-foul/10 sm:mx-0" role="region" aria-label="Payment issues">
-          <div className="flex items-center gap-2 border-b border-foul/30 px-4 py-2.5 text-foul-ink">
+        <div className="mx-5 mb-4 overflow-hidden rounded-lg border border-foul bg-foul/10 sm:mx-0" role="region" aria-label="Payment issues">
+          <button
+            type="button"
+            onClick={toggleIssues}
+            aria-expanded={issuesOpen}
+            className={`flex w-full items-center gap-2 px-4 py-2.5 text-left text-foul-ink transition-colors duration-[120ms] hover:bg-foul/10 active:bg-chalk-press focus-visible:outline-none focus-visible:shadow-ring-focus ${
+              issuesOpen ? "border-b border-foul/30" : ""
+            }`}
+          >
             <Icon name="credit-card" size={13} />
-            <span className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+            <span className="flex-1 font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
               {paymentIssues.length} payment issue{paymentIssues.length !== 1 ? "s" : ""}
             </span>
-          </div>
-          {paymentIssues.slice(0, 4).map((issue) => (
+            <span className={`transition-transform duration-[120ms] ${issuesOpen ? "rotate-180" : ""}`}>
+              <Icon name="chevron-down" size={14} />
+            </span>
+          </button>
+          {issuesOpen && paymentIssues.slice(0, 4).map((issue) => (
             <Link
               key={issue.gameId}
               href={`/director/game/${issue.gameId}`}
@@ -300,7 +334,7 @@ function DirectorHome() {
               <Icon name="chevron-right" size={14} />
             </Link>
           ))}
-          {paymentIssues.length > 4 ? (
+          {issuesOpen && paymentIssues.length > 4 ? (
             <p className="px-4 py-2 font-mono text-[8px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
               +{paymentIssues.length - 4} more · open each game to fix
             </p>

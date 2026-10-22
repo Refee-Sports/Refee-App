@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Text, View, ActivityIndicator, FlatList, RefreshControl, Alert } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,7 +14,7 @@ import {
   type NeedsCompletionRow,
   type DirectorGameRow,
 } from "@/lib/director/queries";
-import type { PaymentIssue } from "@refee/core/director/payment-issues";
+import { issuesPanelOpen, type PaymentIssue } from "@refee/core/director/payment-issues";
 import { DirectorDashboard } from "@/components/director/DirectorDashboard";
 import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
@@ -24,6 +24,7 @@ import { palette, choice } from "@refee/design";
 import { Tappable } from "@/components/ui/Tappable";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STATUS_COLORS: Record<string, string> = {
   open: palette.signal,
@@ -37,6 +38,8 @@ function formatDate(ymd: string) {
   return formatDateOnly(ymd, { month: "short", day: "numeric", year: "numeric" }).toUpperCase();
 }
 
+const ISSUES_MINIMIZED_KEY = "refee.director.paymentIssuesMinimizedAt";
+
 export default function TournamentsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -44,6 +47,20 @@ export default function TournamentsScreen() {
   const [singleGames, setSingleGames] = useState<DirectorGameRow[]>([]);
   const [needsCompletion, setNeedsCompletion] = useState<NeedsCompletionRow[]>([]);
   const [paymentIssues, setPaymentIssues] = useState<PaymentIssue[]>([]);
+  // How many issues there were when the director minimized the panel; it
+  // reopens when a new one arrives. Remembered on this device.
+  const [issuesMinimizedAt, setIssuesMinimizedAt] = useState<number | null>(null);
+  useEffect(() => {
+    AsyncStorage.getItem(ISSUES_MINIMIZED_KEY)
+      .then((v) => setIssuesMinimizedAt(v === null ? null : Number(v)))
+      .catch(() => {});
+  }, []);
+  const issuesOpen = issuesPanelOpen(issuesMinimizedAt, paymentIssues.length);
+  const toggleIssues = () => {
+    const next = issuesOpen ? paymentIssues.length : null;
+    setIssuesMinimizedAt(next);
+    (next === null ? AsyncStorage.removeItem(ISSUES_MINIMIZED_KEY) : AsyncStorage.setItem(ISSUES_MINIMIZED_KEY, String(next))).catch(() => {});
+  };
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -117,14 +134,30 @@ export default function TournamentsScreen() {
 
       {/* Payment problems the director has to act on */}
       {paymentIssues.length > 0 && (
-        <View className="mx-5 mb-4 border border-foul bg-foul/10">
-          <View className="px-4 py-2.5 border-b border-foul/30 flex-row items-center gap-2">
-            <Feather name="credit-card" size={13} color={palette.foul} />
-            <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>
+        <View className="mx-5 mb-4 rounded-lg overflow-hidden border border-foul bg-foul/10">
+          <Tappable
+            onPress={toggleIssues}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: issuesOpen }}
+            accessibilityLabel={`${paymentIssues.length} payment issues. ${issuesOpen ? "Minimize" : "Show"}`}
+            scaleTo={choice.scale.optionRow}
+            style={({ pressed }) => ({
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              backgroundColor: pressed ? palette.chalkPress : undefined,
+            })}
+            className={issuesOpen ? "border-b border-foul/30" : ""}
+          >
+            <Feather name="credit-card" size={13} color={palette.foulInk} />
+            <Text className="flex-1 font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>
               {paymentIssues.length} PAYMENT ISSUE{paymentIssues.length !== 1 ? "S" : ""}
             </Text>
-          </View>
-          {paymentIssues.slice(0, 4).map((issue) => (
+            <Feather name={issuesOpen ? "chevron-up" : "chevron-down"} size={14} color={palette.foulInk} />
+          </Tappable>
+          {issuesOpen && paymentIssues.slice(0, 4).map((issue) => (
             <Tappable
               scaleTo={choice.scale.optionRow}
               style={({ pressed }) => ({ backgroundColor: pressed ? palette.chalkPress : undefined })}
@@ -146,7 +179,7 @@ export default function TournamentsScreen() {
               <Feather name="chevron-right" size={14} color={palette.ink} />
             </Tappable>
           ))}
-          {paymentIssues.length > 4 ? (
+          {issuesOpen && paymentIssues.length > 4 ? (
             <Text className="px-4 py-2 font-mono text-[8px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
               +{paymentIssues.length - 4} MORE · OPEN EACH GAME TO FIX
             </Text>

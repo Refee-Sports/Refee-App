@@ -57,3 +57,12 @@ export function paymentIssues(games: DirectorGameRow[], now: number = Date.now()
     })
     .sort((a, b) => ORDER.indexOf(a.kind) - ORDER.indexOf(b.kind));
 }
+
+/**
+ * Whether the payment-issues panel is open. `minimizedAt` is how many issues
+ * there were when the director minimized it (null if they never did); it stays
+ * minimized until a new issue arrives.
+ */
+export function issuesPanelOpen(minimizedAt: number | null, count: number): boolean {
+  return minimizedAt === null || count > minimizedAt;
+}
