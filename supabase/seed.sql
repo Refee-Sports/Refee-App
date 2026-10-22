@@ -256,7 +256,7 @@ select
   'Free · on-site'
 from public.hirers h
 where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid
-on conflict (id) do nothing;
+on conflict (id) do update set starts_at = excluded.starts_at;
 
 insert into public.jobs (
   id,
@@ -307,7 +307,7 @@ select
   'Lot B'
 from public.hirers h
 where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid
-on conflict (id) do nothing;
+on conflict (id) do update set starts_at = excluded.starts_at;
 
 insert into public.jobs (
   id,
@@ -356,7 +356,7 @@ select
   'Street'
 from public.hirers h
 where h.user_id = '11111111-1111-4111-8111-111111111101'::uuid
-on conflict (id) do nothing;
+on conflict (id) do update set starts_at = excluded.starts_at;
 
 -- =============================================================================
 -- ENRICHED SEED — 4 new test scenarios
@@ -544,41 +544,52 @@ begin
   select id into v_dir2_hirer_id from public.hirers where user_id = v_dir2_id;
   select id into v_dir1_hirer_id from public.hirers where user_id = '11111111-1111-4111-8111-111111111101'::uuid;
 
-  insert into public.tournaments
-    (hirer_id, name, description, sport_id, starts_on, ends_on,
-     venue_name, venue_city, venue_state, total_games, pay_per_game, status)
-  values
-    (v_dir2_hirer_id,
-     'DFW Summer Slam',
-     '3-day summer invitational — 24 teams, all divisions',
-     'basketball',
-     (current_date + interval '30 days')::date,
-     (current_date + interval '32 days')::date,
-     'American Airlines Center Auxiliary Gym', 'Dallas', 'TX',
-     36, 160, 'open')
-  on conflict do nothing
-  returning id into v_tournament_id;
+  -- Found by name so re-seeding updates it instead of adding another.
+  select id into v_tournament_id from public.tournaments
+   where hirer_id = v_dir2_hirer_id and name = 'DFW Summer Slam';
 
-  if v_tournament_id is not null then
-    insert into public.jobs
-      (hirer_id, tournament_id, sport_id, title, job_type, level, age_group, gender, ruleset,
-       starts_at, duration_minutes, venue_name, venue_city, venue_state,
-       pay_per_game, num_games, crew_size, status, is_featured, uniform_requirements)
+  if v_tournament_id is null then
+    insert into public.tournaments
+      (hirer_id, name, description, sport_id, starts_on, ends_on,
+       venue_name, venue_city, venue_state, total_games, pay_per_game, status)
     values
-      (v_dir2_hirer_id, v_tournament_id, 'basketball',
-       'DFW Summer Slam — Pool A Day 1', 'tournament', 'high_school', 'U18', 'boys', 'NFHS',
-       (now() + interval '30 days'), 120, 'AAC Auxiliary Court 1', 'Dallas', 'TX',
-       160, 3, 3, 'open', true, 'Black / white stripe'),
-      (v_dir2_hirer_id, v_tournament_id, 'basketball',
-       'DFW Summer Slam — Pool B Day 1', 'tournament', 'high_school', 'U18', 'girls', 'NFHS',
-       (now() + interval '30 days' + interval '4 hours'), 120, 'AAC Auxiliary Court 2', 'Dallas', 'TX',
-       160, 3, 2, 'partially_filled', false, 'Black / white stripe'),
-      (v_dir2_hirer_id, v_tournament_id, 'basketball',
-       'DFW Summer Slam — Finals', 'tournament', 'high_school', 'U18', 'boys', 'NFHS',
-       (now() + interval '32 days'), 120, 'AAC Auxiliary Court 1', 'Dallas', 'TX',
-       200, 1, 3, 'open', true, 'Black / white stripe')
-    on conflict do nothing;
+      (v_dir2_hirer_id,
+       'DFW Summer Slam',
+       '3-day summer invitational — 24 teams, all divisions',
+       'basketball',
+       (current_date + interval '30 days')::date,
+       (current_date + interval '32 days')::date,
+       'American Airlines Center Auxiliary Gym', 'Dallas', 'TX',
+       36, 160, 'open')
+    returning id into v_tournament_id;
+  else
+    update public.tournaments
+       set starts_on = (current_date + interval '30 days')::date,
+           ends_on = (current_date + interval '32 days')::date
+     where id = v_tournament_id;
   end if;
+
+  insert into public.jobs
+    (hirer_id, tournament_id, sport_id, title, job_type, level, age_group, gender, ruleset,
+     starts_at, duration_minutes, venue_name, venue_city, venue_state,
+     pay_per_game, num_games, crew_size, status, is_featured, uniform_requirements)
+  select v_dir2_hirer_id, v_tournament_id, 'basketball', v.title, 'tournament', 'high_school', 'U18', v.gender, 'NFHS',
+         v.starts_at, 120, v.venue, 'Dallas', 'TX', v.pay, v.games, v.crew, v.status, v.featured, 'Black / white stripe'
+    from (values
+      ('DFW Summer Slam — Pool A Day 1', 'boys',  now() + interval '30 days',                      'AAC Auxiliary Court 1', 160, 3, 3, 'open',             true),
+      ('DFW Summer Slam — Pool B Day 1', 'girls', now() + interval '30 days' + interval '4 hours', 'AAC Auxiliary Court 2', 160, 3, 2, 'partially_filled', false),
+      ('DFW Summer Slam — Finals',       'boys',  now() + interval '32 days',                      'AAC Auxiliary Court 1', 200, 1, 3, 'open',             true)
+    ) as v(title, gender, starts_at, venue, pay, games, crew, status, featured)
+   where not exists (select 1 from public.jobs j where j.tournament_id = v_tournament_id and j.title = v.title);
+
+  update public.jobs j
+     set starts_at = v.starts_at
+    from (values
+      ('DFW Summer Slam — Pool A Day 1', now() + interval '30 days'),
+      ('DFW Summer Slam — Pool B Day 1', now() + interval '30 days' + interval '4 hours'),
+      ('DFW Summer Slam — Finals',       now() + interval '32 days')
+    ) as v(title, starts_at)
+   where j.tournament_id = v_tournament_id and j.title = v.title;
 
   -- ── Marcus: past completed jobs (earnings) ─────────────────────────────────
   -- This week 3 × $150 = $450
@@ -591,7 +602,7 @@ begin
      (now() - interval '1 day'),    90, 'Austin Rec Center', 'Austin', 'TX', 150, 2, 'completed'),
     (j_wk3, v_dir1_hirer_id, 'basketball', 'Rec Thursday Night', 'single', 'adult', 'adult', 'co_ed', 'FIBA',
      (now() - interval '12 hours'), 90, 'Austin Rec Center', 'Austin', 'TX', 150, 2, 'completed')
-  on conflict (id) do nothing;
+  on conflict (id) do update set starts_at = excluded.starts_at;
 
   -- This month, not this week: 2 × $200 = $400 (total month = $850)
   insert into public.jobs (id, hirer_id, sport_id, title, job_type, level, age_group, gender, ruleset,
@@ -601,7 +612,7 @@ begin
      (date_trunc('month', now()) + interval '3 days'), 120, 'Eastside HS Gym', 'Austin', 'TX', 200, 3, 'completed'),
     (j_mo2, v_dir1_hirer_id, 'basketball', 'East Side League — Girls', 'single', 'high_school', 'U18', 'girls', 'NFHS',
      (date_trunc('month', now()) + interval '5 days'), 120, 'Eastside HS Gym', 'Austin', 'TX', 200, 3, 'completed')
-  on conflict (id) do nothing;
+  on conflict (id) do update set starts_at = excluded.starts_at;
 
   -- This year, not this month: 3 × $175 = $525 (total year = $1,375)
   insert into public.jobs (id, hirer_id, sport_id, title, job_type, level, age_group, gender, ruleset,
@@ -613,7 +624,7 @@ begin
      make_date(extract(year from now())::int, 2, 8),  90, 'Round Rock Sportsplex', 'Round Rock', 'TX', 175, 3, 'completed'),
     (j_yr3, v_dir1_hirer_id, 'basketball', 'Spring Invitational Semi', 'tournament', 'high_school', 'U18', 'girls', 'NFHS',
      make_date(extract(year from now())::int, 3, 22), 90, 'Cedar Park Gym',        'Cedar Park',  'TX', 175, 3, 'completed')
-  on conflict (id) do nothing;
+  on conflict (id) do update set starts_at = excluded.starts_at;
 
   insert into public.job_assignments (job_id, ref_id, role, status, applied_at, responded_at, amount_due, payout_status)
   values
@@ -640,14 +651,15 @@ begin
     (j_up3, v_dir1_hirer_id, 'basketball',
      'Thursday Night League', 'single', 'adult', 'adult', 'co_ed', 'FIBA',
      (now() + interval '21 days'), 90, 'Austin Rec Center', 'Austin', 'TX', 85, 2, 'open')
-  on conflict (id) do nothing;
+  on conflict (id) do update set starts_at = excluded.starts_at;
 
   insert into public.job_assignments (job_id, ref_id, role, status, applied_at, responded_at)
   values
     (j_up1, v_ref4_id, 'official',   'accepted', now()-interval'5 days', now()-interval'4 days'),
     (j_up2, v_ref4_id, 'crew_chief', 'accepted', now()-interval'3 days', now()-interval'2 days'),
     (j_up3, v_ref4_id, 'official',   'accepted', now()-interval'1 day',  now()-interval'12 hours')
-  on conflict (job_id, ref_id) do nothing;
+  -- A re-seed moves the games, which sends accepted crews back to re-confirm.
+  on conflict (job_id, ref_id) do update set status = excluded.status, responded_at = excluded.responded_at;
 
 end
 $extra$;

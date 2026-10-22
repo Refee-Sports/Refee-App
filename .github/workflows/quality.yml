@@ -88,6 +88,8 @@ jobs:
         run: npm run db:start
       - name: Prove a clean migration and seed reset
         run: npm run db:reset
+      - name: Prove the seed can be re-run (npm run db:seed)
+        run: npm run db:seed
       - name: Run database authorization tests
         run: npm run db:test
       - name: Stop local Supabase

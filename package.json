@@ -13,6 +13,7 @@
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
+    "db:seed": "bash scripts/seed-local.sh",
     "db:push": "supabase db push",
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local --schema public > packages/core/src/database.types.ts",

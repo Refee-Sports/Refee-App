@@ -89,12 +89,39 @@ A QR code will appear in your terminal.
 The app will load on your phone. Save any file in your editor and it
 hot-reloads instantly.
 
+## Local test data
+
+`npm run db:reset` builds a fresh local database with seed data, and
+`npm run db:seed` re-runs the seed without wiping accounts you made yourself.
+Re-seeding moves every game date forward from today, so run it whenever the
+feed looks stale. Run the mobile app with `npm run ios:local -w apps/mobile`
+so it talks to this local database, never production.
+
+Sign in with any address below; the code arrives in the local inbox at
+http://127.0.0.1:54324 (nothing reaches a real mailbox).
+
+| Account | Who | What you'll see |
+|---|---|---|
+| `dc.new@refee.local` | Riley, referee | A full DC feed, no games yet |
+| `dc.booked@refee.local` | Jamie, referee | Two confirmed games, an application pending, an offer from the assignor |
+| `dc.paid@refee.local` | Morgan, referee | A season of completed games, paid and pending payouts |
+| `dc.unverified@refee.local` | Casey, referee | ID check in review: can browse, can't apply |
+| `dc.director@refee.local` | Pat, director | DMV Hoops Classic, weeknight games, applicants to review |
+| `dc.assignor@refee.local` | Drew, assignor | Three-ref roster, running Capital Fall League |
+| `admin@refee.local` | Sky, staff | The web admin at /admin |
+| `ref1`–`ref4@refee.local`, `dir1`–`dir2@refee.local` | Texas accounts | The original Austin/Dallas data |
+
+An account you create yourself with a DC ZIP (e.g. 20019) sees the same DC
+feed. ZIP lookups need the local edge functions: `supabase functions serve`.
+`supabase/tests/database/0075_local_seed_test.sql` fails if a migration breaks
+the seed or it stops covering one of these states.
+
 ## What you should see
 
-1. **Welcome screen** — ink canvas, hi-vis "CALLED UP" tag, three-cell value strip
-2. Tap **GET STARTED** → phone entry
-3. Enter your real phone number → tap **SEND CODE**
-4. You'll receive an SMS (or check Supabase logs for the code if you disabled SMS)
+1. **Welcome screen** — "Games don't count unless you make it official."
+2. Tap **GET STARTED** → email entry
+3. Enter an email → tap **SEND CODE**
+4. Locally, the code is in http://127.0.0.1:54324
 5. Enter the 6 digits → auto-verify → drops you into the app shell with tabs
 
 ## Troubleshooting
