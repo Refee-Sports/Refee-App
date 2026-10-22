@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Text, View, ActivityIndicator, Pressable, Alert } from "react-native";
+import { Text, View, ActivityIndicator, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
@@ -19,6 +19,9 @@ import {
 } from "@/lib/assignor/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { palette } from "@refee/design";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { ListRow } from "@/components/ui/Controls";
 
 /** "SAT · SEP 20" in the venue's zone. */
 function formatCardDate(iso: string, tz?: string | null): string {
@@ -45,12 +48,10 @@ function AssignmentCard({ row }: { row: AssignmentRow }) {
   const pay = row.job.pay_per_game * row.job.num_games;
 
   return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync();
-        router.push(`/job/${row.job.id}`);
-      }}
-      className="border border-ink-20 bg-chalk active:opacity-70"
+    <Card
+      onPress={() => router.push(`/job/${row.job.id}`)}
+      variant="quiet"
+      accessibilityLabel={row.job.title}
     >
       <View className="px-4 pt-3.5 pb-1">
         <Text
@@ -69,7 +70,7 @@ function AssignmentCard({ row }: { row: AssignmentRow }) {
       </View>
       <View className="flex-row border-t border-ink-20 mt-2">
         <View className="flex-1 px-4 py-2.5 border-r border-ink-20">
-          <Text className="text-ink-40 font-mono-bold text-[8px] uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
+          <Text className="text-ink-60 font-mono-bold text-[8px] uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
             WHEN
           </Text>
           <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 0.5 }}>
@@ -80,7 +81,7 @@ function AssignmentCard({ row }: { row: AssignmentRow }) {
           </Text>
         </View>
         <View className="flex-1 px-4 py-2.5 border-r border-ink-20">
-          <Text className="text-ink-40 font-mono-bold text-[8px] uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
+          <Text className="text-ink-60 font-mono-bold text-[8px] uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
             WHERE
           </Text>
           <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
@@ -91,7 +92,7 @@ function AssignmentCard({ row }: { row: AssignmentRow }) {
           </Text>
         </View>
         <View className="px-4 py-2.5 items-end justify-center">
-          <Text className="text-ink-40 font-mono-bold text-[8px] uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
+          <Text className="text-ink-60 font-mono-bold text-[8px] uppercase mb-0.5" style={{ letterSpacing: 1.5 }}>
             PAY
           </Text>
           <Text className="text-ink font-display" style={{ fontSize: 18, letterSpacing: -0.5 }}>
@@ -99,7 +100,7 @@ function AssignmentCard({ row }: { row: AssignmentRow }) {
           </Text>
         </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
@@ -252,12 +253,27 @@ export default function Home() {
                   Joining allows this assignor to send game offers. Every game still requires your acceptance.
                 </Text>
                 <View className="flex-row mt-3">
-                  <Pressable disabled={rosterBusyId !== null} onPress={() => void respondToRoster(invite, false)} className="flex-1 border border-ink py-2.5 items-center active:opacity-70">
-                    <Text className="font-mono-bold text-[9px] text-ink uppercase">DECLINE</Text>
-                  </Pressable>
-                  <Pressable disabled={rosterBusyId !== null} onPress={() => void respondToRoster(invite, true)} className="flex-1 border border-ink bg-ink py-2.5 items-center active:opacity-70">
-                    {rosterBusyId === invite.roster_id ? <ActivityIndicator size="small" color={palette.paper} /> : <Text className="font-mono-bold text-[9px] text-paper uppercase">JOIN ROSTER</Text>}
-                  </Pressable>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      label="Decline"
+                      variant="secondary"
+                      size="sm"
+                      fullWidth
+                      disabled={rosterBusyId !== null}
+                      onPress={() => void respondToRoster(invite, false)}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      label="Join roster"
+                      size="sm"
+                      fullWidth
+                      loading={rosterBusyId === invite.roster_id}
+                      loadingLabel="Joining"
+                      disabled={rosterBusyId !== null}
+                      onPress={() => void respondToRoster(invite, true)}
+                    />
+                  </View>
                 </View>
               </View>
             ))}
@@ -302,20 +318,6 @@ export default function Home() {
 function QuickAction({ label, href }: { label: string; href: string }) {
   const router = useRouter();
   return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync();
-        router.push(href as any);
-      }}
-      className="border border-ink-20 bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
-    >
-      <Text
-        className="text-ink font-mono-bold text-[11px] uppercase"
-        style={{ letterSpacing: 1.5 }}
-      >
-        {label}
-      </Text>
-      <Text className="text-ink-40 font-mono text-[11px]">→</Text>
-    </Pressable>
+    <ListRow label={label} onPress={() => router.push(href as any)} />
   );
 }

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { Alert, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { cancelTournament } from "@/lib/director/queries";
-import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Cancels every game still open in an event (rain-out, venue lost), then the
@@ -54,19 +54,14 @@ export function CancelTournamentButton({
 
   return (
     <View className="mt-6 mb-4">
-      <Pressable
+      <Button
+        label="Cancel entire event"
+        variant="danger"
+        fullWidth
+        loading={busy}
+        loadingLabel="Cancelling"
         onPress={confirm}
-        disabled={busy}
-        className="border-[1.5px] border-foul py-3.5 items-center active:opacity-80 disabled:opacity-40"
-      >
-        {busy ? (
-          <ActivityIndicator color={palette.foul} />
-        ) : (
-          <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-            CANCEL ENTIRE EVENT
-          </Text>
-        )}
-      </Pressable>
+      />
     </View>
   );
 }

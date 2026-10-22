@@ -1,9 +1,8 @@
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { Feather } from "@expo/vector-icons";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { JobDetailActionBar } from "@/components/job/JobDetailActionBar";
 import { JobDetailCrew } from "@/components/job/JobDetailCrew";
@@ -22,6 +21,8 @@ import { getOrCreateCrewConversation } from "@/lib/messages/queries";
 import { withdrawFromJob, isLateWithdrawal, reportRunningLate, canReportRunningLate, canWithdraw } from "@/lib/jobs/queries";
 import { jobAvailability } from "@refee/core/jobs/availability";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { BackButton } from "@/components/ui/Controls";
 
 const ACTION_BAR_HEIGHT = 88;
 
@@ -202,12 +203,9 @@ export default function JobDetailScreen() {
         <StatusBar style="dark" />
         <View style={{ height: insets.top }} />
         <View className="px-5 pt-4">
-          <Pressable
-            onPress={() => router.back()}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70 mb-6"
-          >
-            <Feather name="chevron-left" size={20} color={palette.ink} />
-          </Pressable>
+          <View className="mb-6">
+            <BackButton onPress={() => router.back()} />
+          </View>
           <Text
             className="text-ink font-display uppercase"
             style={{ fontSize: 22, letterSpacing: -0.5 }}
@@ -278,14 +276,7 @@ export default function JobDetailScreen() {
 
       {unavailable ? (
         <View className="border-t border-ink bg-paper px-5 pt-3" style={{ paddingBottom: insets.bottom + 12 }}>
-          <Pressable
-            onPress={() => router.replace("/(app)/(tabs)/jobs" as never)}
-            className="border border-ink py-4 items-center active:opacity-70"
-          >
-            <Text className="font-mono-bold text-[12px] text-ink uppercase" style={{ letterSpacing: 2 }}>
-              BACK TO GAMES
-            </Text>
-          </Pressable>
+          <Button label="Back to games" variant="secondary" fullWidth onPress={() => router.replace("/(app)/(tabs)/jobs" as never)} />
         </View>
       ) : (
       <JobDetailActionBar

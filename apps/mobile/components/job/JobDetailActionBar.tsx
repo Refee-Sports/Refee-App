@@ -1,8 +1,10 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Button } from "@/components/ui/Button";
 import type { AssignmentStatus } from "@/lib/jobs/queries";
 import { palette } from "@refee/design";
+import { TextLink } from "@/components/ui/Controls";
+import { Feather } from "@expo/vector-icons";
 
 type Props = {
   bottomInset: number;
@@ -41,20 +43,18 @@ export function JobDetailActionBar({
           <ZebraRule variant="signal" thin noMargin />
         </View>
         <View className="flex-row gap-2.5">
-          <View className="flex-1 bg-court/15 border border-court py-4 items-center justify-center">
+          <View className="flex-1 rounded-md bg-court/15 border border-court py-4 items-center justify-center">
             <Text className="text-court-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
               ACCEPTED · ON CREW
             </Text>
           </View>
           {onMessageCrew && (
-            <Pressable
+            <Button
+              label="Message crew"
+              variant="primary"
+              icon={<Feather name="message-square" size={14} color={palette.paper} />}
               onPress={onMessageCrew}
-              className="bg-ink px-5 items-center justify-center active:opacity-80"
-            >
-              <Text className="font-mono-bold text-[10px] uppercase text-center" style={{ letterSpacing: 1.5, color: palette.hiVis }}>
-                MESSAGE{"\n"}CREW
-              </Text>
-            </Pressable>
+            />
           )}
         </View>
         {onRunningLate && (
@@ -63,28 +63,23 @@ export function JobDetailActionBar({
               RUNNING LATE?
             </Text>
             {[10, 15, 30].map((m) => (
-              <Pressable
-                key={m}
-                onPress={() => onRunningLate(m)}
-                disabled={actionLoading}
-                className="flex-1 border border-ink bg-chalk py-2 items-center active:opacity-70 disabled:opacity-40"
-              >
-                <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                  {m} MIN
-                </Text>
-              </Pressable>
+              <View key={m} style={{ flex: 1 }}>
+                <Button
+                  label={`${m} min`}
+                  variant="secondary"
+                  size="sm"
+                  fullWidth
+                  disabled={actionLoading}
+                  onPress={() => onRunningLate(m)}
+                />
+              </View>
             ))}
           </View>
         )}
         {onWithdraw && (
-          <Pressable onPress={onWithdraw} className="mt-2 py-2 items-center active:opacity-70">
-            <Text
-              className="text-ink-40 font-mono-bold text-[9px] uppercase underline"
-              style={{ letterSpacing: 1.5 }}
-            >
-              WITHDRAW FROM THIS GAME
-            </Text>
-          </Pressable>
+          <View className="mt-1">
+            <TextLink label="Withdraw from this game" onPress={onWithdraw} />
+          </View>
         )}
       </View>
     );
@@ -134,7 +129,7 @@ export function JobDetailActionBar({
         <View className="absolute top-0 left-0 right-0 -mt-[1.5px]">
           <ZebraRule variant="signal" thin noMargin />
         </View>
-        <View className="border border-ink-20 py-4 items-center">
+        <View className="rounded-md border border-ink-20 py-4 items-center">
           <Text className="text-ink-60 font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
             DECLINED
           </Text>
@@ -152,24 +147,19 @@ export function JobDetailActionBar({
         <View className="absolute top-0 left-0 right-0 -mt-[1.5px]">
           <ZebraRule variant="signal" thin noMargin />
         </View>
-        <View className="border border-ink-20 py-4 items-center">
+        <View className="rounded-md border border-ink-20 py-4 items-center">
           <Text className="text-ink-60 font-mono-bold text-xs uppercase" style={{ letterSpacing: 2 }}>
             APPLICATION PENDING
           </Text>
         </View>
         {onCancelApplication && (
-          <Pressable
-            onPress={onCancelApplication}
-            disabled={actionLoading || !canMutate}
-            className="mt-2 py-2 items-center active:opacity-70 disabled:opacity-40"
-          >
-            <Text
-              className="text-ink-40 font-mono-bold text-[9px] uppercase underline"
-              style={{ letterSpacing: 1.5 }}
-            >
-              CANCEL MY APPLICATION
-            </Text>
-          </Pressable>
+          <View className="mt-1">
+            <TextLink
+              label="Cancel my application"
+              onPress={onCancelApplication}
+              disabled={actionLoading || !canMutate}
+            />
+          </View>
         )}
       </View>
     );

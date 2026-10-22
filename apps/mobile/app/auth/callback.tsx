@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import { finalizeOAuthRedirect } from "@/lib/oauth";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
 
 export default function AuthCallback() {
   const router = useRouter();
@@ -25,9 +26,9 @@ export default function AuthCallback() {
         <>
           <Text className="font-display text-ink text-center" style={{ fontSize: 30 }}>SIGN-IN LINK FAILED</Text>
           <Text className="font-mono text-[10px] text-foul-ink uppercase text-center mt-3" style={{ letterSpacing: 1 }}>{error}</Text>
-          <Pressable onPress={() => router.replace("/(auth)/sign-in")} className="bg-ink px-6 py-4 mt-6 active:opacity-75">
-            <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>REQUEST A NEW LINK</Text>
-          </Pressable>
+          <View className="mt-6">
+            <Button label="Request a new link" onPress={() => router.replace("/(auth)/sign-in")} />
+          </View>
         </>
       ) : (
         <>

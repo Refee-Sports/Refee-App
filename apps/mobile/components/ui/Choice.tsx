@@ -83,15 +83,21 @@ export function Chip({
   selected,
   onPress,
   disabled,
+  icon,
+  accessibilityLabel,
 }: {
   label: string;
   selected: boolean;
   onPress: () => void;
   disabled?: boolean;
+  /** Drawn before the label in the label's color. */
+  icon?: (color: string) => ReactNode;
+  accessibilityLabel?: string;
 }) {
   return (
     <Tappable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       accessibilityState={{ selected, disabled: !!disabled }}
       disabled={disabled}
       onPress={onPress}
@@ -111,14 +117,17 @@ export function Chip({
         };
       }}
     >
-      {({ pressed }) => (
-        <Text
-          className="font-mono-bold text-[10px] uppercase"
-          style={{ letterSpacing: 1.4, color: chipLook({ selected, pressed }).fg }}
-        >
-          {label}
-        </Text>
-      )}
+      {({ pressed }) => {
+        const fg = chipLook({ selected, pressed }).fg;
+        return (
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            {icon?.(fg)}
+            <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.4, color: fg }}>
+              {label}
+            </Text>
+          </View>
+        );
+      }}
     </Tappable>
   );
 }

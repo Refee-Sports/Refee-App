@@ -1,7 +1,6 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { palette } from "@refee/design";
+import { BackButton, IconButton } from "@/components/ui/Controls";
 
 type Props = {
   jobCode: string;
@@ -11,15 +10,7 @@ type Props = {
 export function JobDetailHeader({ jobCode, onBack }: Props) {
   return (
     <View className="flex-row items-center justify-between px-5 py-1">
-      <Pressable
-        onPress={() => {
-          Haptics.selectionAsync();
-          onBack();
-        }}
-        className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-      >
-        <Feather name="chevron-left" size={20} color={palette.ink} />
-      </Pressable>
+      <BackButton onPress={onBack} />
       <View className="items-center flex-1 px-2">
         <Text
           className="text-ink-60 font-mono-bold text-[9px] uppercase"
@@ -35,18 +26,8 @@ export function JobDetailHeader({ jobCode, onBack }: Props) {
         </Text>
       </View>
       <View className="flex-row gap-1.5">
-        <Pressable
-          onPress={() => Haptics.selectionAsync()}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Feather name="bookmark" size={14} color={palette.ink} />
-        </Pressable>
-        <Pressable
-          onPress={() => Haptics.selectionAsync()}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Feather name="share-2" size={14} color={palette.ink} />
-        </Pressable>
+        <IconButton accessibilityLabel="Save game" onPress={() => {}} icon={(c) => <Feather name="bookmark" size={14} color={c} />} />
+        <IconButton accessibilityLabel="Share game" onPress={() => {}} icon={(c) => <Feather name="share-2" size={14} color={c} />} />
       </View>
     </View>
   );

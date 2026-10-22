@@ -1,8 +1,9 @@
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { palette } from "@refee/design";
+import { Tappable } from "@/components/ui/Tappable";
 
 type DirectorTab = "tournaments" | "messages" | "profile";
 
@@ -34,14 +35,16 @@ export function DirectorTabBar({ active }: { active?: DirectorTab }) {
     >
       {ITEMS.map((it) => {
         const focused = active === it.key;
-        const color = focused ? palette.signal : palette.ink40;
+        const color = focused ? palette.signal : palette.ink60;
         return (
-          <Pressable
+          <Tappable
             key={it.key}
             onPress={() => router.navigate(it.href as never)}
-            className="flex-1 items-center active:opacity-60"
             accessibilityRole="button"
             accessibilityLabel={it.label}
+            scaleTo={0.96}
+            wrapperStyle={{ flex: 1 }}
+            style={{ alignItems: "center" }}
           >
             <Feather name={it.icon} size={20} color={color} />
             <Text
@@ -51,7 +54,7 @@ export function DirectorTabBar({ active }: { active?: DirectorTab }) {
             >
               {it.label}
             </Text>
-          </Pressable>
+          </Tappable>
         );
       })}
     </View>

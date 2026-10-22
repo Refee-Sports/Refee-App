@@ -1,10 +1,10 @@
 import { useCallback, useState } from "react";
-import { Text, View, Pressable, FlatList, ActivityIndicator, RefreshControl } from "react-native";
+import { Text, View, FlatList, ActivityIndicator, RefreshControl } from "react-native";
 import { useFocusEffect } from "expo-router";
-import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import { fetchConversations, type ConversationRow } from "@/lib/messages/queries";
 import { palette } from "@refee/design";
+import { Card } from "@/components/ui/Card";
 
 function fmtWhen(iso: string): string {
   const d = new Date(iso);
@@ -71,42 +71,40 @@ export function ConversationList({
       }
       contentContainerStyle={{ paddingBottom: 40 }}
       renderItem={({ item }) => (
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            onOpen(item.id);
-          }}
-          className="mx-5 mb-2 border border-ink bg-chalk px-4 py-3.5 active:opacity-75"
-        >
-          <View className="flex-row items-center justify-between mb-1">
-            <View className="flex-row items-center gap-2 flex-1 pr-2">
-              {item.unread && <View className="w-2 h-2 bg-signal" />}
-              <Text
-                className={`text-[12px] text-ink uppercase flex-1 ${item.unread ? "font-mono-bold" : "font-mono"}`}
-                style={{ letterSpacing: 0.5 }}
-                numberOfLines={1}
-              >
-                {item.title}
-              </Text>
+        <View className="mx-5 mb-2">
+          <Card onPress={() => onOpen(item.id)} accessibilityLabel={item.title}>
+            <View className="px-4 py-3.5">
+              <View className="flex-row items-center justify-between mb-1">
+                <View className="flex-row items-center gap-2 flex-1 pr-2">
+                  {item.unread && <View className="w-2 h-2 rounded-full bg-signal" />}
+                  <Text
+                    className={`text-[12px] text-ink uppercase flex-1 ${item.unread ? "font-mono-bold" : "font-mono"}`}
+                    style={{ letterSpacing: 0.5 }}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+                </View>
+                <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
+                  {fmtWhen(item.lastMessageAt)}
+                </Text>
+              </View>
+              <View className="flex-row items-center justify-between">
+                <Text
+                  className="font-mono text-[10px] text-ink-60 flex-1 pr-2"
+                  numberOfLines={1}
+                >
+                  {item.lastMessageBody ?? "No messages yet"}
+                </Text>
+                {(item.kind === "game_crew" || item.kind === "director_crew_note") && (
+                  <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1 }}>
+                    {item.kind === "director_crew_note" ? "ONE-WAY" : `CREW · ${item.participantCount}`}
+                  </Text>
+                )}
+              </View>
             </View>
-            <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1 }}>
-              {fmtWhen(item.lastMessageAt)}
-            </Text>
-          </View>
-          <View className="flex-row items-center justify-between">
-            <Text
-              className="font-mono text-[10px] text-ink-60 flex-1 pr-2"
-              numberOfLines={1}
-            >
-              {item.lastMessageBody ?? "No messages yet"}
-            </Text>
-            {(item.kind === "game_crew" || item.kind === "director_crew_note") && (
-              <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1 }}>
-                {item.kind === "director_crew_note" ? "ONE-WAY" : `CREW · ${item.participantCount}`}
-              </Text>
-            )}
-          </View>
-        </Pressable>
+          </Card>
+        </View>
       )}
     />
   );

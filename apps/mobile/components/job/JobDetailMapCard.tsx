@@ -1,8 +1,8 @@
-import { Pressable, Text, View } from "react-native";
-import * as Haptics from "expo-haptics";
+import { Text, View } from "react-native";
 import { DataCard } from "./DataCard";
 import { openVenueDirections } from "@/lib/jobs/open-directions";
 import type { JobDetail } from "@/lib/jobs/types";
+import { TextLink } from "@/components/ui/Controls";
 
 type Props = {
   job: JobDetail;
@@ -75,20 +75,7 @@ export function JobDetailMapCard({ job }: Props) {
             </Text>
           ) : null}
         </View>
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            openVenueDirections(job.venueName, job.venueAddress);
-          }}
-          className="active:opacity-70"
-        >
-          <Text
-            className="text-signal font-mono-bold text-[9px] uppercase"
-            style={{ letterSpacing: 1.6 }}
-          >
-            DIRECTIONS →
-          </Text>
-        </Pressable>
+        <TextLink label="Directions →" tone="signal" onPress={() => openVenueDirections(job.venueName, job.venueAddress)} />
       </View>
     </DataCard>
   );
