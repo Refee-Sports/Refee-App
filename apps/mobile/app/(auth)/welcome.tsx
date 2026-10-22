@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { Button } from "@/components/ui/Button";
+import { Tappable } from "@/components/ui/Tappable";
+import { buttonPressScale, palette, radius } from "@refee/design";
 import { signInWithAppleOAuth, signInWithGoogleOAuth } from "@/lib/oauth";
 import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 
@@ -41,13 +44,11 @@ export default function Welcome() {
   };
 
   const goToSignIn = async () => {
-    Haptics.selectionAsync();
     await supabase.auth.signOut();
     router.push("/(auth)/sign-in");
   };
 
   const goToGetStarted = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     await supabase.auth.signOut();
     router.push("/(auth)/sign-in");
   };
@@ -103,7 +104,7 @@ export default function Welcome() {
         </Text>
 
         {/* Three-cell value strip */}
-        <View className="border border-paper/20 flex-row mb-auto">
+        <View className="border border-paper/20 flex-row mb-auto overflow-hidden" style={{ borderRadius: radius.lg }}>
           <View className="flex-1 py-3 border-r border-paper/20 items-center">
             <Text
               className="text-paper font-display"
@@ -181,24 +182,24 @@ export default function Welcome() {
           <View className="flex-1 h-px bg-paper/25" />
         </View>
 
-        <Pressable
-          onPress={goToGetStarted}
-          className="bg-hi-vis py-5 mb-2.5 active:opacity-80"
-        >
-          <View className="flex-row justify-center items-center gap-2">
-            <Text
-              className="text-ink font-mono-bold"
-              style={{ fontSize: 13, letterSpacing: 2 }}
-            >
-              GET STARTED
-            </Text>
-            <Text className="text-ink font-mono-bold text-base">→</Text>
-          </View>
-        </Pressable>
+        <View className="mb-2.5">
+          <Button label="Get started" variant="hi-vis" showArrow fullWidth onPress={goToGetStarted} />
+        </View>
 
-        <Pressable
+        <Tappable
+          accessibilityRole="button"
+          accessibilityLabel="Already a ref? Sign in"
           onPress={goToSignIn}
-          className="border border-paper/30 py-4 active:opacity-70"
+          scaleTo={buttonPressScale}
+          style={({ pressed }) => ({
+            minHeight: 48,
+            justifyContent: "center",
+            paddingVertical: 15,
+            borderRadius: radius.md,
+            borderWidth: 1.5,
+            borderColor: palette.inkInv40,
+            backgroundColor: pressed ? palette.inkInv10 : "transparent",
+          })}
         >
           <Text
             className="text-paper text-center font-mono-bold uppercase"
@@ -206,7 +207,7 @@ export default function Welcome() {
           >
             ALREADY A REF? <Text className="text-hi-vis">SIGN IN</Text>
           </Text>
-        </Pressable>
+        </Tappable>
 
         <View className="flex-row justify-between mt-5">
           <Text

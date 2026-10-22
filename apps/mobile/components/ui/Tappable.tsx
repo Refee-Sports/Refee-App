@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Animated, Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import * as Haptics from "expo-haptics";
 import { usePressScale } from "./usePress";
@@ -32,24 +32,30 @@ export function Tappable({
   ...rest
 }: TappableProps) {
   const press = usePressScale(scaleTo);
+  // Pressed state is tracked here and styles are resolved to plain objects:
+  // NativeWind's Pressable wrapper drops function styles, which left every
+  // fill and border off.
+  const [pressed, setPressed] = useState(false);
   return (
     <Animated.View style={[wrapperStyle, { transform: [{ scale: press.scale }] }]}>
       <Pressable
         disabled={disabled}
         onPressIn={(e) => {
           press.pressIn();
+          setPressed(true);
           if (haptic === "light") Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           if (haptic === "selection") Haptics.selectionAsync();
           onPressIn?.(e);
         }}
         onPressOut={(e) => {
           press.pressOut();
+          setPressed(false);
           onPressOut?.(e);
         }}
-        style={style}
+        style={typeof style === "function" ? style({ pressed }) : style}
         {...rest}
       >
-        {children}
+        {typeof children === "function" ? children({ pressed }) : children}
       </Pressable>
     </Animated.View>
   );
