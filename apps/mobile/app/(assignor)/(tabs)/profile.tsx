@@ -1,6 +1,6 @@
 import { verificationLabel } from "@/lib/identity/queries";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Image, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Image, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -15,6 +15,7 @@ import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
 
 export default function AssignorProfile() {
   const router = useRouter();
@@ -108,24 +109,14 @@ export default function AssignorProfile() {
           <RoleSwitcher />
         </View>
 
-        <Pressable
-          onPress={() => router.push({ pathname: "/edit-details", params: { role: "assignor" } } as any)}
-          className="mb-4 border border-ink py-4 active:bg-chalk"
-        >
-          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
-            EDIT PROFILE
-          </Text>
-        </Pressable>
-        <Pressable onPress={() => router.push("/account" as any)} className="mb-4 border border-ink py-4 active:bg-chalk">
-          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
-            ACCOUNT &amp; SIGN-IN
-          </Text>
-        </Pressable>
+        <View className="mb-4">
+          <Button label="Edit profile" variant="secondary" fullWidth onPress={() => router.push({ pathname: "/edit-details", params: { role: "assignor" } } as any)} />
+        </View>
+        <View className="mb-4">
+          <Button label="Account & sign-in" variant="secondary" fullWidth onPress={() => router.push("/account" as any)} />
+        </View>
 
-        <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
-          <Feather name="log-out" size={14} color={palette.paper} />
-          <Text className="text-paper font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>SIGN OUT</Text>
-        </Pressable>
+        <Button label="Sign out" variant="secondary" fullWidth icon={<Feather name="log-out" size={14} color={palette.ink} />} onPress={signOut} />
       </View>
     </ScrollScreen>
   );

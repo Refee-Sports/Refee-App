@@ -1,9 +1,8 @@
 import { useCallback, useState } from "react";
-import { Text, View, Pressable, ActivityIndicator, FlatList } from "react-native";
+import { Text, View, ActivityIndicator, FlatList } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { DirectorTabBar } from "@/components/director/DirectorTabBar";
 import { CancelTournamentButton } from "@/components/director/CancelTournamentButton";
@@ -15,6 +14,9 @@ import {
   type DirectorGameRow,
 } from "@/lib/director/queries";
 import { palette } from "@refee/design";
+import { BackButton, TextLink } from "@/components/ui/Controls";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 function fmtDateOnly(iso: string, opts: Intl.DateTimeFormatOptions) {
   // Noon UTC prevents a date-only database value from rolling back a day in US timezones.
@@ -87,12 +89,7 @@ export default function TournamentDetail() {
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       {/* Back */}
       <View className="px-5 py-3 flex-row items-center gap-3">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Text className="text-ink font-mono-bold text-base">←</Text>
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text
           className="font-mono-bold text-[10px] text-ink-60 uppercase flex-1"
           style={{ letterSpacing: 2 }}
@@ -100,21 +97,13 @@ export default function TournamentDetail() {
         >
           {tournament.name.toUpperCase()}
         </Text>
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.push({
-              pathname: "/(director)/tournament/create" as any,
-              params: { editId: id },
-            });
-          }}
-          className="h-9 px-3 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
-        >
-          <Feather name="edit-2" size={12} color={palette.ink} />
-          <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-            EDIT
-          </Text>
-        </Pressable>
+        <Button
+          label="Edit"
+          variant="secondary"
+          size="sm"
+          icon={<Feather name="edit-2" size={12} color={palette.ink} />}
+          onPress={() => router.push({ pathname: "/(director)/tournament/create" as any, params: { editId: id } })}
+        />
       </View>
 
       <FlatList
@@ -159,25 +148,19 @@ export default function TournamentDetail() {
                 ── GAMES ({games.length})
               </Text>
               <View className="flex-row gap-2">
-                <Pressable
+                <Button
+                  label="CSV"
+                  variant="secondary"
+                  size="sm"
+                  icon={<Feather name="upload" size={12} color={palette.ink} />}
                   onPress={() => router.push({ pathname: "/(director)/tournament/import" as any, params: { tournamentId: id } })}
-                  className="h-8 px-3 border border-ink flex-row items-center gap-1.5 active:opacity-70"
-                >
-                  <Feather name="upload" size={12} color={palette.ink} />
-                  <Text className="text-ink font-mono-bold text-[9px] uppercase">CSV</Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    router.push({ pathname: "/(director)/game/create" as any, params: { tournamentId: id } });
-                  }}
-                  className="h-8 px-3 bg-ink flex-row items-center gap-1.5 active:opacity-70"
-                >
-                  <Feather name="plus" size={12} color={palette.paper} />
-                  <Text className="text-paper font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-                    ADD GAME
-                  </Text>
-                </Pressable>
+                />
+                <Button
+                  label="Add game"
+                  size="sm"
+                  icon={<Feather name="plus" size={12} color={palette.paper} />}
+                  onPress={() => router.push({ pathname: "/(director)/game/create" as any, params: { tournamentId: id } })}
+                />
               </View>
             </View>
 
@@ -201,51 +184,48 @@ export default function TournamentDetail() {
           </View>
         }
         renderItem={({ item }) => (
-          <Pressable
-            className="mx-5 mb-2 border border-ink bg-chalk active:opacity-75"
-            onPress={() => {
-              Haptics.selectionAsync();
-              router.push(`/(director)/game/${item.id}` as any);
-            }}
-          >
-            <View className="px-4 pt-3.5 pb-3">
-              <View className="flex-row items-start justify-between mb-1">
-                <Text
-                  className="text-ink font-mono-bold text-[12px] uppercase flex-1 pr-2"
-                  style={{ letterSpacing: 0.5 }}
-                  numberOfLines={1}
-                >
-                  {item.title}
-                </Text>
-                <GameStatusBadge status={item.status} />
-              </View>
-              <Text className="font-mono text-[10px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
-                {fmtTime(item.starts_at, tournament.timezone)} · {item.venue_city.toUpperCase()}, {item.venue_state}
-              </Text>
-            </View>
-            <View className="border-t border-ink-20 flex-row items-center">
-              <View className="flex-1 px-4 py-2.5">
-                <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1 }}>
-                  {item.crew_size}-REF · ${item.pay_per_game}/GAME
+          <View className="mx-5 mb-2">
+            <Card
+              onPress={() => router.push(`/(director)/game/${item.id}` as any)}
+              accessibilityLabel={item.title}
+            >
+              <View className="px-4 pt-3.5 pb-3">
+                <View className="flex-row items-start justify-between mb-1">
+                  <Text
+                    className="text-ink font-mono-bold text-[12px] uppercase flex-1 pr-2"
+                    style={{ letterSpacing: 0.5 }}
+                    numberOfLines={1}
+                  >
+                    {item.title}
+                  </Text>
+                  <GameStatusBadge status={item.status} />
+                </View>
+                <Text className="font-mono text-[10px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
+                  {fmtTime(item.starts_at, tournament.timezone)} · {item.venue_city.toUpperCase()}, {item.venue_state}
                 </Text>
               </View>
-              <Pressable
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  router.push({
-                    pathname: "/(director)/game/create" as any,
-                    params: { tournamentId: id, copyFromId: item.id },
-                  });
-                }}
-                className="px-3 py-2.5 border-l border-ink-20 flex-row items-center gap-1 active:opacity-60"
-              >
-                <Feather name="copy" size={11} color={palette.signal} />
-                <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1 }}>
-                  COPY
-                </Text>
-              </Pressable>
-            </View>
-          </Pressable>
+              <View className="border-t border-ink-20 flex-row items-center">
+                <View className="flex-1 px-4 py-2.5">
+                  <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1 }}>
+                    {item.crew_size}-REF · ${item.pay_per_game}/GAME
+                  </Text>
+                </View>
+                <View className="px-3 border-l border-ink-20">
+                  <TextLink
+                    label="Copy"
+                    tone="signal"
+                    accessibilityLabel={`Copy ${item.title}`}
+                    onPress={() =>
+                      router.push({
+                        pathname: "/(director)/game/create" as any,
+                        params: { tournamentId: id, copyFromId: item.id },
+                      })
+                    }
+                  />
+                </View>
+              </View>
+            </Card>
+          </View>
         )}
       />
       <DirectorTabBar active="tournaments" />

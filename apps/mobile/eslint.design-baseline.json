@@ -1,12 +1,1 @@
-[
-  "app/(assignor)/(tabs)/profile.tsx",
-  "app/(assignor)/(tabs)/roster.tsx",
-  "app/(assignor)/(tabs)/tournaments.tsx",
-  "app/(assignor)/announce.tsx",
-  "app/(assignor)/game/[id].tsx",
-  "app/(assignor)/invite.tsx",
-  "app/(assignor)/tournament/[id].tsx",
-  "app/(director)/game/create.tsx",
-  "app/(director)/tournament/[id].tsx",
-  "app/(director)/tournament/create.tsx"
-]
+[]

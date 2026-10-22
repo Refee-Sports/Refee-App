@@ -1,9 +1,8 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { supabase } from "@/lib/supabase";
@@ -13,6 +12,7 @@ import {
   type TournamentInviteRow,
 } from "@/lib/assignor/queries";
 import { palette } from "@refee/design";
+import { Card } from "@/components/ui/Card";
 
 type SectionRow =
   | { kind: "heading"; id: string; label: string; count: number }
@@ -104,31 +104,33 @@ export default function AssignorTournaments() {
               ── {item.label} ({item.count})
             </Text>
           ) : (
-            <Pressable
-              onPress={() => { Haptics.selectionAsync(); router.push(`/(assignor)/tournament/${item.tournament.id}` as any); }}
-              className="border border-ink bg-chalk mb-2 active:opacity-75"
-            >
-              <View className={`h-1 ${item.invited ? "bg-signal" : "bg-court"}`} />
-              <View className="px-4 pt-3 pb-3">
-                <View className="flex-row justify-between items-start">
-                  <Text className="font-display text-ink flex-1 pr-3" style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.5 }} numberOfLines={2}>
-                    {item.tournament.name.toUpperCase()}
-                  </Text>
-                  <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1.2 }}>
-                    {item.invited ? item.tournament.assignor_status : "ACCEPTED"}
+            <View className="mb-2">
+              <Card
+                onPress={() => router.push(`/(assignor)/tournament/${item.tournament.id}` as any)}
+                accessibilityLabel={item.tournament.name}
+              >
+                <View className={`h-1 ${item.invited ? "bg-signal" : "bg-court"}`} />
+                <View className="px-4 pt-3 pb-3">
+                  <View className="flex-row justify-between items-start">
+                    <Text className="font-display text-ink flex-1 pr-3" style={{ fontSize: 20, lineHeight: 22, letterSpacing: -0.5 }} numberOfLines={2}>
+                      {item.tournament.name.toUpperCase()}
+                    </Text>
+                    <Text className="font-mono-bold text-[8px] text-signal uppercase" style={{ letterSpacing: 1.2 }}>
+                      {item.invited ? item.tournament.assignor_status : "ACCEPTED"}
+                    </Text>
+                  </View>
+                  <Text className="font-mono text-[9px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 1 }}>
+                    {orgName(item.tournament).toUpperCase()} · {item.tournament.venue_city.toUpperCase()}, {item.tournament.venue_state}
                   </Text>
                 </View>
-                <Text className="font-mono text-[9px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 1 }}>
-                  {orgName(item.tournament).toUpperCase()} · {item.tournament.venue_city.toUpperCase()}, {item.tournament.venue_state}
-                </Text>
-              </View>
-              <View className="border-t border-ink-20 px-4 py-2.5 flex-row justify-between items-center">
-                <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1.2 }}>
-                  {dateRange(item.tournament)} · {item.tournament.total_games ?? "—"} GAMES
-                </Text>
-                <Feather name="chevron-right" size={14} color={palette.ink40} />
-              </View>
-            </Pressable>
+                <View className="border-t border-ink-20 px-4 py-2.5 flex-row justify-between items-center">
+                  <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 1.2 }}>
+                    {dateRange(item.tournament)} · {item.tournament.total_games ?? "—"} GAMES
+                  </Text>
+                  <Feather name="chevron-right" size={14} color={palette.ink60} />
+                </View>
+              </Card>
+            </View>
           )}
         />
       )}

@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  ScrollView,
-  Share,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Share, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -25,6 +16,9 @@ import {
 } from "@/lib/assignor/queries";
 import { pickEmailCsv } from "@/lib/roster/files";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
 
 const RESULT_LABEL: Record<EmailInviteResult["result"], string> = {
   invited: "INVITED — ALREADY ON REFEE",
@@ -130,12 +124,7 @@ export default function InviteToRoster() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
-        >
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           INVITE REFEREES
         </Text>
@@ -161,16 +150,12 @@ export default function InviteToRoster() {
                 Referees scan this or type the code in Refee. Anyone with it joins your roster.
               </Text>
               <View className="flex-row gap-2 mt-4 self-stretch">
-                <Pressable onPress={shareLink} className="flex-1 bg-ink py-3 items-center active:opacity-80">
-                  <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                    SHARE LINK
-                  </Text>
-                </Pressable>
-                <Pressable onPress={rotate} className="flex-1 border border-ink py-3 items-center active:opacity-70">
-                  <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                    NEW CODE
-                  </Text>
-                </Pressable>
+                <View style={{ flex: 1 }}>
+                  <Button label="Share link" fullWidth onPress={shareLink} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button label="New code" variant="secondary" fullWidth onPress={rotate} />
+                </View>
               </View>
             </>
           ) : codeError ? (
@@ -184,48 +169,43 @@ export default function InviteToRoster() {
         <Text className="font-mono-bold text-[9px] text-ink uppercase mt-7 mb-2" style={{ letterSpacing: 1.5 }}>
           INVITE BY EMAIL
         </Text>
-        <TextInput
+        <TextField
           value={text}
+          style={{ minHeight: 110, textAlignVertical: "top" }}
           onChangeText={(t) => {
             setText(t);
             setResults(null);
           }}
           placeholder={"jordan@example.com\nsam@example.com"}
-          placeholderTextColor={palette.ink60}
           multiline
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="email-address"
-          className="border border-ink bg-chalk px-3 py-3 font-mono text-[12px] text-ink"
-          style={{ minHeight: 110, textAlignVertical: "top" }}
         />
         <Text className="font-mono text-[9px] text-ink-60 uppercase mt-2" style={{ letterSpacing: 1 }}>
           Paste or type addresses, separated by commas or new lines.
         </Text>
 
         <View className="flex-row gap-2 mt-3">
-          <Pressable onPress={importCsv} className="flex-1 border border-ink py-3 flex-row items-center justify-center gap-2 active:opacity-70">
-            <Feather name="upload" size={13} color={palette.ink} />
-            <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-              IMPORT CSV
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={send}
-            disabled={emails.length === 0 || busy}
-            className={`flex-1 py-3 items-center justify-center ${emails.length > 0 && !busy ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
-          >
-            {busy ? (
-              <ActivityIndicator color={palette.paper} size="small" />
-            ) : (
-              <Text
-                className={`font-mono-bold text-[10px] uppercase ${emails.length > 0 ? "text-paper" : "text-ink-40"}`}
-                style={{ letterSpacing: 1.5 }}
-              >
-                {emails.length > 0 ? `INVITE ${emails.length}` : "INVITE"}
-              </Text>
-            )}
-          </Pressable>
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Import CSV"
+              variant="secondary"
+              fullWidth
+              icon={<Feather name="upload" size={13} color={palette.ink} />}
+              onPress={importCsv}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button
+              label={emails.length > 0 ? `Invite ${emails.length}` : "Invite"}
+              fullWidth
+              loading={busy}
+              loadingLabel="Sending invites"
+              disabled={emails.length === 0}
+              onPress={send}
+            />
+          </View>
         </View>
 
         {results ? (

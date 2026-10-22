@@ -20,9 +20,9 @@ module.exports = defineConfig([
       "no-restricted-syntax": [
         "error",
         {
-          selector: "JSXOpeningElement[name.name=/^(Pressable|TouchableOpacity|TouchableHighlight|TouchableWithoutFeedback|TextInput)$/]",
+          selector: "JSXOpeningElement[name.name=/^(Pressable|TouchableOpacity|TouchableHighlight|TouchableWithoutFeedback|TextInput|Switch)$/]",
           message:
-            "Use the shared controls in components/ui (Button, TextField, OptionRow, Chip, BigChoice, Toggle, Card, or Tappable) so you get the design system's pressed state.",
+            "Use the shared controls in components/ui (Button, IconButton, TextLink, ListRow, TextField, OptionRow, Chip, BigChoice, Toggle, Card, or Tappable) so you get the design system's pressed state.",
         },
         {
           selector: "Literal[value=/^#[0-9a-fA-F]{3,8}$/]",

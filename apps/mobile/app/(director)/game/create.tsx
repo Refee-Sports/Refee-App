@@ -1,13 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  Pressable,
-  ActivityIndicator,
-  Switch,
-  Alert,
-} from "react-native";
+import { Text, View, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -33,6 +25,11 @@ import {
 import { US_STATES } from "@refee/core/geo/regions";
 import { venueWallClock } from "@refee/core/time";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { BigChoice, OptionRow, Toggle } from "@/components/ui/Choice";
+import { IconButton } from "@/components/ui/Controls";
+import { AffixField, TextField } from "@/components/ui/TextField";
+import { Feather } from "@expo/vector-icons";
 
 // 15-minute increments, 6:00 AM – 11:45 PM
 const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
@@ -46,7 +43,6 @@ const TIME_OPTIONS = Array.from({ length: 72 }, (_, i) => {
 });
 
 
-const PAPER = palette.paper;
 
 function parseYMD(s: string): Date {
   const [y, m, d] = s.split("-").map(Number);
@@ -262,12 +258,11 @@ export default function CreateGame() {
       keyboard
       header={
         <View className="flex-row items-center justify-between px-5 py-3 border-b border-ink-20">
-          <Pressable
+          <IconButton
+            accessibilityLabel="Close"
             onPress={() => router.back()}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-          >
-            <Text className="text-ink font-mono-bold text-base">✕</Text>
-          </Pressable>
+            icon={(color) => <Feather name="x" size={16} color={color} />}
+          />
           <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 2 }}>
             {isEdit ? "EDIT GAME" : "ADD GAME"}
           </Text>
@@ -284,24 +279,15 @@ export default function CreateGame() {
               {error}
             </Text>
           )}
-          <Pressable
+          <Button
+            label={isEdit ? "Save changes" : "Post game"}
+            showArrow
+            fullWidth
+            loading={loading}
+            loadingLabel={isEdit ? "Saving" : "Posting"}
+            disabled={!canSubmit}
             onPress={handleSubmit}
-            disabled={!canSubmit || loading}
-            className={`py-4 ${canSubmit && !loading ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
-          >
-            <View className="flex-row justify-center items-center gap-2">
-              {loading ? (
-                <ActivityIndicator color={palette.paper} />
-              ) : (
-                <Text
-                  className={`font-mono-bold ${canSubmit ? "text-paper" : "text-ink-40"}`}
-                  style={{ fontSize: 12, letterSpacing: 2.5 }}
-                >
-                  {isEdit ? "SAVE CHANGES →" : "POST GAME →"}
-                </Text>
-              )}
-            </View>
-          </Pressable>
+          />
         </View>
       }
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24 }}
@@ -346,21 +332,7 @@ export default function CreateGame() {
         {LEVELS.map((l) => {
           const selected = form.level === l.id;
           return (
-            <Pressable
-              key={l.id}
-              onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, level: l.id })); }}
-              className={`border-[1.5px] px-4 py-3 flex-row items-center justify-between active:opacity-70 ${
-                selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
-              }`}
-            >
-              <Text
-                className={`font-mono text-[11px] ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
-                style={{ letterSpacing: 1 }}
-              >
-                {l.label}
-              </Text>
-              {selected && <Text className="text-signal font-mono-bold">✓</Text>}
-            </Pressable>
+            <OptionRow key={l.id} label={l.label} selected={selected} dim onPress={() => setForm((f) => ({ ...f, level: l.id }))} />
           );
         })}
       </View>
@@ -378,20 +350,7 @@ export default function CreateGame() {
         {RULESETS.map((r) => {
           const selected = form.ruleset === r.id;
           return (
-            <Pressable
-              key={r.id}
-              onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, ruleset: r.id })); }}
-              className={`border-[1.5px] px-4 py-3 active:opacity-70 ${
-                selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
-              }`}
-            >
-              <Text
-                className={`font-mono text-[11px] ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
-                style={{ letterSpacing: 1 }}
-              >
-                {r.label}
-              </Text>
-            </Pressable>
+            <OptionRow key={r.id} label={r.label} selected={selected} dim onPress={() => setForm((f) => ({ ...f, ruleset: r.id }))} />
           );
         })}
       </View>
@@ -419,51 +378,21 @@ export default function CreateGame() {
         {([2, 3] as const).map((n) => {
           const selected = form.crewSize === n;
           return (
-            <Pressable
-              key={n}
-              onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, crewSize: n })); }}
-              className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
-                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
-              }`}
-            >
-              <Text
-                className={`font-display ${selected ? "text-signal" : "text-ink"}`}
-                style={{ fontSize: 28, letterSpacing: -1 }}
-              >
-                {n}
-              </Text>
-              <Text
-                className={`font-mono-bold text-[9px] uppercase ${
-                  selected ? "text-signal/70" : "text-ink-40"
-                }`}
-                style={{ letterSpacing: 2 }}
-              >
-                REFS
-              </Text>
-            </Pressable>
+            <BigChoice key={n} num={String(n)} label="Refs" selected={selected} onPress={() => setForm((f) => ({ ...f, crewSize: n }))} />
           );
         })}
       </View>
 
-      <FLabel style={{ marginTop: 16 }}>PAY PER GAME ($) *</FLabel>
-      <View className="flex-row border-[1.5px] border-ink">
-        <View className="bg-ink px-4 justify-center">
-          <Text className="text-paper font-mono-bold text-base">$</Text>
-        </View>
-        <TextInput
+      <View style={{ marginTop: 16 }}>
+        <AffixField
+          label="Pay per game ($) *"
+          prefix="$"
+          suffix="PER REF"
           value={form.payPerGame}
           onChangeText={(v) => set("payPerGame")(v.replace(/\D/g, "").slice(0, 4))}
           placeholder="50"
-          placeholderTextColor={palette.ink60}
           keyboardType="number-pad"
-          className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
-          style={{ fontSize: 14 }}
         />
-        <View className="bg-ink px-3 justify-center">
-          <Text className="text-paper font-mono text-[10px]" style={{ letterSpacing: 1 }}>
-            PER REF
-          </Text>
-        </View>
       </View>
 
       {/* Section: Date & Time */}
@@ -502,35 +431,13 @@ export default function CreateGame() {
         ] as const).map((opt) => {
           const selected = form.gameFormat === opt.id;
           return (
-            <Pressable
+            <BigChoice
               key={opt.id}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setForm((f) => ({
-                  ...f,
-                  gameFormat: opt.id,
-                  periodMinutes: "",
-                }));
-              }}
-              className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
-                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
-              }`}
-            >
-              <Text
-                className={`font-display ${selected ? "text-signal" : "text-ink"}`}
-                style={{ fontSize: 28, letterSpacing: -1 }}
-              >
-                {opt.num}
-              </Text>
-              <Text
-                className={`font-mono-bold text-[9px] uppercase ${
-                  selected ? "text-signal/70" : "text-ink-40"
-                }`}
-                style={{ letterSpacing: 2 }}
-              >
-                {opt.label}
-              </Text>
-            </Pressable>
+              num={opt.num}
+              label={opt.label}
+              selected={selected}
+              onPress={() => setForm((f) => ({ ...f, gameFormat: opt.id, periodMinutes: "" }))}
+            />
           );
         })}
       </View>
@@ -637,13 +544,13 @@ export default function CreateGame() {
       <Sect style={{ marginTop: 28 }}>ACCEPTANCE SETTINGS</Sect>
 
       <View
-        className={`border border-ink flex-row items-center justify-between px-4 py-4 ${
+        className={`rounded-lg border border-ink flex-row items-center justify-between px-4 py-4 ${
           form.autoAccept ? "bg-hi-vis" : "bg-chalk"
         }`}
       >
         <View className="flex-1 pr-4">
           <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
-            {form.autoAccept ? "● AUTO-ACCEPT ON" : "○ MANUAL APPROVAL"}
+            {form.autoAccept ? "AUTO-ACCEPT ON" : "MANUAL APPROVAL"}
           </Text>
           <Text className="font-mono text-[9px] text-ink-60 mt-0.5" style={{ letterSpacing: 1 }}>
             {form.autoAccept
@@ -651,12 +558,7 @@ export default function CreateGame() {
               : "You review and approve each referee application."}
           </Text>
         </View>
-        <Switch
-          value={form.autoAccept}
-          onValueChange={(v) => { Haptics.selectionAsync(); setForm((f) => ({ ...f, autoAccept: v })); }}
-          trackColor={{ false: palette.ink20, true: palette.ink }}
-          thumbColor={form.autoAccept ? palette.hiVis : PAPER}
-        />
+        <Toggle label="Auto-accept referees" checked={form.autoAccept} onChange={(v) => setForm((f) => ({ ...f, autoAccept: v }))} />
       </View>
     </ScrollScreen>
   );
@@ -684,26 +586,4 @@ function FLabel({ children, style }: { children: string; style?: object }) {
   );
 }
 
-function FInput({
-  error,
-  style,
-  ...props
-}: React.ComponentProps<typeof TextInput> & { error?: string }) {
-  return (
-    <>
-      <TextInput
-        placeholderTextColor={palette.ink60}
-        className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${
-          error ? "border-foul" : "border-ink"
-        }`}
-        style={[{ fontSize: 14 }, style]}
-        {...props}
-      />
-      {error && (
-        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {error}
-        </Text>
-      )}
-    </>
-  );
-}
+const FInput = TextField;

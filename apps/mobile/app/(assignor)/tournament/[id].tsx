@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +17,11 @@ import {
   type TournamentInviteRow,
 } from "@/lib/assignor/queries";
 import { palette } from "@refee/design";
+import { BackButton, TextLink } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Choice";
 
 function formatWhen(value: string, timeZone: string) {
   return new Date(value).toLocaleString("en-US", {
@@ -116,9 +121,7 @@ export default function AssignorTournamentDetail() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable onPress={() => router.back()} className="w-9 h-9 border border-ink items-center justify-center active:opacity-70">
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>TOURNAMENT</Text>
         <View className="w-9" />
       </View>
@@ -140,31 +143,34 @@ export default function AssignorTournamentDetail() {
             </View>
 
             {!accepted && proposalOpen && (
-              <View className="mt-5 border border-ink bg-chalk p-4">
+              <View className="mt-5 rounded-lg border border-ink bg-chalk p-4">
                 <Text className="font-mono-bold text-[10px] text-ink uppercase mb-3" style={{ letterSpacing: 1.5 }}>YOUR PROPOSAL</Text>
-                <View className="flex-row mb-3">
+                <View className="flex-row gap-1.5 mb-3">
                   {(["flat", "percentage"] as const).map((type) => (
-                    <Pressable key={type} onPress={() => setFeeType(type)} className={`flex-1 border border-ink py-2.5 items-center ${feeType === type ? "bg-ink" : "bg-paper"}`}>
-                      <Text className={`font-mono-bold text-[9px] uppercase ${feeType === type ? "text-paper" : "text-ink"}`}>{type}</Text>
-                    </Pressable>
+                    <Chip key={type} label={type === "flat" ? "Flat" : "Percentage"} selected={feeType === type} onPress={() => setFeeType(type)} />
                   ))}
                 </View>
-                <TextInput value={fee} onChangeText={setFee} keyboardType="decimal-pad" placeholder={feeType === "flat" ? "FLAT FEE ($)" : "PERCENTAGE (%)"} placeholderTextColor={palette.ink60} className="border border-ink px-3 py-3 font-mono text-[11px] text-ink mb-3" />
-                <TextInput value={message} onChangeText={setMessage} multiline placeholder="OPTIONAL NOTE TO DIRECTOR" placeholderTextColor={palette.ink60} className="border border-ink px-3 py-3 font-mono text-[10px] text-ink mb-3 min-h-[76px]" textAlignVertical="top" />
-                <Pressable onPress={() => void submit()} disabled={saving} className="bg-ink py-3.5 items-center active:opacity-75">
-                  {saving ? <ActivityIndicator color={palette.paper} /> : <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>SUBMIT PROPOSAL</Text>}
-                </Pressable>
-                {proposal?.status === "submitted" && <Pressable onPress={withdraw} className="py-3 items-center"><Text className="font-mono-bold text-[9px] text-foul-ink uppercase">WITHDRAW PROPOSAL</Text></Pressable>}
+                <View className="mb-3">
+                  <TextField value={fee} onChangeText={setFee} keyboardType="decimal-pad" placeholder={feeType === "flat" ? "FLAT FEE ($)" : "PERCENTAGE (%)"} />
+                </View>
+                <View className="mb-3">
+                  <TextField value={message} onChangeText={setMessage} multiline placeholder="OPTIONAL NOTE TO DIRECTOR" textAlignVertical="top" style={{ minHeight: 76 }} />
+                </View>
+                <Button label="Submit proposal" fullWidth loading={saving} loadingLabel="Submitting" onPress={() => void submit()} />
+                {proposal?.status === "submitted" && <TextLink label="Withdraw proposal" tone="danger" onPress={withdraw} />}
               </View>
             )}
 
             {accepted && (
               <View className="flex-row items-center justify-between mt-6 mb-2">
                 <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 2 }}>── GAME STAFFING ({games.length})</Text>
-                <Pressable onPress={() => router.push({ pathname: "/(assignor)/tournament/import" as any, params: { tournamentId: id } })} className="h-8 px-3 border border-ink flex-row items-center gap-1.5 active:opacity-70">
-                  <Feather name="upload" size={12} color={palette.ink} />
-                  <Text className="font-mono-bold text-[8px] text-ink uppercase">IMPORT CSV</Text>
-                </Pressable>
+                <Button
+                  label="Import CSV"
+                  variant="secondary"
+                  size="sm"
+                  icon={<Feather name="upload" size={12} color={palette.ink} />}
+                  onPress={() => router.push({ pathname: "/(assignor)/tournament/import" as any, params: { tournamentId: id } })}
+                />
               </View>
             )}
           </View>
@@ -179,18 +185,25 @@ export default function AssignorTournamentDetail() {
           />
         ) : null}
         renderItem={({ item }) => (
-          <Pressable onPress={() => router.push(`/(assignor)/game/${item.id}` as any)} className="border border-ink bg-chalk mb-2 px-4 py-3 active:opacity-75">
-            <View className="flex-row justify-between items-start">
-              <View className="flex-1 pr-3">
-                <Text className="font-mono-bold text-[11px] text-ink uppercase" numberOfLines={1}>{item.title}</Text>
-                <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1" style={{ letterSpacing: 0.8 }}>{formatWhen(item.starts_at, tournament.timezone)} · {item.venue_name}</Text>
+          <View className="mb-2">
+            <Card
+              onPress={() => router.push(`/(assignor)/game/${item.id}` as any)}
+              accessibilityLabel={item.title}
+            >
+              <View className="px-4 py-3">
+                <View className="flex-row justify-between items-start">
+                  <View className="flex-1 pr-3">
+                    <Text className="font-mono-bold text-[11px] text-ink uppercase" numberOfLines={1}>{item.title}</Text>
+                    <Text className="font-mono text-[8px] text-ink-60 uppercase mt-1" style={{ letterSpacing: 0.8 }}>{formatWhen(item.starts_at, tournament.timezone)} · {item.venue_name}</Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="font-mono-bold text-[8px] text-signal uppercase">{item.status}</Text>
+                    <Text className="font-mono text-[8px] text-ink-60 uppercase mt-1">{item.crew_size} REFS</Text>
+                  </View>
+                </View>
               </View>
-              <View className="items-end">
-                <Text className="font-mono-bold text-[8px] text-signal uppercase">{item.status}</Text>
-                <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{item.crew_size} REFS</Text>
-              </View>
-            </View>
-          </Pressable>
+            </Card>
+          </View>
         )}
       />
       {error && <Text className="text-foul-ink font-mono text-[10px] text-center px-5 mb-4 uppercase">{error}</Text>}

@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  Pressable,
-  ActivityIndicator,
-} from "react-native";
+import { Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -21,7 +15,11 @@ import { CalendarRangePicker } from "@/components/ui/CalendarRangePicker";
 import { DropdownSelect } from "@/components/ui/DropdownSelect";
 import { RULESETS, QUARTER_MINUTES, HALF_MINUTES } from "@/lib/basketball/options";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
-import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { BigChoice, OptionRow } from "@/components/ui/Choice";
+import { IconButton } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
+import { Feather } from "@expo/vector-icons";
 
 
 const US_TIMEZONES = [
@@ -172,12 +170,11 @@ export default function CreateTournament() {
       keyboard
       header={
         <View className="flex-row items-center justify-between px-5 py-3 border-b border-ink-20">
-          <Pressable
+          <IconButton
+            accessibilityLabel="Close"
             onPress={() => router.back()}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-          >
-            <Text className="text-ink font-mono-bold text-base">✕</Text>
-          </Pressable>
+            icon={(color) => <Feather name="x" size={16} color={color} />}
+          />
           <Text
             className="text-ink font-mono-bold text-[11px] uppercase"
             style={{ letterSpacing: 2 }}
@@ -197,24 +194,15 @@ export default function CreateTournament() {
               {error}
             </Text>
           )}
-          <Pressable
+          <Button
+            label={isEdit ? "Save changes" : "Create tournament"}
+            showArrow
+            fullWidth
+            loading={loading}
+            loadingLabel={isEdit ? "Saving" : "Creating"}
+            disabled={!canSubmit}
             onPress={handleSubmit}
-            disabled={!canSubmit || loading}
-            className={`py-4 ${canSubmit && !loading ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
-          >
-            <View className="flex-row justify-center items-center gap-2">
-              {loading ? (
-                <ActivityIndicator color={palette.paper} />
-              ) : (
-                <Text
-                  className={`font-mono-bold ${canSubmit ? "text-paper" : "text-ink-40"}`}
-                  style={{ fontSize: 12, letterSpacing: 2.5 }}
-                >
-                  {isEdit ? "SAVE CHANGES →" : "CREATE TOURNAMENT →"}
-                </Text>
-              )}
-            </View>
-          </Pressable>
+          />
         </View>
       }
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 24 }}
@@ -264,20 +252,7 @@ export default function CreateTournament() {
         {RULESETS.map((r) => {
           const selected = form.ruleset === r.id;
           return (
-            <Pressable
-              key={r.id}
-              onPress={() => { Haptics.selectionAsync(); setForm((f) => ({ ...f, ruleset: r.id })); }}
-              className={`border-[1.5px] px-4 py-3 active:opacity-70 ${
-                selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"
-              }`}
-            >
-              <Text
-                className={`font-mono text-[11px] ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
-                style={{ letterSpacing: 1 }}
-              >
-                {r.label}
-              </Text>
-            </Pressable>
+            <OptionRow key={r.id} label={r.label} selected={selected} dim onPress={() => setForm((f) => ({ ...f, ruleset: r.id }))} />
           );
         })}
       </View>
@@ -307,26 +282,13 @@ export default function CreateTournament() {
         ] as const).map((opt) => {
           const selected = form.gameFormat === opt.id;
           return (
-            <Pressable
+            <BigChoice
               key={opt.id}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setForm((f) => ({ ...f, gameFormat: opt.id, periodMinutes: "" }));
-              }}
-              className={`flex-1 py-4 border-[1.5px] items-center active:opacity-70 ${
-                selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
-              }`}
-            >
-              <Text className={`font-display ${selected ? "text-signal" : "text-ink"}`} style={{ fontSize: 28, letterSpacing: -1 }}>
-                {opt.num}
-              </Text>
-              <Text
-                className={`font-mono-bold text-[9px] uppercase ${selected ? "text-signal/70" : "text-ink-40"}`}
-                style={{ letterSpacing: 2 }}
-              >
-                {opt.label}
-              </Text>
-            </Pressable>
+              num={opt.num}
+              label={opt.label}
+              selected={selected}
+              onPress={() => setForm((f) => ({ ...f, gameFormat: opt.id, periodMinutes: "" }))}
+            />
           );
         })}
       </View>
@@ -440,26 +402,4 @@ function FLabel({ children, style }: { children: string; style?: object }) {
   );
 }
 
-function FInput({
-  error,
-  style,
-  ...props
-}: React.ComponentProps<typeof TextInput> & { error?: string }) {
-  return (
-    <>
-      <TextInput
-        placeholderTextColor={palette.ink60}
-        className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${
-          error ? "border-foul" : "border-ink"
-        }`}
-        style={[{ fontSize: 14 }, style]}
-        {...props}
-      />
-      {error && (
-        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {error}
-        </Text>
-      )}
-    </>
-  );
-}
+const FInput = TextField;

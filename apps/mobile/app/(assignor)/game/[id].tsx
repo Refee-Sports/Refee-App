@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -22,6 +22,11 @@ import { cancelGame, completeGame } from "@/lib/director/queries";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { palette } from "@refee/design";
+import { BackButton, IconButton } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Choice";
+import { Tappable } from "@/components/ui/Tappable";
 
 type CrewRow = { id: string; ref_id: string; role: string; status: string; display_name: string };
 
@@ -213,7 +218,7 @@ export default function AssignorGameDetail() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable onPress={() => router.back()} className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"><Feather name="arrow-left" size={16} color={palette.ink} /></Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>STAFF GAME</Text>
         <View className="w-9" />
       </View>
@@ -229,11 +234,16 @@ export default function AssignorGameDetail() {
             <Text className="font-mono-bold text-[10px] text-signal uppercase mt-2">${game.pay_per_game}/REF · {crew.length}/{game.crew_size} SLOTS ACTIVE</Text>
 
             <Text className="font-mono-bold text-[9px] text-ink uppercase mt-6 mb-2" style={{ letterSpacing: 1.5 }}>STAFFING MODE</Text>
-            <View className="flex-row mb-5">
+            <View className="flex-row gap-1.5 mb-5">
               {(["assignor_direct", "self_assign"] as const).map((value) => (
-                <Pressable key={value} disabled={busyId !== null} onPress={() => void setMode(value)} className={`flex-1 border border-ink py-3 items-center ${mode === value ? "bg-ink" : "bg-chalk"}`}>
-                  <Text className={`font-mono-bold text-[8px] uppercase ${mode === value ? "text-paper" : "text-ink"}`}>{value === "assignor_direct" ? "OFFER FROM ROSTER" : "ROSTER SELF-CLAIM"}</Text>
-                </Pressable>
+                <View key={value} style={{ flex: 1 }}>
+                  <Chip
+                    label={value === "assignor_direct" ? "Offer from roster" : "Roster self-claim"}
+                    selected={mode === value}
+                    disabled={busyId !== null}
+                    onPress={() => void setMode(value)}
+                  />
+                </View>
               ))}
             </View>
 
@@ -247,53 +257,80 @@ export default function AssignorGameDetail() {
 
             <Text className="font-mono-bold text-[9px] text-ink uppercase mb-2" style={{ letterSpacing: 1.5 }}>ACTIVE CREW ({crew.length})</Text>
             {crew.length === 0 ? (
-              <Text className="font-mono text-[9px] text-ink-40 uppercase py-3">No offers or accepted referees yet.</Text>
+              <Text className="font-mono text-[9px] text-ink-60 uppercase py-3">No offers or accepted referees yet.</Text>
             ) : crew.map((member) => (
-              <View key={member.id} className="border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">
-                <Pressable className="flex-1" onPress={() => router.push(`/(assignor)/referee/${member.ref_id}` as any)}>
+              <View key={member.id} className="rounded-lg border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">
+                <Tappable
+                  accessibilityRole="button"
+                  scaleTo={0.98}
+                  wrapperStyle={{ flex: 1 }}
+                  onPress={() => router.push(`/(assignor)/referee/${member.ref_id}` as any)}
+                >
                   <Text className="font-mono-bold text-[10px] text-ink uppercase">{member.display_name}</Text>
-                  <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{member.role} · {member.status} · VIEW PROFILE</Text>
-                </Pressable>
-                <Pressable disabled={busyId !== null} onPress={() => void messageRef(member.ref_id)} className="border border-ink px-2.5 py-2 mr-2">
-                  {busyId === `dm:${member.ref_id}` ? <ActivityIndicator size="small" color={palette.ink} /> : <Feather name="message-square" size={12} color={palette.ink} />}
-                </Pressable>
-                <Pressable disabled={busyId !== null} onPress={() => remove(member)} className="border border-foul px-2.5 py-2">
-                  {busyId === member.id ? <ActivityIndicator size="small" color={palette.foulInk} /> : <Text className="font-mono-bold text-[8px] text-foul-ink">REMOVE</Text>}
-                </Pressable>
+                  <Text className="font-mono text-[8px] text-ink-60 uppercase mt-1">{member.role} · {member.status} · VIEW PROFILE</Text>
+                </Tappable>
+                <View className="mr-2">
+                  <IconButton
+                    accessibilityLabel={`Message ${member.display_name}`}
+                    size={32}
+                    disabled={busyId !== null}
+                    onPress={() => void messageRef(member.ref_id)}
+                    icon={(color) =>
+                      busyId === `dm:${member.ref_id}` ? (
+                        <ActivityIndicator size="small" color={color} />
+                      ) : (
+                        <Feather name="message-square" size={12} color={color} />
+                      )
+                    }
+                  />
+                </View>
+                <Button
+                  label="Remove"
+                  variant="danger"
+                  size="sm"
+                  loading={busyId === member.id}
+                  loadingLabel="Removing"
+                  disabled={busyId !== null}
+                  onPress={() => remove(member)}
+                />
               </View>
             ))}
 
             {showAssignSelf && (
-              <View className="border-[1.5px] border-signal bg-chalk px-4 py-3 mt-1 flex-row items-center">
+              <View className="rounded-lg border-[1.5px] border-signal bg-chalk px-4 py-3 mt-1 flex-row items-center">
                 <View className="flex-1 pr-3">
                   <Text className="font-mono-bold text-[10px] text-ink uppercase">WORK THIS GAME YOURSELF</Text>
-                  <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">You referee too · schedule conflicts are still checked</Text>
+                  <Text className="font-mono text-[8px] text-ink-60 uppercase mt-1">You referee too · schedule conflicts are still checked</Text>
                 </View>
-                <Pressable disabled={busyId !== null} onPress={() => void assignSelf()} className="px-3 py-2 bg-signal">
-                  {busyId === "self" ? <ActivityIndicator size="small" color={palette.paper} /> : <Text className="font-mono-bold text-[8px] text-paper">ASSIGN MYSELF</Text>}
-                </Pressable>
+                <Button
+                  label="Assign myself"
+                  size="sm"
+                  loading={busyId === "self"}
+                  loadingLabel="Assigning"
+                  disabled={busyId !== null}
+                  onPress={() => void assignSelf()}
+                />
               </View>
             )}
 
             <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>MESSAGE THE CREW</Text>
-            <TextInput
+            <TextField
               value={note}
+              style={{ minHeight: 70, textAlignVertical: "top" }}
               onChangeText={setNote}
               placeholder="A one-way update for everyone confirmed on this game"
-              placeholderTextColor={palette.ink60}
               multiline
-              className="border border-ink bg-chalk px-3 py-3 text-ink"
-              style={{ minHeight: 70, textAlignVertical: "top", fontSize: 14 }}
             />
-            <Pressable
-              onPress={() => void sendNote()}
-              disabled={posting || note.trim().length === 0}
-              className={`py-3 items-center mt-2 ${note.trim().length > 0 && !posting ? "bg-ink" : "bg-ink-20"}`}
-            >
-              {posting ? <ActivityIndicator size="small" color={palette.paper} /> : (
-                <Text className={`font-mono-bold text-[10px] uppercase ${note.trim().length > 0 ? "text-paper" : "text-ink-40"}`} style={{ letterSpacing: 1.5 }}>SEND UPDATE</Text>
-              )}
-            </Pressable>
+            <View className="mt-2">
+              <Button
+                label="Send update"
+                fullWidth
+                loading={posting}
+                loadingLabel="Sending"
+                disabled={note.trim().length === 0}
+                onPress={() => void sendNote()}
+              />
+            </View>
 
             {mode === "assignor_direct" && <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>AVAILABLE ROSTER ({available.length})</Text>}
           </View>
@@ -304,36 +341,46 @@ export default function AssignorGameDetail() {
         ListFooterComponent={game.status !== "completed" && game.status !== "cancelled" ? (
           <View className="mt-6 gap-2">
             {new Date(game.starts_at).getTime() <= Date.now() && (
-              <Pressable
-                onPress={markCompleted}
+              <Button
+                label="Mark game completed"
+                variant="court"
+                fullWidth
+                loading={busyId === "complete"}
+                loadingLabel="Completing"
                 disabled={busyId !== null}
-                className="bg-court py-3.5 items-center active:opacity-80 disabled:opacity-40"
-              >
-                {busyId === "complete" ? <ActivityIndicator color={palette.paper} /> : (
-                  <Text className="font-mono-bold text-[10px] text-paper uppercase" style={{ letterSpacing: 1.5 }}>MARK GAME COMPLETED</Text>
-                )}
-              </Pressable>
+                onPress={markCompleted}
+              />
             )}
-            <Pressable
-              onPress={cancel}
+            <Button
+              label="Cancel game"
+              variant="danger"
+              fullWidth
+              loading={busyId === "cancel"}
+              loadingLabel="Cancelling"
               disabled={busyId !== null}
-              className="border-[1.5px] border-foul py-3.5 items-center active:opacity-80 disabled:opacity-40"
-            >
-              {busyId === "cancel" ? <ActivityIndicator color={palette.foul} /> : (
-                <Text className="font-mono-bold text-[10px] text-foul-ink uppercase" style={{ letterSpacing: 1.5 }}>CANCEL GAME</Text>
-              )}
-            </Pressable>
+              onPress={cancel}
+            />
           </View>
         ) : null}
         renderItem={({ item }) => (
-          <View className="border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">
-            <Pressable className="flex-1" onPress={() => router.push(`/(assignor)/referee/${item.ref_id}` as any)}>
+          <View className="rounded-lg border border-ink bg-chalk px-4 py-3 mb-2 flex-row items-center">
+            <Tappable
+                  accessibilityRole="button"
+                  scaleTo={0.98}
+                  wrapperStyle={{ flex: 1 }}
+                  onPress={() => router.push(`/(assignor)/referee/${item.ref_id}` as any)}
+                >
               <Text className="font-mono-bold text-[10px] text-ink uppercase">{item.display_name}</Text>
-              <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1">{item.city}, {item.state} · {item.rating.toFixed(1)} RATING · VIEW PROFILE</Text>
-            </Pressable>
-            <Pressable disabled={busyId !== null || crew.length >= game.crew_size} onPress={() => void offer(item)} className={`px-3 py-2 border border-ink ${crew.length >= game.crew_size ? "bg-ink-20" : "bg-ink"}`}>
-              {busyId === item.ref_id ? <ActivityIndicator size="small" color={palette.paper} /> : <Text className="font-mono-bold text-[8px] text-paper">OFFER</Text>}
-            </Pressable>
+              <Text className="font-mono text-[8px] text-ink-60 uppercase mt-1">{item.city}, {item.state} · {item.rating.toFixed(1)} RATING · VIEW PROFILE</Text>
+            </Tappable>
+            <Button
+              label="Offer"
+              size="sm"
+              loading={busyId === item.ref_id}
+              loadingLabel="Offering"
+              disabled={busyId !== null || crew.length >= game.crew_size}
+              onPress={() => void offer(item)}
+            />
           </View>
         )}
       />

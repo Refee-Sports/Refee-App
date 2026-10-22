@@ -17,6 +17,9 @@ type TextFieldProps = TextInputProps & {
   label?: string;
   error?: string | null;
   hint?: string;
+  /** Drawn inside the field, before / after the text (e.g. a search icon, a spinner). */
+  leading?: ReactNode;
+  trailing?: ReactNode;
 };
 
 /**
@@ -25,9 +28,10 @@ type TextFieldProps = TextInputProps & {
  * Errors switch the border and caption to foul-ink.
  */
 export const TextField = forwardRef<RNTextInput, TextFieldProps>(function TextField(
-  { label, error, hint, onFocus, onBlur, style, editable, ...props },
+  { label, error, hint, leading, trailing, onFocus, onBlur, style, editable, ...props },
   ref
 ) {
+  const adorned = !!(leading || trailing);
   const [focused, setFocused] = useState(false);
   const c = fieldLook({ focused, error: !!error });
   return (
@@ -49,6 +53,41 @@ export const TextField = forwardRef<RNTextInput, TextFieldProps>(function TextFi
             }}
           />
         ) : null}
+        {adorned ? (
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              borderWidth: 1.5,
+              borderColor: c.border,
+              borderRadius: radius.sm,
+              backgroundColor: c.bg,
+              paddingHorizontal: 14,
+            }}
+          >
+            {leading}
+            <TextInput
+              {...props}
+              ref={ref}
+              editable={editable}
+              placeholderTextColor={c.placeholder}
+              onFocus={(e) => {
+                setFocused(true);
+                onFocus?.(e);
+              }}
+              onBlur={(e) => {
+                setFocused(false);
+                onBlur?.(e);
+              }}
+              style={[
+                { flex: 1, paddingVertical: 14, fontFamily: "JetBrainsMono_500Medium", fontSize: 14, color: c.text },
+                style,
+              ]}
+            />
+            {trailing}
+          </View>
+        ) : (
         <TextInput
           {...props}
           ref={ref}
@@ -77,6 +116,7 @@ export const TextField = forwardRef<RNTextInput, TextFieldProps>(function TextFi
             style,
           ]}
         />
+        )}
       </View>
       {error ? (
         <Text className="mt-1 font-mono text-[9px] uppercase" style={{ letterSpacing: 1, color: c.error }}>
