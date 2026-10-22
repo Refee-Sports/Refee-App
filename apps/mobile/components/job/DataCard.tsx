@@ -7,21 +7,18 @@ type Props = {
   className?: string;
 };
 
+/** A labelled card. The label sits above the card, so rounded corners and
+ *  cards that clip their content (the map) both keep it visible. */
 export function DataCard({ tab, children, className = "" }: Props) {
   return (
-    <View className={`rounded-lg border border-ink bg-chalk mb-3 relative mt-2 ${className}`}>
-      <View
-        className="absolute -top-2.5 left-3 bg-paper px-1.5 z-10"
-        style={{ paddingHorizontal: 6 }}
+    <View className="mb-3">
+      <Text
+        className="text-ink-60 font-mono-bold text-[9px] uppercase mb-1.5 ml-1"
+        style={{ letterSpacing: 1.8 }}
       >
-        <Text
-          className="text-ink font-mono-bold text-[8px] uppercase"
-          style={{ letterSpacing: 1.8 }}
-        >
-          {tab}
-        </Text>
-      </View>
-      {children}
+        {tab}
+      </Text>
+      <View className={`rounded-lg border border-ink bg-chalk ${className}`}>{children}</View>
     </View>
   );
 }

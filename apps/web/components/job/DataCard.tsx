@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-/** Port of the app's DataCard — bordered card with a mono tab notch on top. */
+/** Port of the app's DataCard — a rounded card with a mono label above it. */
 export function DataCard({
   tab,
   children,
@@ -10,17 +10,17 @@ export function DataCard({
   children: ReactNode;
   className?: string;
 }) {
+  // The label sits above the card, so rounded corners and cards that clip
+  // their content (the map) both keep it visible.
   return (
-    <div className={`relative mb-3 mt-2 rounded-lg border border-ink bg-chalk ${className}`}>
-      <span className="absolute -top-2.5 left-3 z-10 bg-paper px-1.5">
-        <span
-          className="font-mono-bold text-[8px] uppercase text-ink"
-          style={{ letterSpacing: 1.8 }}
-        >
-          {tab}
-        </span>
+    <div className="mb-3">
+      <span
+        className="mb-1.5 ml-1 block font-mono-bold text-[9px] uppercase text-ink-60"
+        style={{ letterSpacing: 1.8 }}
+      >
+        {tab}
       </span>
-      {children}
+      <div className={`rounded-lg border border-ink bg-chalk ${className}`}>{children}</div>
     </div>
   );
 }
