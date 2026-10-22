@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { Wordmark } from "@/components/ui/Wordmark";
 import { Button } from "@/components/ui/Button";
 import { Tappable } from "@/components/ui/Tappable";
 import { buttonPressScale, palette, radius } from "@refee/design";
@@ -15,8 +16,7 @@ import { getSupabaseSetupError, supabase } from "@/lib/supabase";
 /**
  * Welcome / 5.1 — first impression.
  * Inverse palette: ink canvas + paper text + hi-vis accents.
- * The three-cell value strip states product capabilities without promising a
- * payout deadline that depends on unsettled marketplace-risk policy.
+ * Leads with the same line as the web hero.
  */
 export default function Welcome() {
   const router = useRouter();
@@ -74,80 +74,30 @@ export default function Welcome() {
           paddingBottom: 24,
         }}
       >
-        {/* Live tag */}
-        <View className="flex-row items-center gap-2 mb-4">
-          <View className="w-1.5 h-1.5 rounded-full bg-hi-vis" />
-          <Text
-            className="text-hi-vis font-mono-bold text-[10px] uppercase"
-            style={{ letterSpacing: 2 }}
-          >
-            CALLED UP · LIVE ROSTER
-          </Text>
-        </View>
+        <Wordmark size={28} mode="dark" />
 
-        {/* Headline */}
+        <Text
+          className="text-paper/60 font-mono-bold text-[10px] uppercase mt-8 mb-4"
+          style={{ letterSpacing: 2 }}
+        >
+          Basketball first · ID-verified · 18+
+        </Text>
+
         <Text
           className="text-paper font-display"
-          style={{ fontSize: 64, lineHeight: 72, letterSpacing: -2.5 }}
+          style={{ fontSize: 44, lineHeight: 48, letterSpacing: -1.5 }}
         >
-          REF
-          <Text className="text-signal-dark">EE</Text>
-          {"\n"}EARN ON{"\n"}YOUR <Text className="text-signal-dark">CALL.</Text>
+          GAMES DON&apos;T COUNT UNLESS YOU MAKE IT{" "}
+          <Text className="text-signal-dark">OFFICIAL.</Text>
         </Text>
 
         <Text
-          className="text-paper/70 mt-5 mb-8"
-          style={{ fontSize: 15, lineHeight: 22, maxWidth: 280 }}
+          className="text-paper/70 mt-5"
+          style={{ fontSize: 15, lineHeight: 22, maxWidth: 300 }}
         >
-          The on-demand marketplace for officials. Find games, set your rate,
-          and track every payout.
+          Refee is where officials find games and get paid. Pick your sports,
+          set your rate, and take the games that fit your week.
         </Text>
-
-        {/* Three-cell value strip */}
-        <View className="border border-paper/20 flex-row mb-auto overflow-hidden" style={{ borderRadius: radius.lg }}>
-          <View className="flex-1 py-3 border-r border-paper/20 items-center">
-            <Text
-              className="text-paper font-display"
-              style={{ fontSize: 22, letterSpacing: -1, lineHeight: 22 }}
-            >
-              LIVE<Text className="text-hi-vis">.</Text>
-            </Text>
-            <Text
-              className="text-paper/50 font-mono-bold text-[8px] uppercase mt-1"
-              style={{ letterSpacing: 1.5 }}
-            >
-              ROSTER
-            </Text>
-          </View>
-          <View className="flex-1 py-3 border-r border-paper/20 items-center">
-            <Text
-              className="text-paper font-display"
-              style={{ fontSize: 22, letterSpacing: -1, lineHeight: 22 }}
-            >
-              CLEAR<Text className="text-hi-vis">.</Text>
-            </Text>
-            <Text
-              className="text-paper/50 font-mono-bold text-[8px] uppercase mt-1"
-              style={{ letterSpacing: 1.5 }}
-            >
-              PAY STATUS
-            </Text>
-          </View>
-          <View className="flex-1 py-3 items-center">
-            <Text
-              className="text-paper font-display"
-              style={{ fontSize: 22, letterSpacing: -1, lineHeight: 22 }}
-            >
-              YOU<Text className="text-hi-vis">.</Text>
-            </Text>
-            <Text
-              className="text-paper/50 font-mono-bold text-[8px] uppercase mt-1"
-              style={{ letterSpacing: 1.5 }}
-            >
-              SET RATE
-            </Text>
-          </View>
-        </View>
       </ScrollView>
 
       {/* Sticky footer — outside ScrollView so taps always register */}
@@ -220,7 +170,7 @@ export default function Welcome() {
             className="text-paper/40 font-mono-bold text-[9px] uppercase"
             style={{ letterSpacing: 1.5 }}
           >
-            ● BUILT BY OFFICIALS
+            BUILT BY OFFICIALS
           </Text>
         </View>
       </View>
