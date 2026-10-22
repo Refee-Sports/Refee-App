@@ -15,9 +15,9 @@ describe("game length", () => {
     expect(formatGameLength("halves", null)).toBe("—");
   });
 
-  it("never offers a half longer than 20 minutes", () => {
+  it("offers every half length from 8 to 20 minutes", () => {
     expect(MAX_HALF_MINUTES).toBe(20);
-    expect(HALF_MINUTES.map(Number).every((m) => m <= MAX_HALF_MINUTES)).toBe(true);
+    expect(HALF_MINUTES.map(Number)).toEqual([8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]);
     expect(QUARTER_MINUTES.length).toBeGreaterThan(0);
   });
 

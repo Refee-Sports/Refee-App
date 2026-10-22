@@ -26,7 +26,7 @@ import { US_STATES } from "@refee/core/geo/regions";
 import { venueWallClock } from "@refee/core/time";
 import { palette } from "@refee/design";
 import { Button } from "@/components/ui/Button";
-import { BigChoice, OptionRow, Toggle } from "@/components/ui/Choice";
+import { BigChoice, Chip, OptionRow, Toggle } from "@/components/ui/Choice";
 import { IconButton } from "@/components/ui/Controls";
 import { AffixField, TextField } from "@/components/ui/TextField";
 import { Feather } from "@expo/vector-icons";
@@ -350,7 +350,7 @@ export default function CreateGame() {
         {RULESETS.map((r) => {
           const selected = form.ruleset === r.id;
           return (
-            <OptionRow key={r.id} label={r.label} selected={selected} dim onPress={() => setForm((f) => ({ ...f, ruleset: r.id }))} />
+            <Chip key={r.id} label={r.label} selected={selected} onPress={() => setForm((f) => ({ ...f, ruleset: r.id }))} />
           );
         })}
       </View>

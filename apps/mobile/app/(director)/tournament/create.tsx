@@ -16,7 +16,7 @@ import { DropdownSelect } from "@/components/ui/DropdownSelect";
 import { RULESETS, QUARTER_MINUTES, HALF_MINUTES } from "@/lib/basketball/options";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { Button } from "@/components/ui/Button";
-import { BigChoice, OptionRow } from "@/components/ui/Choice";
+import { BigChoice, Chip } from "@/components/ui/Choice";
 import { IconButton } from "@/components/ui/Controls";
 import { TextField } from "@/components/ui/TextField";
 import { Feather } from "@expo/vector-icons";
@@ -252,7 +252,7 @@ export default function CreateTournament() {
         {RULESETS.map((r) => {
           const selected = form.ruleset === r.id;
           return (
-            <OptionRow key={r.id} label={r.label} selected={selected} dim onPress={() => setForm((f) => ({ ...f, ruleset: r.id }))} />
+            <Chip key={r.id} label={r.label} selected={selected} onPress={() => setForm((f) => ({ ...f, ruleset: r.id }))} />
           );
         })}
       </View>
