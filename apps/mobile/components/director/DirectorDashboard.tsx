@@ -124,7 +124,7 @@ export function DirectorDashboard({ userId }: { userId: string }) {
         <Text className="font-mono-bold text-[10px] text-ink uppercase" style={{ letterSpacing: 2 }}>
           SPEND
         </Text>
-        <View className="flex-row border border-ink">
+        <View className="flex-row gap-1.5">
           {(["month", "tournaments"] as const).map((v) => (
             <Chip
               key={v}
