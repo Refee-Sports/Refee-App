@@ -39,6 +39,8 @@ import { TextField } from "@/components/ui/TextField";
 import { Tappable } from "@/components/ui/Tappable";
 import { Button } from "@/components/ui/Button";
 import { payoutDisplay, canRateReferee, type PayoutTone } from "@refee/core/director/game-status";
+import { crewNoteAllowed } from "@refee/core/director/payment-issues";
+import { crewChatOpen } from "@refee/core/messages/permissions";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -446,13 +448,16 @@ export default function GameDetail() {
                 }
               />
             </View>
-            <Button
-              label="Edit"
-              variant="secondary"
-              size="sm"
-              icon={<Feather name="edit-2" size={12} color={palette.ink} />}
-              onPress={() => router.push({ pathname: "/(director)/game/create" as any, params: { editId: id } })}
-            />
+            {/* A finished or cancelled game is a record; Duplicate it to post again. */}
+            {!isClosed && (
+              <Button
+                label="Edit"
+                variant="secondary"
+                size="sm"
+                icon={<Feather name="edit-2" size={12} color={palette.ink} />}
+                onPress={() => router.push({ pathname: "/(director)/game/create" as any, params: { editId: id } })}
+              />
+            )}
           </View>
 
           {/* Game hero */}
@@ -576,20 +581,29 @@ export default function GameDetail() {
           )}
 
           {/* Message crew */}
+          {/* Closes 24h after the game, except to sort out a payment issue (0077). */}
           {accepted.length > 0 && (
             <View className="mx-5 mb-4">
-              <Button
-                label="Send a crew message"
-                fullWidth
-                icon={<Feather name="send" size={14} color={palette.hiVis} />}
-                onPress={handleMessageCrew}
-              />
-              <Text
-                className="font-mono text-[8px] text-ink-40 uppercase mt-1.5 text-center"
-                style={{ letterSpacing: 1 }}
-              >
-                ONLY CONFIRMED CREW CAN VIEW
-              </Text>
+              {crewNoteAllowed(game) ? (
+                <>
+                  <Button
+                    label="Send a crew message"
+                    fullWidth
+                    icon={<Feather name="send" size={14} color={palette.hiVis} />}
+                    onPress={handleMessageCrew}
+                  />
+                  <Text
+                    className="font-mono text-[8px] text-ink-60 uppercase mt-1.5 text-center"
+                    style={{ letterSpacing: 1 }}
+                  >
+                    {crewChatOpen(game) ? "ONLY CONFIRMED CREW CAN VIEW" : "OPEN FOR THIS GAME'S PAYMENT ISSUE"}
+                  </Text>
+                </>
+              ) : (
+                <Text className="font-mono text-[9px] text-ink-60 uppercase text-center" style={{ letterSpacing: 1 }}>
+                  CREW MESSAGES CLOSED 24 HOURS AFTER THE GAME
+                </Text>
+              )}
             </View>
           )}
 

@@ -29,3 +29,19 @@ export function canMessage(from: MessagingRole, to: MessagingRole): boolean {
 export function canSendToParticipants(me: MessagingRole, others: readonly MessagingRole[]): boolean {
   return others.every((role) => canMessage(me, role));
 }
+
+/** Crew messaging closes this long after a game's scheduled end. */
+export const CREW_CHAT_HOURS_AFTER_GAME = 24;
+const DEFAULT_GAME_MINUTES = 120;
+
+/**
+ * Whether a game's crew can still message: until 24 hours after its scheduled
+ * end (start + length, 2 hours if unset). The server enforces the same (0077).
+ */
+export function crewChatOpen(
+  game: { starts_at: string; duration_minutes?: number | null },
+  now: number = Date.now()
+): boolean {
+  const ends = new Date(game.starts_at).getTime() + (game.duration_minutes ?? DEFAULT_GAME_MINUTES) * 60_000;
+  return now < ends + CREW_CHAT_HOURS_AFTER_GAME * 3_600_000;
+}

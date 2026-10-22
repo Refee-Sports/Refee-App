@@ -47,6 +47,8 @@ import {
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { showRate } from "@refee/core/referee/reliability";
 import { canRateReferee, payoutDisplay, type PayoutTone } from "@/lib/director/game-status";
+import { crewNoteAllowed } from "@refee/core/director/payment-issues";
+import { crewChatOpen } from "@refee/core/messages/permissions";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -478,15 +480,18 @@ export default function DirectorGameDetailPage({
             Duplicate
           </span>
         </Link>
-        <Link
-          href={`/director/game/create?editId=${id}`}
-          className="flex h-9 shrink-0 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
-        >
-          <Icon name="edit-2" size={12} />
-          <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-            Edit
-          </span>
-        </Link>
+        {/* A finished or cancelled game is a record; Duplicate it to post again. */}
+        {!isClosed && (
+          <Link
+            href={`/director/game/create?editId=${id}`}
+            className="flex h-9 shrink-0 items-center gap-1.5 border border-ink bg-chalk px-3 text-ink hover:bg-ink hover:text-paper"
+          >
+            <Icon name="edit-2" size={12} />
+            <span className="font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
+              Edit
+            </span>
+          </Link>
+        )}
       </div>
 
       {/* Hero */}
@@ -695,31 +700,39 @@ export default function DirectorGameDetailPage({
         </div>
       )}
 
-      {/* Message crew */}
+      {/* Message crew — closes 24h after the game, except for a payment issue (0077) */}
       {accepted.length > 0 && (
         <div className="mx-5 mb-4">
-          <button
-            type="button"
-            onClick={() => {
-              setNoteText("");
-              setNoteOpen(true);
-            }}
-            className="flex w-full items-center justify-center gap-2 border border-ink bg-ink py-3.5 text-hi-vis hover:opacity-80"
-          >
-            <Icon name="send" size={14} />
-            <span
-              className="font-mono-bold text-[10px] uppercase text-paper"
-              style={{ letterSpacing: 2 }}
-            >
-              Send a crew message
-            </span>
-          </button>
-          <p
-            className="mt-1.5 text-center font-mono text-[8px] uppercase text-ink-40"
-            style={{ letterSpacing: 1 }}
-          >
-            Only confirmed crew can view
-          </p>
+          {crewNoteAllowed(game) ? (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setNoteText("");
+                  setNoteOpen(true);
+                }}
+                className="flex w-full items-center justify-center gap-2 border border-ink bg-ink py-3.5 text-hi-vis hover:opacity-80"
+              >
+                <Icon name="send" size={14} />
+                <span
+                  className="font-mono-bold text-[10px] uppercase text-paper"
+                  style={{ letterSpacing: 2 }}
+                >
+                  Send a crew message
+                </span>
+              </button>
+              <p
+                className="mt-1.5 text-center font-mono text-[8px] uppercase text-ink-60"
+                style={{ letterSpacing: 1 }}
+              >
+                {crewChatOpen(game) ? "Only confirmed crew can view" : "Open for this game's payment issue"}
+              </p>
+            </>
+          ) : (
+            <p className="text-center font-mono text-[9px] uppercase text-ink-60" style={{ letterSpacing: 1 }}>
+              Crew messages closed 24 hours after the game
+            </p>
+          )}
         </div>
       )}
 

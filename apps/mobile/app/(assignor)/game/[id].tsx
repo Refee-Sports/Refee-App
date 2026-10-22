@@ -18,6 +18,7 @@ import {
   type RosterMemberRow,
 } from "@/lib/assignor/queries";
 import { getOrCreateDM, postCrewNote } from "@/lib/messages/queries";
+import { crewChatOpen } from "@refee/core/messages/permissions";
 import { cancelGame, completeGame } from "@/lib/director/queries";
 import { fetchRoles, type Role } from "@/lib/roles/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
@@ -314,23 +315,32 @@ export default function AssignorGameDetail() {
             )}
 
             <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>MESSAGE THE CREW</Text>
-            <TextField
-              value={note}
-              style={{ minHeight: 70, textAlignVertical: "top" }}
-              onChangeText={setNote}
-              placeholder="A one-way update for everyone confirmed on this game"
-              multiline
-            />
-            <View className="mt-2">
-              <Button
-                label="Send update"
-                fullWidth
-                loading={posting}
-                loadingLabel="Sending"
-                disabled={note.trim().length === 0}
-                onPress={() => void sendNote()}
-              />
-            </View>
+            {/* Crew messages close 24 hours after the game (0077). */}
+            {crewChatOpen(game) ? (
+              <>
+                <TextField
+                  value={note}
+                  style={{ minHeight: 70, textAlignVertical: "top" }}
+                  onChangeText={setNote}
+                  placeholder="A one-way update for everyone confirmed on this game"
+                  multiline
+                />
+                <View className="mt-2">
+                  <Button
+                    label="Send update"
+                    fullWidth
+                    loading={posting}
+                    loadingLabel="Sending"
+                    disabled={note.trim().length === 0}
+                    onPress={() => void sendNote()}
+                  />
+                </View>
+              </>
+            ) : (
+              <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
+                Crew messages closed 24 hours after the game
+              </Text>
+            )}
 
             {mode === "assignor_direct" && <Text className="font-mono-bold text-[9px] text-ink uppercase mt-5 mb-2" style={{ letterSpacing: 1.5 }}>AVAILABLE ROSTER ({available.length})</Text>}
           </View>

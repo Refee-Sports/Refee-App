@@ -1,7 +1,7 @@
 import { supabase } from "../client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { sendPush } from "../push/send";
-import { canSendToParticipants, type MessagingRole } from "./permissions";
+import { canSendToParticipants, type MessagingRole, crewChatOpen } from "./permissions";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -182,7 +182,7 @@ export async function canSendInConversation(
 ): Promise<{ allowed: boolean; readOnlyReason: string | null; error: Error | null }> {
   const { data: conversation, error: conversationError } = await supabase
     .from("conversations")
-    .select("kind")
+    .select("kind, jobs(starts_at, duration_minutes)")
     .eq("id", conversationId)
     .maybeSingle();
 
@@ -198,6 +198,15 @@ export async function canSendInConversation(
     return {
       allowed: false,
       readOnlyReason: "Director updates are one-way. Contact your crew or assignor if you need help.",
+      error: null,
+    };
+  }
+
+  const game = Array.isArray(conversation.jobs) ? conversation.jobs[0] : conversation.jobs;
+  if (conversation.kind === "game_crew" && game && !crewChatOpen(game)) {
+    return {
+      allowed: false,
+      readOnlyReason: "This crew chat closed 24 hours after the game.",
       error: null,
     };
   }

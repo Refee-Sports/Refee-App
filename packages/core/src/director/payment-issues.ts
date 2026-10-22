@@ -1,5 +1,6 @@
 import type { DirectorGameRow } from "./queries";
 import { payoutDisplay } from "./game-status";
+import { crewChatOpen } from "../messages/permissions";
 
 // Money problems a director needs to act on, read off the games they already
 // loaded. Shown at the top of their dashboard so a declined card or an overdue
@@ -65,4 +66,13 @@ export function paymentIssues(games: DirectorGameRow[], now: number = Date.now()
  */
 export function issuesPanelOpen(minimizedAt: number | null, count: number): boolean {
   return minimizedAt === null || count > minimizedAt;
+}
+
+/**
+ * Whether the director (or assignor) can still send the crew a note: while
+ * the crew chat is open, and after that only while the game has a payment
+ * issue — the same issues the dashboard lists. The server enforces the same (0077).
+ */
+export function crewNoteAllowed(game: DirectorGameRow, now: number = Date.now()): boolean {
+  return crewChatOpen(game, now) || issueFor(game, now) !== null;
 }
