@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Text, View, Pressable, ActivityIndicator, FlatList, RefreshControl, Alert } from "react-native";
+import { Text, View, ActivityIndicator, FlatList, RefreshControl, Alert } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -20,7 +20,10 @@ import { runAutoPay } from "@/lib/payments/queries";
 import { Wordmark } from "@/components/ui/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { formatDateOnly } from "@refee/core/time";
-import { palette } from "@refee/design";
+import { palette, choice } from "@refee/design";
+import { Tappable } from "@/components/ui/Tappable";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 const STATUS_COLORS: Record<string, string> = {
   open: palette.signal,
@@ -98,15 +101,7 @@ export default function TournamentsScreen() {
       {/* Header */}
       <View className="px-5 pt-1 pb-3 flex-row items-center justify-between">
         <Wordmark size={26} />
-        <Pressable
-          onPress={handleNew}
-          className="h-9 px-3 bg-ink items-center justify-center flex-row gap-1.5 active:opacity-70"
-        >
-          <Feather name="plus" size={14} color={palette.paper} />
-          <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-            New
-          </Text>
-        </Pressable>
+        <Button label="New" size="sm" icon={<Feather name="plus" size={14} color={palette.paper} />} onPress={handleNew} />
       </View>
 
       {/* Telemetry */}
@@ -130,7 +125,9 @@ export default function TournamentsScreen() {
             </Text>
           </View>
           {paymentIssues.slice(0, 4).map((issue) => (
-            <Pressable
+            <Tappable
+              scaleTo={choice.scale.optionRow}
+              style={({ pressed }) => ({ backgroundColor: pressed ? palette.chalkPress : undefined })}
               key={issue.gameId}
               onPress={() => {
                 Haptics.selectionAsync();
@@ -138,7 +135,7 @@ export default function TournamentsScreen() {
               }}
               accessibilityRole="button"
               accessibilityLabel={`${issue.title}. ${issue.message}`}
-              className="px-4 py-2.5 flex-row items-center justify-between active:opacity-70 border-b border-foul/20"
+              className="px-4 py-2.5 flex-row items-center justify-between border-b border-foul/20"
             >
               <View className="flex-1 pr-2">
                 <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
@@ -147,7 +144,7 @@ export default function TournamentsScreen() {
                 <Text className="text-[12px] text-ink-60 leading-[17px] mt-0.5">{issue.message}</Text>
               </View>
               <Feather name="chevron-right" size={14} color={palette.ink} />
-            </Pressable>
+            </Tappable>
           ))}
           {paymentIssues.length > 4 ? (
             <Text className="px-4 py-2 font-mono text-[8px] text-ink-60 uppercase" style={{ letterSpacing: 1 }}>
@@ -167,13 +164,15 @@ export default function TournamentsScreen() {
             </Text>
           </View>
           {needsCompletion.slice(0, 4).map((g) => (
-            <Pressable
+            <Tappable
+              scaleTo={choice.scale.optionRow}
+              style={({ pressed }) => ({ backgroundColor: pressed ? palette.chalkPress : undefined })}
               key={g.id}
               onPress={() => {
                 Haptics.selectionAsync();
                 router.push(`/(director)/game/${g.id}` as any);
               }}
-              className="px-4 py-2.5 flex-row items-center justify-between active:opacity-70 border-b border-ink/10"
+              className="px-4 py-2.5 flex-row items-center justify-between border-b border-ink/10"
             >
               <View className="flex-1 pr-2">
                 <Text className="font-mono-bold text-[11px] text-ink uppercase" style={{ letterSpacing: 0.5 }} numberOfLines={1}>
@@ -184,7 +183,7 @@ export default function TournamentsScreen() {
                 </Text>
               </View>
               <Feather name="chevron-right" size={14} color={palette.ink} />
-            </Pressable>
+            </Tappable>
           ))}
           <Text className="px-4 py-2 font-mono text-[8px] text-ink/50 uppercase" style={{ letterSpacing: 1 }}>
             AUTO-COMPLETES 1H AFTER GAME END IF NOT DONE
@@ -263,10 +262,7 @@ function TournamentCard({
 }) {
   const statusColor = STATUS_COLORS[tournament.status] ?? palette.ink60;
   return (
-    <Pressable
-      onPress={() => { Haptics.selectionAsync(); onPress(); }}
-      className="border border-ink bg-chalk active:opacity-75"
-    >
+    <Card onPress={onPress} accessibilityLabel={tournament.name}>
       {/* Status bar */}
       <View className="h-1" style={{ backgroundColor: statusColor }} />
 
@@ -298,12 +294,12 @@ function TournamentCard({
       </View>
 
       <View className="border-t border-ink-20 px-4 py-2.5 flex-row justify-between items-center">
-        <Text className="font-mono text-[9px] text-ink-40 uppercase" style={{ letterSpacing: 1.5 }}>
+        <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 1.5 }}>
           BASKETBALL · DIRECT HIRE
         </Text>
         <Feather name="chevron-right" size={14} color={palette.ink40} />
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
@@ -313,10 +309,7 @@ function SingleGameCard({ game, onPress }: { game: DirectorGameRow; onPress: () 
     ? `${game.home_team} vs ${game.away_team}`
     : game.title;
   return (
-    <Pressable
-      onPress={() => { Haptics.selectionAsync(); onPress(); }}
-      className="border border-ink bg-chalk active:opacity-75"
-    >
+    <Card onPress={onPress} accessibilityLabel={title}>
       <View className="h-1" style={{ backgroundColor: statusColor }} />
       <View className="px-4 pt-3 pb-3">
         <View className="flex-row items-start justify-between mb-1">
@@ -335,7 +328,7 @@ function SingleGameCard({ game, onPress }: { game: DirectorGameRow; onPress: () 
           {game.venue_city.toUpperCase()}, {game.venue_state} · ${game.pay_per_game}/REF
         </Text>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
@@ -367,14 +360,7 @@ function EmptyState({ onCreate }: { onCreate: () => void }) {
       <Text className="font-mono text-[11px] text-ink-60 text-center mb-8" style={{ letterSpacing: 0.5 }}>
         Create your first tournament to start posting game assignments.
       </Text>
-      <Pressable
-        onPress={() => { Haptics.selectionAsync(); onCreate() ; }}
-        className="bg-ink px-8 py-4 active:opacity-80"
-      >
-        <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 2 }}>
-          CREATE TOURNAMENT →
-        </Text>
-      </Pressable>
+      <Button label="Create tournament" showArrow onPress={onCreate} />
     </View>
   );
 }

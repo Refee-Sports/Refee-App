@@ -1,16 +1,5 @@
 import React, { useCallback, useState } from "react";
-import {
-  Text,
-  View,
-  Pressable,
-  ActivityIndicator,
-  FlatList,
-  Alert,
-  Modal,
-  TextInput,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { Text, View, ActivityIndicator, FlatList, Alert, Modal, KeyboardAvoidingView, Platform } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -44,7 +33,11 @@ import { startCrewPayment, confirmCrewPayout, runAutoPay } from "@/lib/payments/
 import { canOfferCrewPayment, paymentNeedsReview } from "@/lib/payments/status";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { showRate } from "@refee/core/referee/reliability";
-import { palette } from "@refee/design";
+import { palette, choice } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
+import { Tappable } from "@/components/ui/Tappable";
+import { Button } from "@/components/ui/Button";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -414,50 +407,36 @@ export default function GameDetail() {
         <View style={{ paddingTop: insets.top }}>
           {/* Back */}
           <View className="px-5 py-3 flex-row items-center gap-3">
-            <Pressable
-              onPress={() => router.back()}
-              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-            >
-              <Text className="text-ink font-mono-bold text-base">←</Text>
-            </Pressable>
+            <BackButton onPress={() => router.back()} />
             <Text
               className="font-mono-bold text-[10px] text-ink-60 uppercase flex-1"
               style={{ letterSpacing: 2 }}
             >
               GAME DETAIL
             </Text>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                // Same game, new date and time: everything else carries over.
-                router.push({
-                  pathname: "/(director)/game/create" as any,
-                  params: { copyFromId: id, ...(game.tournament_id ? { tournamentId: game.tournament_id } : {}) },
-                });
-              }}
-              accessibilityLabel="Duplicate game"
-              className="h-9 px-3 mr-2 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
-            >
-              <Feather name="copy" size={12} color={palette.ink} />
-              <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-                DUPLICATE
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={() => {
-                Haptics.selectionAsync();
-                router.push({
-                  pathname: "/(director)/game/create" as any,
-                  params: { editId: id },
-                });
-              }}
-              className="h-9 px-3 border border-ink bg-chalk flex-row items-center gap-1.5 active:opacity-70"
-            >
-              <Feather name="edit-2" size={12} color={palette.ink} />
-              <Text className="text-ink font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-                EDIT
-              </Text>
-            </Pressable>
+            <View className="mr-2">
+              <Button
+                label="Duplicate"
+                variant="secondary"
+                size="sm"
+                accessibilityLabel="Duplicate game"
+                icon={<Feather name="copy" size={12} color={palette.ink} />}
+                onPress={() =>
+                  // Same game, new date and time: everything else carries over.
+                  router.push({
+                    pathname: "/(director)/game/create" as any,
+                    params: { copyFromId: id, ...(game.tournament_id ? { tournamentId: game.tournament_id } : {}) },
+                  })
+                }
+              />
+            </View>
+            <Button
+              label="Edit"
+              variant="secondary"
+              size="sm"
+              icon={<Feather name="edit-2" size={12} color={palette.ink} />}
+              onPress={() => router.push({ pathname: "/(director)/game/create" as any, params: { editId: id } })}
+            />
           </View>
 
           {/* Game hero */}
@@ -540,22 +519,14 @@ export default function GameDetail() {
           {/* Pay crew */}
           {showPayCrew && (
             <View className="mx-5 mb-4">
-              <Pressable
+              <Button
+                label="Pay crew"
+                fullWidth
+                icon={<Feather name="dollar-sign" size={14} color={palette.paper} />}
+                loading={paying}
+                loadingLabel="Paying crew"
                 onPress={handlePayCrew}
-                disabled={paying}
-                className="bg-signal py-4 flex-row items-center justify-center gap-2 active:opacity-80"
-              >
-                {paying ? (
-                  <ActivityIndicator color={palette.paper} size="small" />
-                ) : (
-                  <>
-                    <Feather name="dollar-sign" size={14} color={palette.paper} />
-                    <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 2 }}>
-                      PAY CREW
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+              />
               <Text className="font-mono text-[8px] text-ink-40 uppercase mt-1.5 text-center" style={{ letterSpacing: 1 }}>
                 CARD PAYMENT · REFS PAID VIA STRIPE · +5% PLATFORM FEE
               </Text>
@@ -580,18 +551,12 @@ export default function GameDetail() {
           {/* Message crew */}
           {accepted.length > 0 && (
             <View className="mx-5 mb-4">
-              <Pressable
+              <Button
+                label="Send a crew message"
+                fullWidth
+                icon={<Feather name="send" size={14} color={palette.hiVis} />}
                 onPress={handleMessageCrew}
-                className="border border-ink bg-ink py-3.5 flex-row items-center justify-center gap-2 active:opacity-70"
-              >
-                <Feather name="send" size={14} color={palette.hiVis} />
-                <Text
-                  className="text-paper font-mono-bold text-[10px] uppercase"
-                  style={{ letterSpacing: 2 }}
-                >
-                  SEND A CREW MESSAGE
-                </Text>
-              </Pressable>
+              />
               <Text
                 className="font-mono text-[8px] text-ink-40 uppercase mt-1.5 text-center"
                 style={{ letterSpacing: 1 }}
@@ -654,24 +619,15 @@ export default function GameDetail() {
           {!isClosed && (
             <View className="mx-5 mb-4 gap-2">
               {gameStarted && (
-                <Pressable
+                <Button
+                  label="Mark game completed"
+                  variant="court"
+                  fullWidth
+                  icon={<Feather name="check-circle" size={14} color={palette.ink} />}
                   onPress={handleCompleteGame}
-                  className="bg-court py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
-                >
-                  <Feather name="check-circle" size={14} color={palette.paper} />
-                  <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
-                    MARK GAME COMPLETED
-                  </Text>
-                </Pressable>
+                />
               )}
-              <Pressable
-                onPress={handleCancelGame}
-                className="border border-foul py-3 items-center active:opacity-70"
-              >
-                <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
-                  CANCEL GAME
-                </Text>
-              </Pressable>
+              <Button label="Cancel game" variant="danger" fullWidth onPress={handleCancelGame} />
             </View>
           )}
 
@@ -805,44 +761,30 @@ export default function GameDetail() {
             <Text className="text-ink-60 font-mono text-[9px] uppercase mt-1 mb-3" style={{ letterSpacing: 1 }}>
               Note — crew messages can only be viewed by confirmed refs
             </Text>
-            <TextInput
+            <TextField
               value={noteText}
+              style={{ minHeight: 90, textAlignVertical: "top" }}
               onChangeText={setNoteText}
               placeholder="e.g. Arrive 30 min early, park behind the gym…"
-              placeholderTextColor={palette.ink60}
               multiline
               autoFocus
               maxLength={4000}
-              className="border border-ink bg-chalk px-3 py-3 text-ink font-mono text-[13px]"
-              style={{ minHeight: 90, textAlignVertical: "top" }}
             />
             <View className="flex-row gap-2 mt-4">
-              <Pressable
-                onPress={() => setNoteOpen(false)}
-                className="flex-1 border border-ink py-3.5 items-center active:opacity-70"
-              >
-                <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
-                  CANCEL
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={submitCrewNote}
-                disabled={postingNote || noteText.trim().length === 0}
-                className={`flex-1 py-3.5 items-center justify-center flex-row gap-2 active:opacity-80 ${
-                  postingNote || noteText.trim().length === 0 ? "bg-ink-20" : "bg-signal"
-                }`}
-              >
-                {postingNote ? (
-                  <ActivityIndicator size="small" color={palette.paper} />
-                ) : (
-                  <>
-                    <Feather name="send" size={13} color={palette.paper} />
-                    <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 2 }}>
-                      SEND
-                    </Text>
-                  </>
-                )}
-              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Button label="Cancel" variant="secondary" fullWidth onPress={() => setNoteOpen(false)} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button
+                  label="Send"
+                  fullWidth
+                  icon={<Feather name="send" size={13} color={palette.paper} />}
+                  loading={postingNote}
+                  loadingLabel="Sending"
+                  disabled={noteText.trim().length === 0}
+                  onPress={submitCrewNote}
+                />
+              </View>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -964,13 +906,17 @@ function ApplicantCard({
   };
 
   return (
-    <View className="border border-ink bg-chalk">
-      <Pressable
-        onPress={() => { Haptics.selectionAsync(); onViewProfile(); }}
-        className="flex-row items-center gap-3 px-4 py-3.5 active:opacity-80"
+    <View className="border border-ink bg-chalk rounded-lg overflow-hidden">
+      <Tappable
+        scaleTo={choice.scale.optionRow}
+        style={({ pressed }) => ({ backgroundColor: pressed ? palette.chalkPress : undefined })}
+        onPress={onViewProfile}
+        accessibilityRole="button"
+        accessibilityLabel={`View ${displayName}`}
+        className="flex-row items-center gap-3 px-4 py-3.5"
       >
         {/* Avatar */}
-        <View className="w-10 h-10 bg-ink items-center justify-center">
+        <View className="w-10 h-10 rounded-md bg-ink items-center justify-center">
           <Text className="text-paper font-mono-bold text-xs">{initials}</Text>
         </View>
 
@@ -1016,73 +962,53 @@ function ApplicantCard({
         >
           {statusLabel[applicant.status] ?? applicant.status.toUpperCase()}
         </Text>
-      </Pressable>
+      </Tappable>
 
       {showActions && (
-        <View className="border-t border-ink-20 flex-row">
-          <Pressable
-            onPress={onDecline}
-            disabled={actioning}
-            className="flex-1 py-2.5 items-center border-r border-ink-20 active:opacity-70"
-          >
-            <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-              DECLINE
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={onApprove}
-            disabled={actioning}
-            className="flex-1 py-2.5 items-center bg-court active:opacity-70"
-          >
-            {actioning ? (
-              <ActivityIndicator size="small" color={palette.paper} />
-            ) : (
-              <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                ACCEPT ✓
-              </Text>
-            )}
-          </Pressable>
+        <View className="border-t border-ink-20 flex-row gap-2 px-4 py-3">
+          <View style={{ flex: 1 }}>
+            <Button label="Decline" variant="secondary" size="sm" fullWidth disabled={actioning} onPress={onDecline} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Button label="Accept" variant="court" size="sm" fullWidth loading={actioning} loadingLabel="Accepting" onPress={onApprove} />
+          </View>
         </View>
       )}
 
       {!showActions && (onMessage || onRate || rated || onNoShow) && (
-        <View className="border-t border-ink-20 flex-row">
+        <View className="border-t border-ink-20 flex-row gap-2 px-4 py-3">
           {onMessage && (
-            <Pressable
-              onPress={onMessage}
-              className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 active:opacity-70"
-            >
-              <Feather name="message-square" size={11} color={palette.signal} />
-              <Text className="text-signal font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                MESSAGE
-              </Text>
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Button
+                label="Message"
+                variant="secondary"
+                size="sm"
+                fullWidth
+                icon={<Feather name="message-square" size={11} color={palette.ink} />}
+                onPress={onMessage}
+              />
+            </View>
           )}
           {onRate && (
-            <Pressable
-              onPress={onRate}
-              className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20 bg-ink active:opacity-70"
-            >
-              <Feather name="star" size={11} color={palette.hiVis} />
-              <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                RATE
-              </Text>
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Button
+                label="Rate"
+                size="sm"
+                fullWidth
+                icon={<Feather name="star" size={11} color={palette.hiVis} />}
+                onPress={onRate}
+              />
+            </View>
           )}
           {onNoShow && (
-            <Pressable
-              onPress={onNoShow}
-              className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20 active:opacity-70"
-            >
-              <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-                NO-SHOW
-              </Text>
-            </Pressable>
+            <View style={{ flex: 1 }}>
+              <Button label="No-show" variant="danger" size="sm" fullWidth onPress={onNoShow} />
+            </View>
           )}
           {rated && (
-            <View className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5 border-l border-ink-20">
-              <Text style={{ color: palette.court, fontSize: 10 }}>✓</Text>
-              <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: palette.court }}>
+            <View className="flex-1 py-2.5 items-center flex-row justify-center gap-1.5">
+              <Text style={{ color: palette.courtInk, fontSize: 10 }}>✓</Text>
+              <Text className="font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5, color: palette.courtInk }}>
                 RATED
               </Text>
             </View>

@@ -1,13 +1,13 @@
 import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
-import { Text, View, Pressable, ActivityIndicator, ScrollView, Image } from "react-native";
+import { Text, View, ActivityIndicator, ScrollView, Image } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import * as Haptics from "expo-haptics";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { fetchRefereePublicView, type RefereePublicView } from "@/lib/director/queries";
 import { showRate } from "@refee/core/referee/reliability";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
 
 const CERT_LABELS: Record<string, string> = {
   iaabo: "IAABO",
@@ -90,12 +90,7 @@ export default function RefereePublicProfile() {
       <View style={{ paddingTop: insets.top }}>
         {/* Back */}
         <View className="px-5 py-3 flex-row items-center gap-3">
-          <Pressable
-            onPress={() => { Haptics.selectionAsync(); router.back(); }}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-          >
-            <Text className="text-ink font-mono-bold text-base">←</Text>
-          </Pressable>
+          <BackButton onPress={() => router.back()} />
           <Text
             className="font-mono-bold text-[10px] text-ink-60 uppercase"
             style={{ letterSpacing: 2 }}

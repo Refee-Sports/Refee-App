@@ -1,8 +1,13 @@
 import { useState } from "react";
-import { Text, View, Pressable, Modal, TextInput, ActivityIndicator } from "react-native";
+import { Text, View, Modal } from "react-native";
 import * as Haptics from "expo-haptics";
 import type { CategoryRatings } from "@/lib/director/queries";
 import { palette } from "@refee/design";
+import { TextField } from "@/components/ui/TextField";
+import { IconButton } from "@/components/ui/Controls";
+import { Chip } from "@/components/ui/Choice";
+import { Button } from "@/components/ui/Button";
+import { Feather } from "@expo/vector-icons";
 
 const CATEGORIES: { key: keyof CategoryRatings; label: string; hint: string }[] = [
   { key: "onTime", label: "ON TIME", hint: "Arrived ready before tip-off?" },
@@ -48,9 +53,11 @@ export function RateRefereeModal({
             >
               RATE REFEREE
             </Text>
-            <Pressable onPress={onClose} className="active:opacity-70 p-1">
-              <Text className="text-ink font-mono-bold text-base">✕</Text>
-            </Pressable>
+            <IconButton
+              accessibilityLabel="Close"
+              onPress={onClose}
+              icon={(color) => <Feather name="x" size={16} color={color} />}
+            />
           </View>
           <Text
             className="font-display text-ink uppercase mb-5"
@@ -74,56 +81,31 @@ export function RateRefereeModal({
                 {[1, 2, 3, 4, 5].map((n) => {
                   const active = scores[cat.key] >= n;
                   return (
-                    <Pressable
-                      key={n}
-                      onPress={() => setScore(cat.key, n)}
-                      className={`flex-1 py-3 items-center border ${
-                        active ? "bg-ink border-ink" : "bg-chalk border-ink-20"
-                      } active:opacity-70`}
-                    >
-                      <Text
-                        className={`font-display ${active ? "text-hi-vis" : "text-ink-40"}`}
-                        style={{ fontSize: 16 }}
-                      >
-                        {n}
-                      </Text>
-                    </Pressable>
+                    <Chip key={n} label={String(n)} selected={active} onPress={() => setScore(cat.key, n)} accessibilityLabel={`${cat.label} ${n} of 5`} />
                   );
                 })}
               </View>
             </View>
           ))}
 
-          <TextInput
-            value={comment}
-            onChangeText={setComment}
-            placeholder="OPTIONAL COMMENT..."
-            placeholderTextColor={palette.ink60}
-            multiline
-            className="border border-ink-20 bg-chalk px-3 py-2.5 font-mono text-[12px] text-ink mb-4"
-            style={{ minHeight: 60, letterSpacing: 0.5 }}
-          />
+          <View className="mb-4">
+            <TextField
+              value={comment}
+              style={{ minHeight: 60 }}
+              onChangeText={setComment}
+              placeholder="OPTIONAL COMMENT..."
+              multiline
+            />
+          </View>
 
-          <Pressable
-            onPress={() => complete && onSubmit(scores, comment)}
-            disabled={!complete || submitting}
-            className={`py-4 items-center border border-ink ${
-              complete ? "bg-signal" : "bg-chalk"
-            } active:opacity-70`}
-          >
-            {submitting ? (
-              <ActivityIndicator size="small" color={palette.paper} />
-            ) : (
-              <Text
-                className={`font-mono-bold text-[11px] uppercase ${
-                  complete ? "text-paper" : "text-ink-40"
-                }`}
-                style={{ letterSpacing: 2 }}
-              >
-                SUBMIT RATING
-              </Text>
-            )}
-          </Pressable>
+          <Button
+            label="Submit rating"
+            fullWidth
+            loading={submitting}
+            loadingLabel="Submitting"
+            disabled={!complete}
+            onPress={() => onSubmit(scores, comment)}
+          />
         </View>
       </View>
     </Modal>

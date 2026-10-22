@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -7,7 +7,9 @@ import * as Haptics from "expo-haptics";
 import { loadDirectorDashboard, waitingLabel, type DirectorDashboard as Dashboard, type Spend } from "@refee/core/director/dashboard";
 import { fetchPendingApprovals, type PendingApproval } from "@/lib/director/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
-import { palette } from "@refee/design";
+import { palette, choice } from "@refee/design";
+import { Tappable } from "@/components/ui/Tappable";
+import { Chip } from "@/components/ui/Choice";
 
 /** Crew coverage, applicants waiting on the director, and spend. */
 export function DirectorDashboard({ userId }: { userId: string }) {
@@ -53,10 +55,12 @@ export function DirectorDashboard({ userId }: { userId: string }) {
           </Text>
         ) : (
           coverage.short.slice(0, 5).map((g) => (
-            <Pressable
+            <Tappable
+              scaleTo={choice.scale.optionRow}
+              style={({ pressed }) => ({ backgroundColor: pressed ? palette.chalkPress : undefined })}
               key={g.gameId}
               onPress={() => open(g.gameId)}
-              className="px-4 py-2.5 border-b border-ink-10 flex-row items-center justify-between active:opacity-70"
+              className="px-4 py-2.5 border-b border-ink-10 flex-row items-center justify-between"
               accessibilityRole="button"
               accessibilityLabel={`${g.title}, ${g.confirmed} of ${g.crew} referees${g.urgent ? ", within 7 days" : ""}`}
             >
@@ -76,7 +80,7 @@ export function DirectorDashboard({ userId }: { userId: string }) {
                 {g.urgent ? "! " : ""}
                 {g.confirmed}/{g.crew} REFS
               </Text>
-            </Pressable>
+            </Tappable>
           ))
         )}
         {coverage.short.length > 5 ? (
@@ -92,10 +96,12 @@ export function DirectorDashboard({ userId }: { userId: string }) {
           <Header>{`APPLICANTS WAITING · ${approvals.length}`}</Header>
           <View className="mx-5 border border-ink bg-chalk">
             {approvals.slice(0, 5).map((a) => (
-              <Pressable
+              <Tappable
+                scaleTo={choice.scale.optionRow}
+                style={({ pressed }) => ({ backgroundColor: pressed ? palette.chalkPress : undefined })}
                 key={a.assignmentId}
                 onPress={() => open(a.job.id)}
-                className="px-4 py-2.5 border-b border-ink-10 flex-row items-center justify-between active:opacity-70"
+                className="px-4 py-2.5 border-b border-ink-10 flex-row items-center justify-between"
                 accessibilityRole="button"
               >
                 <View className="flex-1 pr-2">
@@ -107,7 +113,7 @@ export function DirectorDashboard({ userId }: { userId: string }) {
                   </Text>
                 </View>
                 <Feather name="chevron-right" size={14} color={palette.ink} />
-              </Pressable>
+              </Tappable>
             ))}
           </View>
         </>
@@ -120,20 +126,12 @@ export function DirectorDashboard({ userId }: { userId: string }) {
         </Text>
         <View className="flex-row border border-ink">
           {(["month", "tournaments"] as const).map((v) => (
-            <Pressable
+            <Chip
               key={v}
-              onPress={() => {
-                Haptics.selectionAsync();
-                setSpendView(v);
-              }}
-              className={`px-2.5 py-1 ${spendView === v ? "bg-ink" : "bg-chalk"}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected: spendView === v }}
-            >
-              <Text className={`font-mono-bold text-[9px] uppercase ${spendView === v ? "text-paper" : "text-ink"}`} style={{ letterSpacing: 1 }}>
-                {v === "month" ? "THIS MONTH" : "BY TOURNAMENT"}
-              </Text>
-            </Pressable>
+              label={v === "month" ? "This month" : "By tournament"}
+              selected={spendView === v}
+              onPress={() => setSpendView(v)}
+            />
           ))}
         </View>
       </View>

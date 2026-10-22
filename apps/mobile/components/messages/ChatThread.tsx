@@ -1,14 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Text,
-  View,
-  Pressable,
-  FlatList,
-  TextInput,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from "react-native";
+import { Text, View, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
@@ -23,6 +14,8 @@ import {
   type MessageRow,
 } from "@/lib/messages/queries";
 import { palette } from "@refee/design";
+import { BackButton , IconButton } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
 
 function fmtTime(iso: string) {
   return new Date(iso).toLocaleTimeString("en-US", {
@@ -103,12 +96,7 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       {/* Header */}
       <View className="px-5 py-3 flex-row items-center gap-3 border-b border-ink-20">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Text className="text-ink font-mono-bold text-base">←</Text>
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text
           className="font-mono-bold text-[10px] text-ink uppercase flex-1"
           style={{ letterSpacing: 2 }}
@@ -174,24 +162,23 @@ export function ChatThread({ conversationId }: { conversationId: string }) {
             className="border-t border-ink bg-chalk flex-row items-end px-4 py-3 gap-3"
             style={{ paddingBottom: Math.max(insets.bottom, 12) }}
           >
-            <TextInput
-              value={draft}
-              onChangeText={setDraft}
-              placeholder="MESSAGE..."
-              placeholderTextColor={palette.ink60}
-              multiline
-              className="flex-1 border border-ink bg-paper px-3 py-2.5 font-mono text-[13px] text-ink"
-              style={{ maxHeight: 100, letterSpacing: 0.5 }}
-            />
-            <Pressable
-              onPress={handleSend}
+            <View className="flex-1">
+              <TextField
+                value={draft}
+                style={{ maxHeight: 100, paddingVertical: 10 }}
+                onChangeText={setDraft}
+                placeholder="MESSAGE..."
+                multiline
+              />
+            </View>
+            <IconButton
+              accessibilityLabel="Send message"
+              size={44}
+              active={!!draft.trim()}
               disabled={!draft.trim() || sending}
-              className={`w-11 h-11 items-center justify-center border border-ink ${
-                draft.trim() ? "bg-signal" : "bg-paper"
-              } active:opacity-70`}
-            >
-              <Feather name="arrow-up" size={18} color={draft.trim() ? palette.paper : palette.ink40} />
-            </Pressable>
+              onPress={handleSend}
+              icon={(color) => <Feather name="arrow-up" size={18} color={color} />}
+            />
           </View>
         ) : (
           <View

@@ -1,6 +1,6 @@
 import { verificationLabel } from "@/lib/identity/queries";
 import { useCallback, useState } from "react";
-import { Text, View, Pressable, ActivityIndicator, Alert, Image } from "react-native";
+import { Text, View, ActivityIndicator, Alert, Image } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -16,7 +16,9 @@ import { getCardSetupParams } from "@/lib/payments/queries";
 import { unregisterPushToken } from "@/lib/push/notifications";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
-import { palette } from "@refee/design";
+import { buttonPressScale, palette, radius } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { Tappable } from "@/components/ui/Tappable";
 
 const ORG_TYPE_LABELS: Record<string, string> = {
   tournament: "TOURNAMENT ORGANIZER",
@@ -203,23 +205,36 @@ export default function DirectorProfile() {
       </View>
 
       {/* Payment method */}
-      <Pressable
+      <Tappable
         onPress={handleSaveCard}
         disabled={savingCard}
-        className={`mx-5 mb-4 border px-4 py-3.5 flex-row items-center justify-between active:opacity-80 ${
-          cardSaved ? "border-court bg-court/10" : "border-ink bg-ink"
-        }`}
+        accessibilityRole="button"
+        accessibilityLabel={cardSaved ? "Auto-pay is on" : "Set up auto-pay"}
+        scaleTo={buttonPressScale}
+        haptic="light"
+        wrapperStyle={{ marginHorizontal: 20, marginBottom: 16 }}
+        style={({ pressed }) => ({
+          borderRadius: radius.lg,
+          borderWidth: 1,
+          borderColor: cardSaved ? palette.court : palette.ink,
+          backgroundColor: cardSaved ? (pressed ? palette.chalkPress : palette.chalk) : pressed ? palette.inkPress : palette.ink,
+          paddingHorizontal: 16,
+          paddingVertical: 14,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+        })}
       >
         <View className="flex-1 pr-3">
           <Text
             className={`font-mono-bold text-[11px] uppercase ${cardSaved ? "" : "text-paper"}`}
-            style={{ letterSpacing: 1.5, ...(cardSaved ? { color: palette.court } : {}) }}
+            style={{ letterSpacing: 1.5, ...(cardSaved ? { color: palette.courtInk } : {}) }}
           >
             {savingCard ? "OPENING STRIPE..." : cardSaved ? "✓ AUTO-PAY ON" : "SET UP AUTO-PAY"}
           </Text>
           <Text
-            className="font-mono text-[9px] uppercase mt-0.5"
-            style={{ letterSpacing: 1, color: cardSaved ? palette.ink60 : "rgba(229,225,214,0.6)" }}
+            className={`font-mono text-[9px] uppercase mt-0.5 ${cardSaved ? "text-ink-60" : "text-paper/70"}`}
+            style={{ letterSpacing: 1 }}
           >
             {cardSaved
               ? "COMPLETED GAMES CHARGE YOUR CARD & PAY REFS AUTOMATICALLY"
@@ -231,7 +246,7 @@ export default function DirectorProfile() {
         ) : (
           <Feather name={cardSaved ? "check-circle" : "credit-card"} size={16} color={cardSaved ? palette.court : palette.hiVis} />
         )}
-      </Pressable>
+      </Tappable>
 
       <View className="px-5 mt-4">
         <NotificationsRow />
@@ -242,32 +257,16 @@ export default function DirectorProfile() {
       </View>
 
       <View className="mx-5 mt-4">
-        <Pressable
-          onPress={() => router.push({ pathname: "/edit-details", params: { role: "director" } } as any)}
-          className="border border-ink py-4 active:bg-chalk"
-        >
-          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
-            EDIT PROFILE
-          </Text>
-        </Pressable>
+        <Button label="Edit profile" variant="secondary" fullWidth onPress={() => router.push({ pathname: "/edit-details", params: { role: "director" } } as any)} />
       </View>
 
       <View className="mx-5 mt-4">
-        <Pressable onPress={() => router.push("/account" as any)} className="border border-ink py-4 active:bg-chalk">
-          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
-            ACCOUNT &amp; SIGN-IN
-          </Text>
-        </Pressable>
+        <Button label="Account & sign-in" variant="secondary" fullWidth onPress={() => router.push("/account" as any)} />
       </View>
 
       {/* Sign out */}
       <View className="mx-5 mt-6">
-        <Pressable onPress={signOut} className="bg-foul py-4 flex-row items-center justify-center gap-2 active:opacity-80">
-          <Feather name="log-out" size={14} color={palette.paper} />
-          <Text className="text-paper font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
-            SIGN OUT
-          </Text>
-        </Pressable>
+        <Button label="Sign out" variant="secondary" fullWidth icon={<Feather name="log-out" size={14} color={palette.ink} />} onPress={signOut} />
       </View>
     </ScrollScreen>
   );

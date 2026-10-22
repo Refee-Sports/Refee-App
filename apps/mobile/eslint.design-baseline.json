@@ -6,15 +6,7 @@
   "app/(assignor)/game/[id].tsx",
   "app/(assignor)/invite.tsx",
   "app/(assignor)/tournament/[id].tsx",
-  "app/(director)/(tabs)/profile.tsx",
-  "app/(director)/(tabs)/tournaments.tsx",
-  "app/(director)/game/[id].tsx",
   "app/(director)/game/create.tsx",
-  "app/(director)/referee/[id].tsx",
   "app/(director)/tournament/[id].tsx",
-  "app/(director)/tournament/create.tsx",
-  "components/director/DirectorDashboard.tsx",
-  "components/messages/ChatThread.tsx",
-  "components/ratings/RateRefereeModal.tsx",
-  "components/schedule/ScheduleImporter.tsx"
+  "app/(director)/tournament/create.tsx"
 ]
