@@ -113,7 +113,7 @@ http://127.0.0.1:54324 (nothing reaches a real mailbox).
 
 An account you create yourself with a DC ZIP (e.g. 20019) sees the same DC
 feed. ZIP lookups need the local edge functions: `supabase functions serve`.
-`supabase/tests/database/0075_local_seed_test.sql` fails if a migration breaks
+`supabase/tests/database/zz_local_seed_test.sql` fails if a migration breaks
 the seed or it stops covering one of these states.
 
 ## What you should see

@@ -250,3 +250,24 @@ on conflict (job_id, ref_id) do update set
   responded_at = excluded.responded_at, offered_at = excluded.offered_at, offered_by = excluded.offered_by,
   amount_due = excluded.amount_due, payout_status = excluded.payout_status, paid_at = excluded.paid_at,
   withdrawn_at = null;
+
+-- ── How each seeded game is played ──────────────────────────────────────────
+-- 2 halves or 4 quarters, halves at most 20 minutes (0075). Covers the Texas
+-- games from seed.sql too. Changing the format doesn't send crews to re-confirm.
+update public.jobs j
+   set game_format = case when j.level in ('high_school', 'juco') then 'quarters' else 'halves' end,
+       period_minutes = case
+         when j.level in ('high_school', 'juco') then 8
+         when j.level = 'adult' then 20
+         when j.age_group in ('U8', 'U9', 'U10', 'U11', 'U12') then 16
+         else 18
+       end
+  from public.hirers h join auth.users u on u.id = h.user_id
+ where h.id = j.hirer_id and u.email like '%@refee.local'
+   and (j.game_format is null or j.period_minutes is null);
+
+update public.tournaments t
+   set game_format = 'halves', period_minutes = 18
+  from public.hirers h join auth.users u on u.id = h.user_id
+ where h.id = t.hirer_id and u.email like '%@refee.local'
+   and (t.game_format is null or t.period_minutes is null);

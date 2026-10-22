@@ -1,3 +1,4 @@
+import { formatGameLength } from "../basketball/options";
 import type { JobDetail, JobListRow } from "./types";
 import { formatGameDate, formatGameTime, zoneLabel } from "../time";
 
@@ -18,6 +19,8 @@ export type JobDbRow = {
   starts_at: string;
   ends_at: string | null;
   duration_minutes: number | null;
+  game_format?: string | null;
+  period_minutes?: number | null;
   venue_name: string;
   venue_address: string | null;
   venue_city: string;
@@ -208,9 +211,8 @@ export function mapDbJobToDetail(row: JobDbRow): JobDetail {
       .replace(/_/g, " ")
       .toUpperCase(),
     ruleset: row.ruleset?.toUpperCase() ?? null,
-    gameLength: row.duration_minutes
-      ? `${row.num_games} × ${Math.round((row.duration_minutes / row.num_games) || 32)} MIN`
-      : "—",
+    // From the format, never the booked time block (which includes warm-ups and breaks).
+    gameLength: formatGameLength(row.game_format, row.period_minutes),
     uniform: row.uniform_requirements?.toUpperCase() ?? null,
     parking: row.parking_info?.toUpperCase() ?? null,
     hirerNote: row.hirer_note,

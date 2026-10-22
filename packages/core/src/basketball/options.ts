@@ -31,8 +31,19 @@ export const TEAM_LEVELS = [
   { id: "freshman", label: "FRESHMAN" },
 ];
 
+/** A game is 2 halves or 4 quarters; a half runs at most 20 minutes. */
+export const MAX_HALF_MINUTES = 20;
 export const QUARTER_MINUTES = ["6", "7", "8", "9", "10", "12"];
-export const HALF_MINUTES = ["14", "16", "18", "20", "24"];
+export const HALF_MINUTES = ["14", "16", "18", "20"];
+
+/** "2 × 20 MIN HALVES" / "4 × 8 MIN QUARTERS", or a dash when not set. */
+export function formatGameLength(
+  format: "quarters" | "halves" | string | null | undefined,
+  periodMinutes: number | null | undefined
+): string {
+  if (!periodMinutes || (format !== "halves" && format !== "quarters")) return "—";
+  return format === "halves" ? `2 × ${periodMinutes} MIN HALVES` : `4 × ${periodMinutes} MIN QUARTERS`;
+}
 
 export function periodLabel(format: "quarters" | "halves"): string {
   return format === "quarters" ? "QUARTER" : "HALF";
