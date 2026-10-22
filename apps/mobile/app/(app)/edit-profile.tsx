@@ -1,11 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  Pressable,
-  ActivityIndicator,
-} from "react-native";
+import { Text, View, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -25,6 +19,10 @@ import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { REGION_CODE_ERROR, US_STATES } from "@refee/core/geo/regions";
 import { LEAGUES_WORKED_MAX, cleanLeaguesWorked } from "@refee/core/profile/leagues";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { Button } from "@/components/ui/Button";
+import { BigChoice, Chip, OptionRow } from "@/components/ui/Choice";
+import { AffixField, TextField } from "@/components/ui/TextField";
 
 
 const CERT_BODIES = [
@@ -236,12 +234,7 @@ export default function EditProfile() {
       keyboard
       header={
         <View className="flex-row items-center justify-between px-5 py-3 border-b border-ink-20">
-          <Pressable
-            onPress={() => router.back()}
-            className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-          >
-            <Text className="text-ink font-mono-bold text-base">←</Text>
-          </Pressable>
+          <BackButton onPress={() => router.back()} />
           <Text
             className="text-ink font-display"
             style={{ fontSize: 16, letterSpacing: -0.5 }}
@@ -256,29 +249,15 @@ export default function EditProfile() {
           className="border-t-[1.5px] border-ink bg-paper px-4 pt-3"
           style={{ paddingBottom: insets.bottom + 16 }}
         >
-          <Pressable
+          <Button
+            label="Save changes"
+            showArrow
+            fullWidth
+            loading={saving}
+            loadingLabel="Saving"
+            disabled={!canSave}
             onPress={handleSave}
-            disabled={!canSave || saving}
-            className={`py-4 ${canSave && !saving ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
-          >
-            <View className="flex-row justify-center items-center gap-2">
-              {saving ? (
-                <ActivityIndicator color={palette.paper} />
-              ) : (
-                <>
-                  <Text
-                    className={`font-mono-bold ${canSave ? "text-paper" : "text-ink-40"}`}
-                    style={{ fontSize: 12, letterSpacing: 2.5 }}
-                  >
-                    SAVE CHANGES
-                  </Text>
-                  <Text className={`font-mono-bold text-base ${canSave ? "text-paper" : "text-ink-40"}`}>
-                    →
-                  </Text>
-                </>
-              )}
-            </View>
-          </Pressable>
+          />
         </View>
       }
     >
@@ -349,55 +328,22 @@ export default function EditProfile() {
 
         {/* ── Pay floor ─────────────────────────────────────────────── */}
         <FormSection label="PAY FLOOR">
-          <FieldLabel>MIN PAY PER GAME ($)</FieldLabel>
-          <View className="flex-row border-[1.5px] border-ink">
-            <View className="bg-ink px-4 justify-center">
-              <Text className="text-paper font-mono-bold text-base" style={{ letterSpacing: 0.5 }}>$</Text>
-            </View>
-            <TextInput
-              value={form.minPay}
-              onChangeText={(v) => set("minPay")(v.replace(/\D/g, "").slice(0, 4))}
-              placeholder="35"
-              placeholderTextColor={palette.ink60}
-              keyboardType="number-pad"
-              className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
-              style={{ fontSize: 14 }}
-            />
-          </View>
-          <Text className="text-ink-60 font-mono text-[9px] mt-1.5 uppercase" style={{ letterSpacing: 1.2 }}>
-            JOBS BELOW THIS RATE WON&apos;T APPEAR IN YOUR FEED
-          </Text>
+          <AffixField
+            label="Min pay per game ($)"
+            prefix="$"
+            value={form.minPay}
+            onChangeText={(v) => set("minPay")(v.replace(/\D/g, "").slice(0, 4))}
+            placeholder="35"
+            keyboardType="number-pad"
+            hint="Jobs below this rate won't appear in your feed"
+          />
 
           <FieldLabel top>TRAVEL RADIUS</FieldLabel>
           <View className="flex-row gap-1.5">
             {["10", "25", "50", "100"].map((r) => {
               const selected = form.travelRadius === r;
               return (
-                <Pressable
-                  key={r}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    set("travelRadius")(r);
-                  }}
-                  className={`flex-1 py-3.5 items-center border-[1.5px] active:opacity-70 ${
-                    selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
-                  }`}
-                >
-                  <Text
-                    className={`font-display ${selected ? "text-signal" : "text-ink"}`}
-                    style={{ fontSize: 18, letterSpacing: -0.5 }}
-                  >
-                    {r}
-                  </Text>
-                  <Text
-                    className={`font-mono-bold text-[8px] uppercase ${
-                      selected ? "text-signal/70" : "text-ink-40"
-                    }`}
-                    style={{ letterSpacing: 1.5 }}
-                  >
-                    MILES
-                  </Text>
-                </Pressable>
+                <BigChoice key={r} num={r} label="Miles" selected={selected} onPress={() => set("travelRadius")(r)} />
               );
             })}
           </View>
@@ -408,24 +354,11 @@ export default function EditProfile() {
           <Text className="text-ink-60 font-mono text-xs mb-4" style={{ lineHeight: 16 }}>
             Tap the days you&apos;re open to work. Directors see this on your profile.
           </Text>
-          <View className="flex-row gap-1">
+          <View className="flex-row flex-wrap gap-1.5">
             {DAYS.map((day, i) => {
               const active = !!(form.availableDays & (1 << i));
               return (
-                <Pressable
-                  key={day}
-                  onPress={() => toggleDay(i)}
-                  className={`flex-1 py-3 items-center border-[1.5px] active:opacity-70 ${
-                    active ? "bg-signal border-signal" : "bg-chalk border-ink-20"
-                  }`}
-                >
-                  <Text
-                    className={`font-mono-bold text-[9px] ${active ? "text-paper" : "text-ink-40"}`}
-                    style={{ letterSpacing: 0.5 }}
-                  >
-                    {day}
-                  </Text>
-                </Pressable>
+                <Chip key={day} label={day} selected={active} onPress={() => toggleDay(i)} />
               );
             })}
           </View>
@@ -447,44 +380,21 @@ export default function EditProfile() {
               const selected = !!entry;
               return (
                 <View key={body.id}>
-                  <Pressable
+                  <OptionRow
+                    label={body.label}
+                    sublabel={body.full}
+                    selected={selected}
                     onPress={() => toggleCert(body.id)}
-                    className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                      ${selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"}`}
-                  >
-                    <View className="flex-1 pr-3">
-                      <Text
-                        className={`font-mono-bold text-sm ${selected ? "text-signal" : "text-ink"}`}
-                        style={{ letterSpacing: 1 }}
-                      >
-                        {body.label}
-                      </Text>
-                      <Text
-                        className={`font-mono text-[9px] mt-0.5 ${selected ? "text-signal/70" : "text-ink-60"}`}
-                        numberOfLines={1}
-                      >
-                        {body.full}
-                      </Text>
-                    </View>
-                    {selected && <Text className="text-signal font-mono-bold text-base">✓</Text>}
-                  </Pressable>
+                  />
 
                   {selected && (
-                    <View className="border-x-[1.5px] border-b-[1.5px] border-signal bg-chalk px-4 py-2.5">
-                      <Text
-                        className="text-ink-60 font-mono-bold text-[9px] uppercase mb-1.5"
-                        style={{ letterSpacing: 1.5 }}
-                      >
-                        LICENSE # (OPTIONAL)
-                      </Text>
-                      <TextInput
+                    <View className="mt-2 ml-4">
+                      <TextField
+                        label="License # (optional)"
                         value={entry.licenseNumber}
                         onChangeText={(v) => setCertLicense(body.id, v)}
                         placeholder="e.g. 123456"
-                        placeholderTextColor={palette.ink60}
                         autoCapitalize="characters"
-                        className="text-ink font-mono border border-ink-20 bg-paper px-3 py-2"
-                        style={{ fontSize: 13 }}
                       />
                     </View>
                   )}
@@ -511,20 +421,13 @@ export default function EditProfile() {
                 {LEVELS.filter((l) => l.tier === tier).map((level) => {
                   const selected = form.levels.includes(level.id);
                   return (
-                    <Pressable
+                    <OptionRow
                       key={level.id}
+                      label={level.label}
+                      selected={selected}
+                      dim
                       onPress={() => toggleLevel(level.id)}
-                      className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                        ${selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"}`}
-                    >
-                      <Text
-                        className={`font-mono text-sm ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
-                        style={{ letterSpacing: 0.5 }}
-                      >
-                        {level.label}
-                      </Text>
-                      {selected && <Text className="text-signal font-mono-bold text-base">✓</Text>}
-                    </Pressable>
+                    />
                   );
                 })}
               </View>
@@ -552,22 +455,7 @@ function QuickDays({
 }) {
   const active = current === mask;
   return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync();
-        onSet(active ? 0 : mask);
-      }}
-      className={`flex-1 py-2 items-center border ${
-        active ? "bg-ink border-ink" : "bg-paper border-ink-20"
-      } active:opacity-70`}
-    >
-      <Text
-        className={`font-mono-bold text-[8px] uppercase ${active ? "text-hi-vis" : "text-ink-60"}`}
-        style={{ letterSpacing: 1 }}
-      >
-        {label}
-      </Text>
-    </Pressable>
+    <Chip label={label} selected={active} onPress={() => onSet(active ? 0 : mask)} />
   );
 }
 
@@ -598,28 +486,4 @@ function FieldLabel({ children, top }: { children: string; top?: boolean }) {
   );
 }
 
-function FieldInput({
-  error,
-  hint,
-  ...props
-}: React.ComponentProps<typeof TextInput> & { error?: string; hint?: string }) {
-  return (
-    <>
-      <TextInput
-        placeholderTextColor={palette.ink60}
-        className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${error ? "border-foul" : "border-ink"}`}
-        style={{ fontSize: 14 }}
-        {...props}
-      />
-      {error ? (
-        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {error}
-        </Text>
-      ) : hint ? (
-        <Text className="text-ink-60 font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {hint}
-        </Text>
-      ) : null}
-    </>
-  );
-}
+const FieldInput = TextField;

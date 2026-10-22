@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Alert, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -17,6 +17,8 @@ import {
 } from "@/lib/referee/backgroundCheck";
 import { pickBackgroundCheckFile } from "@/lib/roster/files";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { Button } from "@/components/ui/Button";
 
 const STATE_STYLE = {
   none: { bg: "bg-chalk", border: "border-ink-20", text: "text-ink-60", title: "NO BACKGROUND CHECK ON FILE" },
@@ -116,12 +118,7 @@ export default function BackgroundCheckScreen() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
-        >
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           BACKGROUND CHECK
         </Text>
@@ -167,31 +164,25 @@ export default function BackgroundCheckScreen() {
             </Text>
           ) : null}
 
-          <Pressable
-            onPress={upload}
-            disabled={busy}
-            className="bg-ink py-4 items-center mt-5 flex-row justify-center gap-2 active:opacity-80"
-          >
-            {busy ? (
-              <ActivityIndicator color={palette.paper} />
-            ) : (
-              <>
-                <Feather name="upload" size={14} color={palette.paper} />
-                <Text className="text-paper font-mono-bold text-[12px] uppercase" style={{ letterSpacing: 2 }}>
-                  {check ? "UPLOAD A NEW ONE" : "UPLOAD BACKGROUND CHECK"}
-                </Text>
-              </>
-            )}
-          </Pressable>
+          <View className="mt-5">
+            <Button
+              label={check ? "Upload a new one" : "Upload background check"}
+              icon={<Feather name="upload" size={14} color={palette.paper} />}
+              fullWidth
+              loading={busy}
+              loadingLabel="Uploading"
+              onPress={upload}
+            />
+          </View>
 
           {check ? (
             <View className="flex-row gap-2 mt-3">
-              <Pressable onPress={view} className="flex-1 border border-ink py-3 items-center active:opacity-70">
-                <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>VIEW MY FILE</Text>
-              </Pressable>
-              <Pressable onPress={remove} className="flex-1 border border-foul py-3 items-center active:opacity-70">
-                <Text className="text-foul-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>REMOVE</Text>
-              </Pressable>
+              <View style={{ flex: 1 }}>
+                <Button label="View my file" variant="secondary" size="sm" fullWidth onPress={view} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Button label="Remove" variant="danger" size="sm" fullWidth onPress={remove} />
+              </View>
             </View>
           ) : null}
 

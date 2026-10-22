@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import { fetchMyLegalIdentity, updateLegalIdentity, type LegalIdentity as Identity } from "@/lib/profile/account";
 import { dateOfBirthError, usDateInput } from "@refee/core/identity/age";
+import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
 
 /** "1992-01-02" → "01021992", the digits the US date field types. */
 const isoToDigits = (iso: string) => (iso ? `${iso.slice(5, 7)}${iso.slice(8, 10)}${iso.slice(0, 4)}` : "");
@@ -80,43 +82,47 @@ export function LegalIdentity() {
 
       <View className="mt-4">
         <Text className="font-mono-bold text-[10px] uppercase">Legal first name</Text>
-        <TextInput
-          value={first}
-          onChangeText={setFirst}
-          editable={namesEditable}
-          autoCapitalize="words"
-          autoComplete="name-given"
-          className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${namesEditable ? "bg-paper" : "bg-chalk text-ink-60"}`}
-        />
+        <View className="mt-2">
+          <TextField
+            value={first}
+            onChangeText={setFirst}
+            editable={namesEditable}
+            autoCapitalize="words"
+            autoComplete="name-given"
+          />
+        </View>
         <Text className="mt-4 font-mono-bold text-[10px] uppercase">Legal last name</Text>
-        <TextInput
-          value={last}
-          onChangeText={setLast}
-          editable={namesEditable}
-          autoCapitalize="words"
-          autoComplete="name-family"
-          className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${namesEditable ? "bg-paper" : "bg-chalk text-ink-60"}`}
-        />
+        <View className="mt-2">
+          <TextField
+            value={last}
+            onChangeText={setLast}
+            editable={namesEditable}
+            autoCapitalize="words"
+            autoComplete="name-family"
+          />
+        </View>
         <Text className="mt-4 font-mono-bold text-[10px] uppercase">Date of birth</Text>
-        <TextInput
-          value={dob.display}
-          onChangeText={setDobDigits}
-          editable={!identity.dobLocked}
-          keyboardType="number-pad"
-          placeholder="MM/DD/YYYY"
-          className={`mt-2 border border-ink px-3 py-3 font-mono text-[14px] ${identity.dobLocked ? "bg-chalk text-ink-60" : "bg-paper"}`}
-        />
+        <View className="mt-2">
+          <TextField
+            value={dob.display}
+            onChangeText={setDobDigits}
+            editable={!identity.dobLocked}
+            keyboardType="number-pad"
+            placeholder="MM/DD/YYYY"
+          />
+        </View>
         {dobError ? <Text className="mt-2 text-foul-ink text-[12px]">{dobError}</Text> : null}
         {namesEditable || !identity.dobLocked ? (
-          <Pressable
-            disabled={saving || (!identity.dobLocked && (!dob.iso || !!dobError))}
-            onPress={() => void save()}
-            className="mt-4 bg-ink px-4 py-4 disabled:opacity-40"
-          >
-            <Text className="font-mono-bold text-[10px] uppercase text-paper text-center">
-              {saving ? "Saving…" : "Save"}
-            </Text>
-          </Pressable>
+          <View className="mt-4">
+            <Button
+              label="Save"
+              fullWidth
+              loading={saving}
+              loadingLabel="Saving"
+              disabled={!identity.dobLocked && (!dob.iso || !!dobError)}
+              onPress={() => void save()}
+            />
+          </View>
         ) : null}
       </View>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
@@ -14,6 +14,9 @@ import {
 import { linkOAuthIdentity } from "@/lib/oauth";
 import { ChangeEmail } from "@/components/account/ChangeEmail";
 import { LegalIdentity } from "@/components/account/LegalIdentity";
+import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
+import { TextLink } from "@/components/ui/Controls";
 
 export default function AccountScreen() {
   const router = useRouter();
@@ -83,9 +86,7 @@ export default function AccountScreen() {
       <ScrollView contentContainerStyle={{ paddingBottom: 48 }}>
         <View className="px-5 py-4 flex-row items-center justify-between border-b border-ink">
           <Wordmark size={26} />
-          <Pressable onPress={() => router.back()}>
-            <Text className="font-mono-bold text-[10px] uppercase underline">Back to profile</Text>
-          </Pressable>
+          <TextLink label="Back to profile" tone="ink" size={10} align="left" onPress={() => router.back()} />
         </View>
 
         <View className="px-5 pt-8">
@@ -110,18 +111,26 @@ export default function AccountScreen() {
             ))}
             <View className="mt-4 gap-3">
               {!linked.has("google") ? (
-                <Pressable disabled={busy !== null} onPress={() => void link("google")} className="border border-ink px-4 py-4 disabled:opacity-50">
-                  <Text className="font-mono-bold text-[10px] uppercase text-center">
-                    {busy === "google" ? "Linking…" : "Link Google"}
-                  </Text>
-                </Pressable>
+                <Button
+                  label="Link Google"
+                  variant="secondary"
+                  fullWidth
+                  loading={busy === "google"}
+                  loadingLabel="Linking"
+                  disabled={busy !== null}
+                  onPress={() => void link("google")}
+                />
               ) : null}
               {!linked.has("apple") ? (
-                <Pressable disabled={busy !== null} onPress={() => void link("apple")} className="border border-ink px-4 py-4 disabled:opacity-50">
-                  <Text className="font-mono-bold text-[10px] uppercase text-center">
-                    {busy === "apple" ? "Linking…" : "Link Apple"}
-                  </Text>
-                </Pressable>
+                <Button
+                  label="Link Apple"
+                  variant="secondary"
+                  fullWidth
+                  loading={busy === "apple"}
+                  loadingLabel="Linking"
+                  disabled={busy !== null}
+                  onPress={() => void link("apple")}
+                />
               ) : null}
             </View>
           </View>
@@ -136,22 +145,25 @@ export default function AccountScreen() {
               This permanently removes your sign-in, profile, verification data, avatar, roles and device tokens. Historical transaction records may be retained in anonymized form. Active games or unresolved payments must be handled first.
             </Text>
             <Text className="mt-5 font-mono-bold text-[10px] uppercase">Type DELETE to confirm</Text>
-            <TextInput
-              value={confirmation}
-              onChangeText={setConfirmation}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[14px]"
-            />
-            <Pressable
-              disabled={confirmation !== "DELETE" || busy !== null}
-              onPress={deleteAccount}
-              className="mt-4 bg-foul px-5 py-4 disabled:opacity-40"
-            >
-              <Text className="font-mono-bold text-[10px] uppercase text-paper text-center">
-                {busy === "delete" ? "Deleting…" : "Permanently delete account"}
-              </Text>
-            </Pressable>
+            <View className="mt-2">
+              <TextField
+                value={confirmation}
+                onChangeText={setConfirmation}
+                autoCapitalize="characters"
+                autoCorrect={false}
+              />
+            </View>
+            <View className="mt-4">
+              <Button
+                label="Permanently delete account"
+                variant="danger-fill"
+                fullWidth
+                loading={busy === "delete"}
+                loadingLabel="Deleting"
+                disabled={confirmation !== "DELETE" || busy !== null}
+                onPress={deleteAccount}
+              />
+            </View>
           </View>
         </View>
       </ScrollView>

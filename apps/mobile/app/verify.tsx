@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -15,6 +15,8 @@ import {
   type IdentityStatus,
 } from "@/lib/identity/queries";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { TextLink } from "@/components/ui/Controls";
 
 const POLL_MS = 3000;
 const GIVE_UP_MS = 60_000;
@@ -210,14 +212,9 @@ export default function Verify() {
         onPress={() => void start()}
         disabled={loading}
       />
-      <Pressable onPress={confirmSkip} className="mt-3 py-3 active:opacity-70">
-        <Text
-          className="text-ink-60 font-mono text-[10px] uppercase text-center"
-          style={{ letterSpacing: 2 }}
-        >
-          I&apos;ll do this later
-        </Text>
-      </Pressable>
+      <View className="mt-2">
+        <TextLink label="I'll do this later" size={10} onPress={confirmSkip} />
+      </View>
     </Shell>
   );
 }
@@ -267,23 +264,9 @@ function Primary({
   disabled?: boolean;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      disabled={disabled}
-      className={`mt-6 py-4 flex-row justify-center items-center gap-2 active:opacity-80 ${
-        disabled ? "bg-ink-20" : "bg-ink"
-      }`}
-    >
-      <Text
-        className={`font-mono-bold ${disabled ? "text-ink-40" : "text-paper"}`}
-        style={{ fontSize: 12, letterSpacing: 2.5 }}
-      >
-        {label}
-      </Text>
-      <Text className={`font-mono-bold text-base ${disabled ? "text-ink-40" : "text-paper"}`}>
-        →
-      </Text>
-    </Pressable>
+    <View className="mt-6">
+      <Button label={label} showArrow fullWidth disabled={disabled} onPress={onPress} />
+    </View>
   );
 }
 

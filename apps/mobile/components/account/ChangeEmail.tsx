@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 import * as Haptics from "expo-haptics";
 import { supabase } from "@/lib/supabase";
 import { cleanCode, confirmEmailChange, EMAIL_CODE_LENGTH, requestEmailChange } from "@/lib/auth/emailCode";
+import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
+import { TextLink } from "@/components/ui/Controls";
 
 /** Shows the account's email and moves it to a new address with a 6-digit code. */
 export function ChangeEmail() {
@@ -55,72 +58,71 @@ export function ChangeEmail() {
       ) : null}
 
       {step === "idle" ? (
-        <Pressable
-          onPress={() => {
-            setStep("enter");
-            setDone(false);
-          }}
-          className="mt-4 border border-ink px-4 py-4"
-        >
-          <Text className="font-mono-bold text-[10px] uppercase text-center">Change email</Text>
-        </Pressable>
+        <View className="mt-4">
+          <Button
+            label="Change email"
+            variant="secondary"
+            fullWidth
+            onPress={() => {
+              setStep("enter");
+              setDone(false);
+            }}
+          />
+        </View>
       ) : null}
 
       {step === "enter" ? (
         <View className="mt-4">
           <Text className="font-mono-bold text-[10px] uppercase">New email</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoCorrect={false}
-            autoComplete="email"
-            textContentType="emailAddress"
-            className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[14px]"
-          />
+          <View className="mt-2">
+            <TextField
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              autoComplete="email"
+              textContentType="emailAddress"
+            />
+          </View>
           <Text className="mt-2 text-ink-60 text-[12px] leading-[18px]">
             We&apos;ll send a code to the new address. Your old address gets a notice once the change goes through.
           </Text>
-          <Pressable
-            disabled={busy || !email}
-            onPress={() => void send()}
-            className="mt-4 bg-ink px-4 py-4 disabled:opacity-40"
-          >
-            <Text className="font-mono-bold text-[10px] uppercase text-paper text-center">
-              {busy ? "Sending…" : "Send code"}
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => setStep("idle")} className="mt-3 py-2">
-            <Text className="font-mono-bold text-[10px] uppercase underline text-center">Cancel</Text>
-          </Pressable>
+          <View className="mt-4">
+            <Button label="Send code" fullWidth loading={busy} loadingLabel="Sending" disabled={!email} onPress={() => void send()} />
+          </View>
+          <View className="mt-1">
+            <TextLink label="Cancel" tone="ink" size={10} onPress={() => setStep("idle")} />
+          </View>
         </View>
       ) : null}
 
       {step === "code" ? (
         <View className="mt-4">
           <Text className="font-mono-bold text-[10px] uppercase">Code sent to {email.trim().toLowerCase()}</Text>
-          <TextInput
-            value={code}
-            onChangeText={(value) => setCode(cleanCode(value))}
-            keyboardType="number-pad"
-            autoComplete="one-time-code"
-            textContentType="oneTimeCode"
-            maxLength={EMAIL_CODE_LENGTH}
-            className="mt-2 border border-ink bg-paper px-3 py-3 font-mono text-[18px] tracking-[6px]"
-          />
-          <Pressable
-            disabled={busy || code.length !== EMAIL_CODE_LENGTH}
-            onPress={() => void confirm()}
-            className="mt-4 bg-ink px-4 py-4 disabled:opacity-40"
-          >
-            <Text className="font-mono-bold text-[10px] uppercase text-paper text-center">
-              {busy ? "Checking…" : "Confirm new email"}
-            </Text>
-          </Pressable>
-          <Pressable onPress={() => setStep("enter")} className="mt-3 py-2">
-            <Text className="font-mono-bold text-[10px] uppercase underline text-center">Use a different email</Text>
-          </Pressable>
+          <View className="mt-2">
+            <TextField
+              value={code}
+              onChangeText={(value) => setCode(cleanCode(value))}
+              keyboardType="number-pad"
+              autoComplete="one-time-code"
+              textContentType="oneTimeCode"
+              maxLength={EMAIL_CODE_LENGTH}
+            />
+          </View>
+          <View className="mt-4">
+            <Button
+              label="Confirm new email"
+              fullWidth
+              loading={busy}
+              loadingLabel="Checking"
+              disabled={code.length !== EMAIL_CODE_LENGTH}
+              onPress={() => void confirm()}
+            />
+          </View>
+          <View className="mt-1">
+            <TextLink label="Use a different email" tone="ink" size={10} onPress={() => setStep("enter")} />
+          </View>
         </View>
       ) : null}
 

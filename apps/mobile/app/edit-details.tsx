@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, ScrollView, Text, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,6 +11,11 @@ import { pickAndUploadAvatar } from "@/lib/profile/avatar";
 import { updateAssignorDetails, updateDirectorDetails } from "@/lib/profile/account";
 import { ORG_TYPES } from "@/lib/roles/queries";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Choice";
+import { BackButton } from "@/components/ui/Controls";
+import { Tappable } from "@/components/ui/Tappable";
+import { TextField } from "@/components/ui/TextField";
 
 /**
  * Edit the details a director or assignor gave at sign-up: photo, name, city,
@@ -100,13 +105,7 @@ export default function EditDetailsScreen() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           EDIT PROFILE
         </Text>
@@ -122,8 +121,14 @@ export default function EditDetailsScreen() {
           contentContainerStyle={{ padding: 20, paddingBottom: insets.bottom + 40 }}
           keyboardShouldPersistTaps="handled"
         >
-          <Pressable onPress={changePhoto} className="flex-row items-center gap-4 mb-6 active:opacity-80">
-            <View className="w-16 h-16 bg-ink border border-ink items-center justify-center overflow-hidden">
+          <Tappable
+            onPress={changePhoto}
+            accessibilityRole="button"
+            accessibilityLabel="Change photo"
+            scaleTo={0.98}
+            style={{ flexDirection: "row", alignItems: "center", gap: 16, marginBottom: 24 }}
+          >
+            <View className="w-16 h-16 rounded-md bg-ink border border-ink items-center justify-center overflow-hidden">
               {uploading ? (
                 <ActivityIndicator color={palette.chalk} />
               ) : avatarUrl ? (
@@ -133,7 +138,7 @@ export default function EditDetailsScreen() {
               )}
             </View>
             <Text className="font-mono-bold text-[10px] uppercase underline">Change photo</Text>
-          </Pressable>
+          </Tappable>
 
           {isDirector ? (
             <>
@@ -144,16 +149,7 @@ export default function EditDetailsScreen() {
                 {ORG_TYPES.map((t) => {
                   const selected = form.orgType === t.id;
                   return (
-                    <Pressable
-                      key={t.id}
-                      onPress={() => set("orgType")(t.id)}
-                      className={`border px-3 py-2 ${selected ? "border-ink bg-ink" : "border-ink-20 bg-chalk"}`}
-                      accessibilityState={{ selected }}
-                    >
-                      <Text className={`font-mono-bold text-[10px] uppercase ${selected ? "text-paper" : "text-ink"}`}>
-                        {t.label}
-                      </Text>
-                    </Pressable>
+                    <Chip key={t.id} label={t.label} selected={selected} onPress={() => set("orgType")(t.id)} />
                   );
                 })}
               </View>
@@ -180,11 +176,9 @@ export default function EditDetailsScreen() {
             <Text className="mt-4 border border-foul bg-foul/10 p-3 text-foul-ink text-[13px]">{error}</Text>
           ) : null}
 
-          <Pressable onPress={save} disabled={saving} className="mt-6 bg-ink py-4 active:opacity-80 disabled:opacity-50">
-            <Text className="text-paper font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
-              {saving ? "Saving…" : "Save changes"}
-            </Text>
-          </Pressable>
+          <View className="mt-6">
+            <Button label="Save changes" fullWidth loading={saving} loadingLabel="Saving" onPress={save} />
+          </View>
         </ScrollView>
       )}
     </View>
@@ -199,6 +193,4 @@ function Label({ children, top }: { children: string; top?: boolean }) {
   );
 }
 
-function Input(props: React.ComponentProps<typeof TextInput>) {
-  return <TextInput {...props} className="border border-ink bg-chalk px-3 py-3 font-body text-[15px] text-ink" />;
-}
+const Input = TextField;

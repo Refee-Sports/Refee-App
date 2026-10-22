@@ -1,6 +1,6 @@
 import { verificationLabel } from "@/lib/identity/queries";
 import { useEffect, useState } from "react";
-import { Text, View, Pressable, Switch, ActivityIndicator, Image, Alert } from "react-native";
+import { Text, View, ActivityIndicator, Image, Alert } from "react-native";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -37,7 +37,12 @@ import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { RoleSwitcher } from "@/components/ui/RoleSwitcher";
 import { NotificationsRow } from "@/components/profile/NotificationsRow";
 import { fetchReliability, showRate, type ReliabilityCounts } from "@refee/core/referee/reliability";
-import { palette } from "@refee/design";
+import { buttonPressScale, palette, radius } from "@refee/design";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { IconButton, ListRow, TextLink } from "@/components/ui/Controls";
+import { Toggle } from "@/components/ui/Choice";
+import { Tappable } from "@/components/ui/Tappable";
 
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -273,15 +278,11 @@ export default function Profile() {
       {/* ── App header ───────────────────────────────────────────── */}
       <View className="px-5 pt-1 pb-3 flex-row items-center justify-between">
         <Wordmark size={26} />
-        <Pressable
-          onPress={() => {
-            Haptics.selectionAsync();
-            router.push("/edit-profile");
-          }}
-          className="w-9 h-9 bg-chalk border border-ink items-center justify-center active:opacity-70"
-        >
-          <Feather name="edit-2" size={14} color={palette.ink} />
-        </Pressable>
+        <IconButton
+          accessibilityLabel="Edit profile"
+          onPress={() => router.push("/edit-profile")}
+          icon={(color) => <Feather name="edit-2" size={14} color={color} />}
+        />
       </View>
 
       {/* ── Telemetry ────────────────────────────────────────────── */}
@@ -297,8 +298,14 @@ export default function Profile() {
 
       {/* ── Avatar pill ──────────────────────────────────────────── */}
       <View className="px-5 flex-row items-center gap-4 mb-5">
-        <Pressable onPress={handleAvatarPress} style={{ position: "relative" }} className="active:opacity-80">
-          <View className="w-16 h-16 bg-ink border border-ink items-center justify-center overflow-hidden">
+        <Tappable
+          onPress={handleAvatarPress}
+          accessibilityRole="button"
+          accessibilityLabel="Change profile photo"
+          scaleTo={0.96}
+          style={{ position: "relative" }}
+        >
+          <View className="w-16 h-16 rounded-md bg-ink border border-ink items-center justify-center overflow-hidden">
             {uploadingAvatar ? (
               <ActivityIndicator color={palette.paper} size="small" />
             ) : profile.avatar_url ? (
@@ -316,6 +323,7 @@ export default function Profile() {
               top: -4,
               left: -4,
               backgroundColor: palette.ink,
+              borderRadius: radius.sm,
               paddingHorizontal: 3,
               paddingVertical: 2,
             }}
@@ -329,12 +337,13 @@ export default function Profile() {
               right: -2,
               width: 14,
               height: 14,
+              borderRadius: radius.full,
               backgroundColor: profile.is_available ? palette.court : palette.ink20,
               borderWidth: 2,
               borderColor: PAPER,
             }}
           />
-        </Pressable>
+        </Tappable>
 
         <View className="flex-1">
           <Text className="font-mono text-[9px] text-ink-60 uppercase" style={{ letterSpacing: 2 }}>
@@ -440,22 +449,33 @@ export default function Profile() {
 
       {/* Skipped or failed ID check: the way back in. Taking games needs it. */}
       {!profile.is_verified && (
-        <Pressable
-          onPress={() => router.push("/verify")}
-          className="mx-5 mb-4 border-[1.5px] border-ink bg-hi-vis px-4 py-3 flex-row items-center justify-between active:opacity-80"
-        >
-          <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
-            VERIFY YOUR ID TO TAKE GAMES
-          </Text>
-          <Text className="text-ink font-mono-bold text-sm">→</Text>
-        </Pressable>
+        <View className="mx-5 mb-4">
+          <Card
+            onPress={() => router.push("/verify")}
+            variant="hi-vis"
+            accessibilityLabel={"Verify your ID to take games"}
+          >
+            <View className="px-4 py-3 flex-row items-center justify-between">
+              <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>
+                VERIFY YOUR ID TO TAKE GAMES
+              </Text>
+              <Text className="text-ink font-mono-bold text-sm">→</Text>
+            </View>
+          </Card>
+        </View>
       )}
 
       {/* ── Stat strip ───────────────────────────────────────────── */}
       <View className="mx-5 border border-ink bg-chalk flex-row mb-4">
         <StatStrip label="GAMES WORKED" value={String(earnings.gamesWorked || profile.games_called_total)} />
         <View className="w-px bg-ink" />
-        <Pressable className="flex-1 px-3 py-3 active:opacity-70" onPress={cyclePeriod}>
+        <Tappable
+          onPress={cyclePeriod}
+          accessibilityRole="button"
+          accessibilityLabel={`${PERIOD_LABEL[earningsPeriod]} earnings. Tap to switch period`}
+          wrapperStyle={{ flex: 1 }}
+          style={({ pressed }) => ({ paddingHorizontal: 12, paddingVertical: 12, backgroundColor: pressed ? palette.chalkPress : undefined })}
+        >
           <Text
             className="text-ink-60 font-mono-bold text-[8px] uppercase mb-1"
             style={{ letterSpacing: 2 }}
@@ -471,12 +491,12 @@ export default function Profile() {
             ${earnings.totalEarned.toLocaleString()}
           </Text>
           <Text
-            className="font-mono text-[7px] text-ink-40 uppercase mt-0.5"
+            className="font-mono text-[8px] text-ink-60 uppercase mt-0.5"
             style={{ letterSpacing: 1.5 }}
           >
             TAP TO SWITCH
           </Text>
-        </Pressable>
+        </Tappable>
         <View className="w-px bg-ink" />
         <StatStrip label="MEMBER SINCE" value={String(memberYear)} />
       </View>
@@ -557,21 +577,34 @@ export default function Profile() {
           </Text>
         </View>
       ) : (
-        <Pressable
+        <Tappable
           onPress={handleSetUpPayouts}
           disabled={payoutBusy}
-          className="mx-5 mb-4 border border-ink bg-ink px-4 py-3.5 flex-row items-center justify-between active:opacity-80"
+          accessibilityRole="button"
+          accessibilityLabel="Set up payouts"
+          scaleTo={buttonPressScale}
+          haptic="light"
+          wrapperStyle={{ marginHorizontal: 20, marginBottom: 16 }}
+          style={({ pressed }) => ({
+            borderRadius: radius.lg,
+            backgroundColor: pressed ? palette.inkPress : palette.ink,
+            paddingHorizontal: 16,
+            paddingVertical: 14,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          })}
         >
           <View className="flex-1 pr-3">
             <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
               {payoutBusy ? "OPENING STRIPE..." : "SET UP PAYOUTS"}
             </Text>
-            <Text className="font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1, color: "rgba(229,225,214,0.6)" }}>
+            <Text className="font-mono text-[9px] uppercase mt-0.5 text-paper/70" style={{ letterSpacing: 1 }}>
               {payoutStatus?.hasAccount
                 ? "FINISH STRIPE ONBOARDING TO GET PAID"
                 : "CONNECT A BANK ACCOUNT TO GET PAID FOR GAMES"}
             </Text>
-            <Text className="font-mono text-[8px] uppercase mt-1.5" style={{ letterSpacing: 0.6, lineHeight: 12, color: "rgba(229,225,214,0.72)" }}>
+            <Text className="font-mono text-[8px] uppercase mt-1.5 text-paper/70" style={{ letterSpacing: 0.6, lineHeight: 12 }}>
               FIRST BANK PAYOUT MAY TAKE ABOUT 7 DAYS · STANDARD PAYOUTS ARE TYPICALLY ABOUT 2 BUSINESS DAYS
             </Text>
           </View>
@@ -580,7 +613,7 @@ export default function Profile() {
           ) : (
             <Feather name="arrow-right" size={16} color={palette.hiVis} />
           )}
-        </Pressable>
+        </Tappable>
       )}
 
       {/* ── Availability ─────────────────────────────────────────── */}
@@ -605,13 +638,7 @@ export default function Profile() {
             </Text>
           )}
         </View>
-        <Switch
-          value={profile.is_available}
-          onValueChange={handleAvailToggle}
-          disabled={availToggling}
-          trackColor={{ false: palette.ink20, true: palette.ink }}
-          thumbColor={profile.is_available ? palette.hiVis : palette.paper}
-        />
+        <Toggle label="Available for games" checked={profile.is_available} onChange={handleAvailToggle} disabled={availToggling} />
       </View>
 
       {/* Days grid */}
@@ -732,36 +759,9 @@ export default function Profile() {
       )}
 
       <View className="mx-5 mt-6 gap-2">
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); router.push("/earnings" as any); }}
-          className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
-        >
-          <View>
-            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>EARNINGS STATEMENT</Text>
-            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>EVERY GAME AND WHERE ITS PAY STANDS</Text>
-          </View>
-          <Feather name="chevron-right" size={16} color={palette.ink} />
-        </Pressable>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); router.push("/my-organizations" as any); }}
-          className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
-        >
-          <View>
-            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>MY ORGANIZATIONS</Text>
-            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>ASSIGNOR ROSTERS YOU&apos;RE ON</Text>
-          </View>
-          <Feather name="chevron-right" size={16} color={palette.ink} />
-        </Pressable>
-        <Pressable
-          onPress={() => { Haptics.selectionAsync(); router.push("/background-check" as any); }}
-          className="border border-ink bg-chalk px-4 py-3.5 flex-row items-center justify-between active:opacity-70"
-        >
-          <View>
-            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>BACKGROUND CHECK</Text>
-            <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>UPLOAD · NOT VERIFIED YET</Text>
-          </View>
-          <Feather name="chevron-right" size={16} color={palette.ink} />
-        </Pressable>
+        <ListRow label="Earnings statement" sublabel="EVERY GAME AND WHERE ITS PAY STANDS" onPress={() => router.push("/earnings" as any)} />
+        <ListRow label="My organizations" sublabel="ASSIGNOR ROSTERS YOU'RE ON" onPress={() => router.push("/my-organizations" as any)} />
+        <ListRow label="Background check" sublabel="UPLOAD · NOT VERIFIED YET" onPress={() => router.push("/background-check" as any)} />
       </View>
 
       <View className="px-5 mt-3">
@@ -773,20 +773,12 @@ export default function Profile() {
       </View>
 
       <View className="mx-5 mt-4">
-        <Pressable onPress={() => router.push("/account" as any)} className="border border-ink py-4 active:bg-chalk">
-          <Text className="text-ink font-mono-bold uppercase text-center" style={{ fontSize: 11, letterSpacing: 2 }}>
-            ACCOUNT &amp; SIGN-IN
-          </Text>
-        </Pressable>
+        <Button label="Account & sign-in" variant="secondary" fullWidth onPress={() => router.push("/account" as any)} />
       </View>
 
       {/* ── Sign out ─────────────────────────────────────────────── */}
       <View className="mx-5 mt-10">
-        <Pressable onPress={signOut} className="border border-foul py-4 active:opacity-70">
-          <Text className="text-foul-ink text-center font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
-            SIGN OUT
-          </Text>
-        </Pressable>
+        <Button label="Sign out" variant="secondary" fullWidth onPress={signOut} />
       </View>
     </ScrollScreen>
   );
@@ -868,66 +860,63 @@ function UpcomingGameCard({ game }: { game: UpcomingGameRow }) {
   const timeStr = formatGameTimeWithZone(game.startsAt, game.timeZone);
 
   return (
-    <Pressable
-      onPress={() => {
-        Haptics.selectionAsync();
-        router.push(`/job/${game.jobId}` as any);
-      }}
-      className={`border px-4 py-3.5 flex-row items-start justify-between active:opacity-80 ${
-        game.needsReconfirm ? "border-foul bg-foul/5" : "border-ink bg-chalk"
-      }`}
+    <Card
+      onPress={() => router.push(`/job/${game.jobId}` as any)}
+      accessibilityLabel={game.title}
+      style={game.needsReconfirm ? { borderColor: palette.foulInk } : undefined}
     >
-      <View className="flex-1 pr-3">
-        {game.needsReconfirm && (
+      <View className="px-4 py-3.5 flex-row items-start justify-between">
+        <View className="flex-1 pr-3">
+          {game.needsReconfirm && (
+            <Text
+              className="font-mono-bold text-[8px] text-foul-ink uppercase mb-1"
+              style={{ letterSpacing: 1.5 }}
+            >
+              ⚠ DETAILS CHANGED — TAP TO RE-CONFIRM
+            </Text>
+          )}
           <Text
-            className="font-mono-bold text-[8px] text-foul-ink uppercase mb-1"
-            style={{ letterSpacing: 1.5 }}
+            className="font-mono-bold text-[12px] text-ink uppercase"
+            style={{ letterSpacing: 0.5 }}
+            numberOfLines={1}
           >
-            ⚠ DETAILS CHANGED — TAP TO RE-CONFIRM
+            {game.title}
           </Text>
-        )}
-        <Text
-          className="font-mono-bold text-[12px] text-ink uppercase"
-          style={{ letterSpacing: 0.5 }}
-          numberOfLines={1}
-        >
-          {game.title}
-        </Text>
-        <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
-          {game.orgName.toUpperCase()} · {game.venueCity.toUpperCase()}, {game.venueState}
-        </Text>
-        <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
-          {dateStr} · {timeStr}
-        </Text>
-      </View>
-      <View className="items-end gap-1.5">
-        <View className="items-end">
-          <Text
-            className="font-display text-ink"
-            style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 20 }}
-          >
-            ${game.payPerGame}
+          <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+            {game.orgName.toUpperCase()} · {game.venueCity.toUpperCase()}, {game.venueState}
           </Text>
-          <Text className="font-mono text-[8px] text-ink-40 uppercase" style={{ letterSpacing: 1 }}>
-            / GAME
+          <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+            {dateStr} · {timeStr}
           </Text>
         </View>
-        <Pressable
-          onPress={async () => {
-            Haptics.selectionAsync();
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) return;
-            const { conversationId } = await getOrCreateCrewConversation(session.user.id, game.jobId);
-            if (conversationId) {
-              router.push(`/(app)/conversation/${conversationId}` as any);
-            }
-          }}
-          className="w-8 h-8 border border-ink bg-paper items-center justify-center active:opacity-70"
-        >
-          <Feather name="message-square" size={13} color={palette.ink} />
-        </Pressable>
+        <View className="items-end gap-1.5">
+          <View className="items-end">
+            <Text
+              className="font-display text-ink"
+              style={{ fontSize: 20, letterSpacing: -0.5, lineHeight: 20 }}
+            >
+              ${game.payPerGame}
+            </Text>
+            <Text className="font-mono text-[8px] text-ink-40 uppercase" style={{ letterSpacing: 1 }}>
+              / GAME
+            </Text>
+          </View>
+          <IconButton
+            accessibilityLabel="Message the crew"
+            size={32}
+            onPress={async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session) return;
+              const { conversationId } = await getOrCreateCrewConversation(session.user.id, game.jobId);
+              if (conversationId) {
+                router.push(`/(app)/conversation/${conversationId}` as any);
+              }
+            }}
+            icon={(color) => <Feather name="message-square" size={13} color={color} />}
+          />
+        </View>
       </View>
-    </Pressable>
+    </Card>
   );
 }
 
@@ -950,13 +939,7 @@ function PSectionHeader({
           {title.toUpperCase()}
         </Text>
       </View>
-      {action && (
-        <Pressable onPress={onAction} className="active:opacity-70">
-          <Text className="text-signal font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 1.5 }}>
-            {action}
-          </Text>
-        </Pressable>
-      )}
+      {action && onAction ? <TextLink label={action} tone="signal" onPress={onAction} /> : null}
     </View>
   );
 }

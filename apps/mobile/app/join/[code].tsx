@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Text, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -12,6 +12,8 @@ import {
 } from "@/lib/assignor/queries";
 import { setPendingRosterCode } from "@/lib/roster/files";
 import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { TextLink } from "@/components/ui/Controls";
 
 /**
  * Where a scanned QR code (refee://join/<code>) or a typed code lands.
@@ -80,9 +82,9 @@ export default function JoinRoster() {
           <Text className="text-ink-80 mt-3" style={{ fontSize: 14, lineHeight: 20 }}>
             {error ?? "It may have been replaced. Ask the assignor for their current QR code."}
           </Text>
-          <Pressable onPress={() => router.replace("/my-organizations" as any)} className="bg-ink py-4 items-center mt-6">
-            <Text className="text-paper font-mono-bold text-[12px] uppercase" style={{ letterSpacing: 2 }}>BACK</Text>
-          </Pressable>
+          <View className="mt-6">
+            <Button label="Back" fullWidth onPress={() => router.replace("/my-organizations" as any)} />
+          </View>
         </View>
       ) : (
         <View>
@@ -98,18 +100,12 @@ export default function JoinRoster() {
             They&apos;ll be able to offer you games, and you&apos;ll see the games they open to their roster. You can also be on other
             rosters, and you can leave any time.
           </Text>
-          <Pressable
-            onPress={join}
-            disabled={state === "joining"}
-            className="bg-ink py-4 items-center mt-7 active:opacity-80"
-          >
-            {state === "joining" ? <ActivityIndicator color={palette.paper} /> : (
-              <Text className="text-paper font-mono-bold text-[12px] uppercase" style={{ letterSpacing: 2.5 }}>JOIN ROSTER</Text>
-            )}
-          </Pressable>
-          <Pressable onPress={() => router.back()} className="py-4 items-center">
-            <Text className="text-ink font-mono-bold text-[11px] uppercase underline" style={{ letterSpacing: 1.5 }}>Not now</Text>
-          </Pressable>
+          <View className="mt-7">
+            <Button label="Join roster" fullWidth loading={state === "joining"} loadingLabel="Joining" onPress={join} />
+          </View>
+          <View className="mt-2">
+            <TextLink label="Not now" tone="ink" size={11} onPress={() => router.back()} />
+          </View>
         </View>
       )}
     </View>

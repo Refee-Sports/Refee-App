@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -15,6 +14,8 @@ import {
 } from "@/lib/push/preferences";
 import { useOnboardingStore } from "@/lib/stores/onboarding-store";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { Toggle } from "@/components/ui/Choice";
 
 /**
  * Three switches: new games near me, crew messages, game updates. Each saves as
@@ -74,13 +75,7 @@ export default function NotificationsScreen() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           NOTIFICATIONS
         </Text>
@@ -114,13 +109,7 @@ export default function NotificationsScreen() {
                       {s.description}
                     </Text>
                   </View>
-                  <Switch
-                    value={prefs[s.kind]}
-                    onValueChange={(v) => void flip(s.kind, v)}
-                    trackColor={{ false: palette.ink20, true: palette.signal }}
-                    thumbColor={palette.chalk}
-                    accessibilityLabel={s.label}
-                  />
+                  <Toggle label={s.label} checked={prefs[s.kind]} onChange={(v) => void flip(s.kind, v)} />
                 </View>
               </View>
             ))}

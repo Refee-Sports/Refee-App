@@ -1,15 +1,5 @@
 import { useCallback, useState } from "react";
-import {
-  ActivityIndicator,
-  Alert,
-  Pressable,
-  RefreshControl,
-  ScrollView,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -24,6 +14,9 @@ import {
   type RosterInviteRow,
 } from "@/lib/assignor/queries";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { TextField } from "@/components/ui/TextField";
+import { Button } from "@/components/ui/Button";
 
 /**
  * Every roster (organization) this referee is on. A referee can be on any
@@ -106,12 +99,7 @@ export default function MyOrganizations() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
-        >
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           MY ORGANIZATIONS
         </Text>
@@ -138,22 +126,27 @@ export default function MyOrganizations() {
                     INVITES YOU TO THEIR ROSTER{invite.assignor_city ? ` · ${invite.assignor_city}, ${invite.assignor_state}` : ""}
                   </Text>
                   <View className="flex-row gap-2 mt-3">
-                    <Pressable
-                      disabled={busyId !== null}
-                      onPress={() => void respond(invite, true)}
-                      className="flex-1 bg-ink py-2.5 items-center active:opacity-80"
-                    >
-                      {busyId === invite.roster_id ? <ActivityIndicator size="small" color={palette.paper} /> : (
-                        <Text className="text-paper font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>JOIN</Text>
-                      )}
-                    </Pressable>
-                    <Pressable
-                      disabled={busyId !== null}
-                      onPress={() => void respond(invite, false)}
-                      className="flex-1 border border-ink py-2.5 items-center active:opacity-70"
-                    >
-                      <Text className="text-ink font-mono-bold text-[10px] uppercase" style={{ letterSpacing: 1.5 }}>DECLINE</Text>
-                    </Pressable>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="Join"
+                        size="sm"
+                        fullWidth
+                        loading={busyId === invite.roster_id}
+                        loadingLabel="Joining"
+                        disabled={busyId !== null}
+                        onPress={() => void respond(invite, true)}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Button
+                        label="Decline"
+                        variant="secondary"
+                        size="sm"
+                        fullWidth
+                        disabled={busyId !== null}
+                        onPress={() => void respond(invite, false)}
+                      />
+                    </View>
                   </View>
                 </View>
               ))}
@@ -182,15 +175,15 @@ export default function MyOrganizations() {
                     {roster.joined_at ? `JOINED ${new Date(roster.joined_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }).toUpperCase()}` : "ON ROSTER"}
                   </Text>
                 </View>
-                <Pressable
+                <Button
+                  label="Leave"
+                  variant="danger"
+                  size="sm"
+                  loading={busyId === roster.roster_id}
+                  loadingLabel="Leaving"
                   disabled={busyId !== null}
                   onPress={() => leave(roster)}
-                  className="border border-foul px-2.5 py-2 active:opacity-70"
-                >
-                  {busyId === roster.roster_id ? <ActivityIndicator size="small" color={palette.foulInk} /> : (
-                    <Text className="font-mono-bold text-[8px] text-foul-ink" style={{ letterSpacing: 1 }}>LEAVE</Text>
-                  )}
-                </Pressable>
+                />
               </View>
             ))
           )}
@@ -199,26 +192,17 @@ export default function MyOrganizations() {
             JOIN WITH A CODE
           </Text>
           <View className="flex-row gap-2">
-            <TextInput
-              value={code}
-              onChangeText={(t) => setCode(t.toUpperCase())}
-              placeholder="ROSTER CODE"
-              placeholderTextColor={palette.ink60}
-              autoCapitalize="characters"
-              autoCorrect={false}
-              maxLength={40}
-              className="flex-1 border border-ink bg-chalk px-3 py-3 font-mono-bold text-[13px] text-ink"
-              style={{ letterSpacing: 3 }}
-            />
-            <Pressable
-              onPress={joinWithCode}
-              disabled={code.trim().length < 6}
-              className={`px-5 justify-center ${code.trim().length >= 6 ? "bg-ink" : "bg-ink-20"}`}
-            >
-              <Text className={`font-mono-bold text-[10px] uppercase ${code.trim().length >= 6 ? "text-paper" : "text-ink-40"}`} style={{ letterSpacing: 1.5 }}>
-                NEXT
-              </Text>
-            </Pressable>
+            <View className="flex-1">
+              <TextField
+                value={code}
+                onChangeText={(t) => setCode(t.toUpperCase())}
+                placeholder="ROSTER CODE"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={40}
+              />
+            </View>
+            <Button label="Next" disabled={code.trim().length < 6} onPress={joinWithCode} />
           </View>
           <Text className="font-mono text-[9px] text-ink-60 uppercase mt-2" style={{ letterSpacing: 1 }}>
             Scanned a QR code with your camera? It opens Refee here automatically.

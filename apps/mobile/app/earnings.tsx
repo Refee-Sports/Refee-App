@@ -1,6 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { supabase } from "@/lib/supabase";
@@ -16,6 +15,10 @@ import {
 import { shareCsv } from "@/lib/files/share";
 import { formatGameDate } from "@refee/core/time";
 import { palette } from "@refee/design";
+import { BackButton } from "@/components/ui/Controls";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Choice";
 
 const PAYOUT_COLOR: Record<LedgerRow["payout"], string> = {
   paid: "text-ink",
@@ -66,13 +69,7 @@ export default function EarningsScreen() {
   return (
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       <View className="px-5 py-3 flex-row items-center justify-between border-b border-ink">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink items-center justify-center active:opacity-70"
-          accessibilityLabel="Back"
-        >
-          <Feather name="arrow-left" size={16} color={palette.ink} />
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="font-mono-bold text-[9px] text-ink uppercase" style={{ letterSpacing: 1.5 }}>
           EARNINGS STATEMENT
         </Text>
@@ -112,29 +109,18 @@ export default function EarningsScreen() {
               {rows.length > 0 ? (
                 <View className="mt-4 flex-row flex-wrap items-center gap-2">
                   {(["all", ...years] as const).map((y) => (
-                    <Pressable
-                      key={String(y)}
-                      onPress={() => setExportYear(y)}
-                      className={`border px-2.5 py-1.5 ${exportYear === y ? "border-ink bg-ink" : "border-ink-20 bg-chalk"}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: exportYear === y }}
-                    >
-                      <Text className={`font-mono-bold text-[9px] uppercase ${exportYear === y ? "text-paper" : "text-ink"}`} style={{ letterSpacing: 1 }}>
-                        {y === "all" ? "ALL TIME" : String(y)}
-                      </Text>
-                    </Pressable>
+                    <Chip key={String(y)} label={y === "all" ? "All time" : String(y)} selected={exportYear === y} onPress={() => setExportYear(y)} />
                   ))}
-                  <Pressable
-                    onPress={exportCsv}
-                    disabled={exporting}
-                    className="ml-auto border border-ink bg-ink px-3 py-1.5 active:opacity-80 disabled:opacity-50"
-                    accessibilityRole="button"
-                    accessibilityLabel="Export earnings as a CSV file"
-                  >
-                    <Text className="font-mono-bold text-[9px] uppercase text-paper" style={{ letterSpacing: 1.5 }}>
-                      {exporting ? "EXPORTING…" : "EXPORT CSV"}
-                    </Text>
-                  </Pressable>
+                  <View className="ml-auto">
+                    <Button
+                      label="Export CSV"
+                      size="sm"
+                      accessibilityLabel="Export earnings as a CSV file"
+                      loading={exporting}
+                      loadingLabel="Exporting"
+                      onPress={exportCsv}
+                    />
+                  </View>
                 </View>
               ) : null}
             </View>
@@ -145,30 +131,32 @@ export default function EarningsScreen() {
             </Text>
           }
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push(`/job/${item.jobId}` as any)}
-              className="border border-ink bg-chalk px-4 py-3 mb-1.5 active:opacity-70"
-              accessibilityRole="button"
-              accessibilityLabel={`${item.title}, $${item.amount}, ${payoutLabel(item)}`}
-            >
-              <View className="flex-row items-start justify-between">
-                <View className="flex-1 pr-3">
-                  <Text className="font-mono-bold text-[11px] text-ink uppercase" numberOfLines={1} style={{ letterSpacing: 0.5 }}>
-                    {item.title}
-                  </Text>
-                  <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
-                    {formatGameDate(item.startsAt, item.timeZone, { month: "short", day: "numeric", year: "numeric" })} · {item.orgName}
-                    {item.kind === "late_cancel" ? " · LATE-CANCEL FEE" : ""}
+            <View className="mb-1.5">
+              <Card
+                onPress={() => router.push(`/job/${item.jobId}` as any)}
+                accessibilityLabel={`${item.title}, $${item.amount}, ${payoutLabel(item)}`}
+              >
+                <View className="px-4 py-3">
+                  <View className="flex-row items-start justify-between">
+                    <View className="flex-1 pr-3">
+                      <Text className="font-mono-bold text-[11px] text-ink uppercase" numberOfLines={1} style={{ letterSpacing: 0.5 }}>
+                        {item.title}
+                      </Text>
+                      <Text className="font-mono text-[9px] text-ink-60 uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+                        {formatGameDate(item.startsAt, item.timeZone, { month: "short", day: "numeric", year: "numeric" })} · {item.orgName}
+                        {item.kind === "late_cancel" ? " · LATE-CANCEL FEE" : ""}
+                      </Text>
+                    </View>
+                    <Text className="font-display text-ink" style={{ fontSize: 16, letterSpacing: -0.5 }}>
+                      ${item.amount.toLocaleString()}
+                    </Text>
+                  </View>
+                  <Text className={`font-mono-bold text-[9px] uppercase mt-2 ${PAYOUT_COLOR[item.payout]}`} style={{ letterSpacing: 1 }}>
+                    {payoutLabel(item)}
                   </Text>
                 </View>
-                <Text className="font-display text-ink" style={{ fontSize: 16, letterSpacing: -0.5 }}>
-                  ${item.amount.toLocaleString()}
-                </Text>
-              </View>
-              <Text className={`font-mono-bold text-[9px] uppercase mt-2 ${PAYOUT_COLOR[item.payout]}`} style={{ letterSpacing: 1 }}>
-                {payoutLabel(item)}
-              </Text>
-            </Pressable>
+              </Card>
+            </View>
           )}
         />
       )}
