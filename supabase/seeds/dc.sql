@@ -284,3 +284,18 @@ delete from public.certifications c
 -- recent games are still owed, so the director sees them due / overdue.
 update public.jobs set payment_status = 'unpaid'
  where id in ('3b000000-0000-4000-8000-000000000024', '3b000000-0000-4000-8000-000000000025');
+
+-- A director who has already paid: their upcoming games are charged up front,
+-- as prepay-game leaves them (5% fee on top of crew pay), so the payment-issues
+-- list shows only real problems. One game stays unpaid to show "Save a card".
+-- Nothing here touches Stripe; to try the real flow, save Stripe's test card
+-- 4242 4242 4242 4242 from the director's profile (local keys are test mode).
+update public.jobs j
+   set payment_status = 'prepaid',
+       prepaid_crew_cents = j.pay_per_game * j.crew_size * coalesce(j.num_games, 1) * 100,
+       prepaid_fee_cents = round(j.pay_per_game * j.crew_size * coalesce(j.num_games, 1) * 100 * 0.05),
+       prepaid_at = now()
+  from public.hirers h
+ where h.id = j.hirer_id and h.user_id = 'dc000000-0000-4000-8000-000000000004'
+   and j.status in ('open', 'partially_filled')
+   and j.id <> '3b000000-0000-4000-8000-000000000013';

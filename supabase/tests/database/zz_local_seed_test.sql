@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(18);
+select plan(19);
 
 -- The local seed (supabase/seed.sql + supabase/seeds/*.sql) is what every
 -- screen is tested against by hand. These checks fail when a migration breaks
@@ -160,6 +160,15 @@ select is(
                    where a.job_id = j.id and a.status = 'completed' and a.payout_status <> 'paid')),
   0,
   'no seeded game is marked paid while a ref on it is still owed'
+);
+
+select is(
+  (select count(*)::int from public.jobs j join public.hirers h on h.id = j.hirer_id
+    where h.user_id = 'dc000000-0000-4000-8000-000000000004'
+      and j.status in ('open', 'partially_filled')
+      and coalesce(j.payment_status, 'unpaid') = 'unpaid'),
+  1,
+  'the DC director has paid for every upcoming game but one'
 );
 
 select * from finish();
