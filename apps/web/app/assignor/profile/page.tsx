@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
-import { Spinner } from "@/components/ui/AppButton";
+import { AppButton, Spinner, buttonLinkClass } from "@/components/ui/AppButton";
 import { supabase } from "@/lib/supabase";
 import { fetchMyProfile, type ProfileRow } from "@/lib/profile/queries";
 import { fetchMyRoles } from "@/lib/assignor/queries";
@@ -129,22 +129,19 @@ export default function AssignorProfilePage() {
           <RoleSwitcher />
         </div>
         <div className="min-w-0">
-          <Link href="/assignor/edit-profile" className="mb-4 flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+          <Link href="/assignor/edit-profile" className={`mb-4 ${buttonLinkClass("secondary", true)}`}>
             Edit profile
           </Link>
-          <Link href="/account" className="mb-4 flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+          <Link href="/account" className={`mb-4 ${buttonLinkClass("primary", true)}`}>
             Account &amp; sign-in
           </Link>
-          <button
-            type="button"
+          <AppButton
+            label="Sign out"
+            variant="danger-fill"
+            fullWidth
+            icon={<Icon name="log-out" size={14} />}
             onClick={() => void supabase.auth.signOut()}
-            className="flex w-full items-center justify-center gap-2 bg-foul py-4 text-paper hover:opacity-80"
-          >
-            <Icon name="log-out" size={14} />
-            <span className="font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
-              Sign out
-            </span>
-          </button>
+          />
         </div>
       </div>
     </div>

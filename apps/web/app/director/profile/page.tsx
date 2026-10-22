@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
-import { Spinner } from "@/components/ui/AppButton";
+import { AppButton, Spinner, buttonLinkClass } from "@/components/ui/AppButton";
 import { StripePaymentModal } from "@/components/payments/StripePaymentModal";
 import { supabase } from "@/lib/supabase";
 import { fetchMyHirerProfile, type HirerRow } from "@/lib/director/queries";
@@ -246,29 +246,26 @@ export default function DirectorProfilePage() {
       </div>
 
       <div className="mx-5 sm:mx-0 mt-4">
-        <Link href="/director/edit-profile" className="flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+        <Link href="/director/edit-profile" className={buttonLinkClass("secondary", true)}>
           Edit profile
         </Link>
       </div>
 
       <div className="mx-5 sm:mx-0 mt-4">
-        <Link href="/account" className="flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+        <Link href="/account" className={buttonLinkClass("primary", true)}>
           Account &amp; sign-in
         </Link>
       </div>
 
       {/* Sign out */}
       <div className="mx-5 sm:mx-0 mt-6">
-        <button
-          type="button"
+        <AppButton
+          label="Sign out"
+          variant="danger-fill"
+          fullWidth
+          icon={<Icon name="log-out" size={14} />}
           onClick={signOut}
-          className="flex w-full items-center justify-center gap-2 bg-foul py-4 text-paper hover:opacity-80"
-        >
-          <Icon name="log-out" size={14} />
-          <span className="font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
-            Sign out
-          </span>
-        </button>
+        />
       </div>
         </div>
       </div>

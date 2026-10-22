@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Wordmark } from "@/components/Wordmark";
 import { ZebraRule } from "@/components/ui/ZebraRule";
 import { Icon } from "@/components/ui/Icon";
-import { Spinner } from "@/components/ui/AppButton";
+import { AppButton, Spinner, buttonLinkClass } from "@/components/ui/AppButton";
 import { supabase } from "@/lib/supabase";
 import {
   fetchMyAvailability,
@@ -778,22 +778,20 @@ export default function RefereeProfilePage() {
       </div>
 
       <div className="mx-5 sm:mx-0 mt-4">
-        <Link href="/account" className="flex w-full items-center justify-center border border-ink py-4 font-mono-bold text-[11px] uppercase hover:bg-chalk">
+        <Link href="/account" className={buttonLinkClass("primary", true)}>
           Account &amp; sign-in
         </Link>
       </div>
 
       {/* Sign out */}
       <div className="mx-5 sm:mx-0 mt-10">
-        <button
-          type="button"
+        <AppButton
+          label="Sign out"
+          variant="danger-fill"
+          fullWidth
+          icon={<Icon name="log-out" size={14} />}
           onClick={signOut}
-          className="w-full border border-foul py-4 text-center text-foul-ink hover:bg-foul hover:text-paper"
-        >
-          <span className="font-mono-bold uppercase" style={{ fontSize: 11, letterSpacing: 2 }}>
-            Sign out
-          </span>
-        </button>
+        />
       </div>
         </div>
       </div>

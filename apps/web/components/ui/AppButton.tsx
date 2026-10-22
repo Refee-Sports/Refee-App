@@ -49,6 +49,10 @@ export const buttonClasses: Record<ButtonVariant, string> = {
   court: "bg-court text-ink border-ink",
 };
 
+/** The same look for a link that navigates (e.g. a <Link> to Account). */
+export const buttonLinkClass = (variant: ButtonVariant = "primary", fullWidth = false) =>
+  cn(base, buttonClasses[variant], fullWidth && "w-full");
+
 function ButtonSpinner() {
   return (
     <svg

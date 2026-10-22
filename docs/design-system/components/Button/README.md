@@ -12,7 +12,7 @@ States:
 
 Consumer provides: a `label` string, an `onClick`/`onPress` handler, and optionally `variant`, `disabled`, `loading`, `done`, `showArrow`, `fullWidth`, and a leading `icon` node. Mobile also fires haptics: light on press, success on done.
 
-Do: keep labels short; the component uppercases them. Reserve `hi-vis` for the one primary action on a screen. Use `danger` only for actions that can't easily be undone — cancelling a game, removing a ref from a crew, leaving a crew, dropping out of a game you're confirmed for.
+Do: keep labels short; the component uppercases them. Reserve `hi-vis` for the one primary action on a screen. Use `danger` only for actions that can't easily be undone — cancelling a game, removing a ref from a crew, leaving a crew, dropping out of a game you're confirmed for. Sign out is `danger-fill`; the Account & sign-in link above it is `primary`.
 
 Don't: make Decline red — declining a game is a normal choice and uses `secondary`. Don't stack two `hi-vis` buttons on one screen. Don't put a `court` Done button next to `hi-vis`; they compete.
 

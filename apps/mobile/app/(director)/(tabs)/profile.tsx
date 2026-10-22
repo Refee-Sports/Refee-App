@@ -261,12 +261,18 @@ export default function DirectorProfile() {
       </View>
 
       <View className="mx-5 mt-4">
-        <Button label="Account & sign-in" variant="secondary" fullWidth onPress={() => router.push("/account" as any)} />
+        <Button label="Account & sign-in" fullWidth onPress={() => router.push("/account" as any)} />
       </View>
 
       {/* Sign out */}
       <View className="mx-5 mt-6">
-        <Button label="Sign out" variant="secondary" fullWidth icon={<Feather name="log-out" size={14} color={palette.ink} />} onPress={signOut} />
+        <Button
+          label="Sign out"
+          variant="danger-fill"
+          fullWidth
+          icon={<Feather name="log-out" size={14} color={palette.inkInv} />}
+          onPress={signOut}
+        />
       </View>
     </ScrollScreen>
   );
