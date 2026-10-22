@@ -48,13 +48,13 @@ export function JobDetailHero({ job }: Props) {
           <View className="flex-row items-start">
             <Text
               className="text-ink-60 font-display"
-              style={{ fontSize: 22, lineHeight: 28, marginTop: 4 }}
+              style={{ fontSize: 22, lineHeight: 28, marginTop: 8 }}
             >
               $
             </Text>
             <Text
               className="text-signal font-display"
-              style={{ fontSize: 56, lineHeight: 48, letterSpacing: -2.8 }}
+              style={{ fontSize: 56, lineHeight: 60, letterSpacing: -2.8 }}
             >
               {job.payTotal}
             </Text>
@@ -63,7 +63,7 @@ export function JobDetailHero({ job }: Props) {
             className="text-ink-60 font-mono-bold text-[9px] uppercase mt-1"
             style={{ letterSpacing: 1.8 }}
           >
-            TOTAL EST.
+            YOU EARN
           </Text>
         </View>
       </View>

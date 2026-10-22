@@ -1,5 +1,6 @@
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { ZebraRule } from "@/components/ui/ZebraRule";
+import { Button } from "@/components/ui/Button";
 import type { AssignmentStatus } from "@/lib/jobs/queries";
 import { palette } from "@refee/design";
 
@@ -105,28 +106,20 @@ export function JobDetailActionBar({
           ⚠ THE ORGANIZER CHANGED THE TIME, VENUE, OR PAY
         </Text>
         <View className="flex-row gap-2.5">
-          <Pressable
-            onPress={onDecline}
-            disabled={actionLoading || !canMutate}
-            className="rounded-md border-[1.5px] border-foul-ink py-4 px-4 items-center justify-center active:bg-ink-10 active:scale-[0.97] disabled:opacity-40"
-          >
-            <Text className="text-foul-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
-              DROP OUT
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={onAccept}
-            disabled={actionLoading || !canMutate}
-            className="flex-1 rounded-md bg-court py-4 items-center justify-center active:scale-[0.97] flex-row gap-2 disabled:opacity-40"
-          >
-            {actionLoading ? (
-              <ActivityIndicator color={palette.paper} />
-            ) : (
-              <Text className="text-paper font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
-                RE-CONFIRM MY SPOT →
-              </Text>
-            )}
-          </Pressable>
+          {/* Dropping out of a confirmed game is hard to undo: red. */}
+          <Button label="Drop out" variant="danger" onPress={onDecline} disabled={actionLoading || !canMutate} />
+          <View style={{ flex: 1 }}>
+            <Button
+              label="Re-confirm my spot"
+              variant="court"
+              showArrow
+              fullWidth
+              loading={actionLoading}
+              loadingLabel="Re-confirming"
+              disabled={!canMutate}
+              onPress={onAccept}
+            />
+          </View>
         </View>
       </View>
     );
@@ -188,34 +181,23 @@ export function JobDetailActionBar({
       style={{ bottom: 0, paddingBottom: bottomInset + 12 }}
     >
       <View className="absolute top-0 left-0 right-0 -mt-[1.5px]">
-        <ZebraRule variant="signal" thin />
+        <ZebraRule variant="signal" thin noMargin />
       </View>
       <View className="flex-row gap-2.5">
-        <Pressable
-          onPress={onDecline}
-          disabled={actionLoading || !canMutate}
-          className="rounded-md border-[1.5px] border-ink py-4 px-4 items-center justify-center active:bg-ink-10 active:scale-[0.97] disabled:opacity-40"
-        >
-          <Text className="text-ink font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
-            DECLINE
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={onAccept}
-          disabled={actionLoading || !canMutate}
-          className="flex-1 rounded-md bg-court py-4 items-center justify-center active:scale-[0.97] flex-row gap-2 disabled:opacity-40"
-        >
-          {actionLoading ? (
-            <ActivityIndicator color={palette.paper} />
-          ) : (
-            <>
-              <Text className="text-paper font-mono-bold text-xs uppercase" style={{ letterSpacing: 1.4 }}>
-                {assignmentStatus === "offered" ? "ACCEPT ASSIGNMENT" : "ACCEPT JOB"}
-              </Text>
-              <Text className="text-paper font-mono-bold text-base">→</Text>
-            </>
-          )}
-        </Pressable>
+        {/* Declining an offer is easy to undo: neutral, never red. */}
+        <Button label="Decline" variant="secondary" onPress={onDecline} disabled={actionLoading || !canMutate} />
+        <View style={{ flex: 1 }}>
+          <Button
+            label={assignmentStatus === "offered" ? "Accept assignment" : "Accept job"}
+            variant="court"
+            showArrow
+            fullWidth
+            loading={actionLoading}
+            loadingLabel="Accepting"
+            disabled={!canMutate}
+            onPress={onAccept}
+          />
+        </View>
       </View>
     </View>
   );

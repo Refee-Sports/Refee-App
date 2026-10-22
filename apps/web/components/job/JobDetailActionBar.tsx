@@ -159,7 +159,7 @@ export function JobDetailActionBar({
             type="button"
             onClick={onAccept}
             disabled={actionLoading || !canMutate}
-            className={`flex flex-1 items-center justify-center gap-2 border-[1.5px] border-court bg-court py-4 text-paper ${ACT}`}
+            className={`flex flex-1 items-center justify-center gap-2 border-[1.5px] border-ink bg-court py-4 text-ink ${ACT}`}
           >
             {actionLoading ? (
               <Spinner />
@@ -281,7 +281,7 @@ export function JobDetailActionBar({
           type="button"
           onClick={onAccept}
           disabled={actionLoading || !canMutate}
-          className={`flex flex-1 items-center justify-center gap-2 border-[1.5px] border-court bg-court py-4 text-paper ${ACT}`}
+          className={`flex flex-1 items-center justify-center gap-2 border-[1.5px] border-ink bg-court py-4 text-ink ${ACT}`}
         >
           {actionLoading ? (
             <Spinner />

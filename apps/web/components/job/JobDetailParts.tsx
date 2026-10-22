@@ -94,7 +94,7 @@ export function JobDetailHero({ job }: { job: JobDetail }) {
             </span>
             <span
               className="font-display text-signal"
-              style={{ fontSize: 56, lineHeight: "48px", letterSpacing: -2.8 }}
+              style={{ fontSize: 56, lineHeight: "60px", letterSpacing: -2.8 }}
             >
               {job.payTotal}
             </span>
@@ -103,7 +103,7 @@ export function JobDetailHero({ job }: { job: JobDetail }) {
             className="mt-1 font-mono-bold text-[9px] uppercase text-ink-60"
             style={{ letterSpacing: 1.8 }}
           >
-            Total est.
+            You earn
           </span>
         </div>
       </div>
