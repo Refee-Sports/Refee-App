@@ -125,3 +125,18 @@ export function payoutDisplay(game: DirectorGameRow, now: number = Date.now()): 
   }
   return { tone: "due", label: `Refs paid by ${shortDate(deadline, game.timezone)}` };
 }
+
+/**
+ * A director may rate a referee once the game is over: completed, the ref
+ * worked it, and its scheduled end (start + length, 2 hours if unset) has
+ * passed. The ratings insert policy (0076) enforces the same.
+ */
+export function canRateReferee(
+  game: { status: string; starts_at: string; duration_minutes?: number | null },
+  assignmentStatus: string,
+  now: number = Date.now()
+): boolean {
+  if (game.status !== "completed" || assignmentStatus !== "completed") return false;
+  const ends = new Date(game.starts_at).getTime() + (game.duration_minutes ?? DEFAULT_GAME_MINUTES) * 60_000;
+  return now >= ends;
+}

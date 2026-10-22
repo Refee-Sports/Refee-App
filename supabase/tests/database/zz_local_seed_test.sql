@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(16);
+select plan(18);
 
 -- The local seed (supabase/seed.sql + supabase/seeds/*.sql) is what every
 -- screen is tested against by hand. These checks fail when a migration breaks
@@ -141,6 +141,25 @@ select is(
       and j.status in ('open', 'partially_filled') and j.starts_at < now()),
   0,
   'no seeded open game is in the past'
+);
+
+-- ── Re-seed hygiene ─────────────────────────────────────────────────────────
+select is(
+  (select count(*)::int from (
+     select ref_id, org_name from public.certifications
+      where ref_id in (select id from auth.users where email like '%@refee.local')
+      group by 1, 2 having count(*) > 1) d),
+  0,
+  'each seeded certification appears once'
+);
+
+select is(
+  (select count(*)::int from public.jobs j
+    where j.payment_status = 'paid'
+      and exists (select 1 from public.job_assignments a
+                   where a.job_id = j.id and a.status = 'completed' and a.payout_status <> 'paid')),
+  0,
+  'no seeded game is marked paid while a ref on it is still owed'
 );
 
 select * from finish();

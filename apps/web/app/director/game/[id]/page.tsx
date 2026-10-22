@@ -46,6 +46,7 @@ import {
 } from "@/lib/payments/queries";
 import { formatGameDate, formatGameTimeWithZone } from "@refee/core/time";
 import { showRate } from "@refee/core/referee/reliability";
+import { canRateReferee, payoutDisplay, type PayoutTone } from "@/lib/director/game-status";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
@@ -54,6 +55,21 @@ function fmtDatetime(iso: string, tz?: string | null) {
 }
 
 /** Port of refee-mobile/refee/app/(director)/game/[id].tsx. */
+const PAYOUT_PANEL: Record<PayoutTone, string> = {
+  paid: "border-court bg-court/10",
+  held: "border-whistle bg-whistle/10",
+  due: "border-ink-20 bg-chalk",
+  overdue: "border-foul bg-foul/10",
+  none: "",
+};
+const PAYOUT_TEXT: Record<PayoutTone, string> = {
+  paid: "text-court-ink",
+  held: "text-whistle-ink",
+  due: "text-ink",
+  overdue: "text-foul-ink",
+  none: "",
+};
+
 export default function DirectorGameDetailPage({
   params,
 }: {
@@ -425,6 +441,7 @@ export default function DirectorGameDetailPage({
   const isClosed = isCompleted || isCancelled;
   const unratedCount = accepted.filter((a) => !ratedRefIds.has(a.ref_id)).length;
   const isPaid = game.payment_status === "paid";
+  const payout = payoutDisplay(game);
   // Charged at booking: the crew is paid from that charge automatically.
   const isPrepaid = game.payment_status === "prepaid";
   const prepaidTotal = ((game.prepaid_crew_cents ?? 0) + (game.prepaid_fee_cents ?? 0)) / 100;
@@ -653,24 +670,27 @@ export default function DirectorGameDetailPage({
           </p>
         </div>
       )}
-      {isClosed && isPaid && (
-        <div className="mx-5 mb-4 flex items-center gap-3 bg-court px-4 py-3.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-paper/20 text-paper">
-            <Icon name="check" size={15} />
+      {/* Where the crew's money stands — the same read as the payment-issues list. */}
+      {isClosed && payout.tone !== "none" && (
+        <div className={`mx-5 mb-4 flex items-center gap-3 rounded-lg border px-4 py-3.5 ${PAYOUT_PANEL[payout.tone]}`}>
+          <span className={PAYOUT_TEXT[payout.tone]}>
+            <Icon name={payout.tone === "paid" ? "check-circle" : "alert-circle"} size={16} />
           </span>
           <span className="flex-1">
             <span
-              className="block font-mono-bold text-[11px] uppercase text-paper"
+              className={`block font-mono-bold text-[11px] uppercase ${PAYOUT_TEXT[payout.tone]}`}
               style={{ letterSpacing: 1.2 }}
             >
-              Crew paid
+              {payout.tone === "paid" ? "Crew paid" : payout.label}
             </span>
-            <span
-              className="mt-0.5 block font-mono text-[9px] uppercase text-paper/80"
-              style={{ letterSpacing: 1 }}
-            >
-              Sent to referees via Stripe
-            </span>
+            {payout.tone === "paid" ? (
+              <span
+                className="mt-0.5 block font-mono text-[9px] uppercase text-ink-60"
+                style={{ letterSpacing: 1 }}
+              >
+                Sent to referees via Stripe
+              </span>
+            ) : null}
           </span>
         </div>
       )}
@@ -912,7 +932,7 @@ export default function DirectorGameDetailPage({
             showActions={false}
             onMessage={() => handleMessageRef(a.ref_id)}
             onRate={
-              a.status === "completed" && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined
+              canRateReferee(game, a.status) && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined
             }
             rated={ratedRefIds.has(a.ref_id)}
             onNoShow={

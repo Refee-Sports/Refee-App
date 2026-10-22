@@ -271,3 +271,16 @@ update public.tournaments t
   from public.hirers h join auth.users u on u.id = h.user_id
  where h.id = t.hirer_id and u.email like '%@refee.local'
    and (t.game_format is null or t.period_minutes is null);
+
+-- ── Re-seed hygiene ─────────────────────────────────────────────────────────
+-- certifications has no natural key, so seed.sql's "on conflict do nothing"
+-- never fires and each re-seed added another copy. Keep one per ref and body.
+delete from public.certifications c
+ using public.certifications d
+ where c.ref_id = d.ref_id and c.org_name = d.org_name and c.id > d.id
+   and c.ref_id in (select id from auth.users where email like '%@refee.local');
+
+-- A game is only "paid" when every ref who worked it was. Morgan's two most
+-- recent games are still owed, so the director sees them due / overdue.
+update public.jobs set payment_status = 'unpaid'
+ where id in ('3b000000-0000-4000-8000-000000000024', '3b000000-0000-4000-8000-000000000025');

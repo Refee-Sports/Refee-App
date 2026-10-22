@@ -38,12 +38,28 @@ import { BackButton } from "@/components/ui/Controls";
 import { TextField } from "@/components/ui/TextField";
 import { Tappable } from "@/components/ui/Tappable";
 import { Button } from "@/components/ui/Button";
+import { payoutDisplay, canRateReferee, type PayoutTone } from "@refee/core/director/game-status";
 
 /** "SUN, SEP 20 · 1:30 PM ET" in the venue's zone. */
 function fmtDatetime(iso: string, tz?: string | null) {
   const date = formatGameDate(iso, tz, { weekday: "short", month: "short", day: "numeric" }).toUpperCase();
   return `${date} · ${formatGameTimeWithZone(iso, tz)}`;
 }
+
+const PAYOUT_PANEL: Record<PayoutTone, string> = {
+  paid: "border-court bg-court/10",
+  held: "border-whistle bg-whistle/10",
+  due: "border-ink-20 bg-chalk",
+  overdue: "border-foul bg-foul/10",
+  none: "",
+};
+const PAYOUT_TEXT: Record<PayoutTone, string> = {
+  paid: "text-court-ink",
+  held: "text-whistle-ink",
+  due: "text-ink",
+  overdue: "text-foul-ink",
+  none: "",
+};
 
 export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -386,7 +402,7 @@ export default function GameDetail() {
   const isCancelled = game.status === "cancelled";
   const isClosed = isCompleted || isCancelled;
   const unratedCount = accepted.filter((a) => !ratedRefIds.has(a.ref_id)).length;
-  const isPaid = game.payment_status === "paid";
+  const payout = payoutDisplay(game);
   const paymentLockedForReview = paymentNeedsReview(
     game.payment_status,
     game.payment_issue_requires_review
@@ -532,18 +548,29 @@ export default function GameDetail() {
               </Text>
             </View>
           )}
-          {isClosed && isPaid && (
-            <View className="mx-5 mb-4 flex-row items-center gap-3 bg-court px-4 py-3.5">
-              <View className="w-7 h-7 rounded-full bg-paper/20 items-center justify-center">
-                <Feather name="check" size={15} color={palette.paper} />
-              </View>
+          {/* Where the crew's money stands — the same read as the payment-issues list. */}
+          {isClosed && payout.tone !== "none" && (
+            <View
+              className={`mx-5 mb-4 flex-row items-center gap-3 rounded-lg border px-4 py-3.5 ${PAYOUT_PANEL[payout.tone]}`}
+              accessibilityRole="summary"
+            >
+              <Feather
+                name={payout.tone === "paid" ? "check-circle" : payout.tone === "overdue" ? "alert-circle" : "clock"}
+                size={16}
+                color={payout.tone === "paid" ? palette.courtInk : payout.tone === "overdue" ? palette.foulInk : palette.ink}
+              />
               <View className="flex-1">
-                <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.2 }}>
-                  CREW PAID
+                <Text
+                  className={`font-mono-bold text-[11px] uppercase ${PAYOUT_TEXT[payout.tone]}`}
+                  style={{ letterSpacing: 1.2 }}
+                >
+                  {payout.tone === "paid" ? "Crew paid" : payout.label}
                 </Text>
-                <Text className="text-paper/80 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>
-                  Sent to referees via Stripe
-                </Text>
+                {payout.tone === "paid" ? (
+                  <Text className="text-ink-60 font-mono text-[9px] uppercase mt-0.5" style={{ letterSpacing: 1 }}>
+                    Sent to referees via Stripe
+                  </Text>
+                ) : null}
               </View>
             </View>
           )}
@@ -684,7 +711,7 @@ export default function GameDetail() {
                 actioning={false}
                 showActions={false}
                 onMessage={() => handleMessageRef(a.ref_id)}
-                onRate={a.status === "completed" && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined}
+                onRate={canRateReferee(game, a.status) && !ratedRefIds.has(a.ref_id) ? () => setRatingTarget(a) : undefined}
                 rated={ratedRefIds.has(a.ref_id)}
                 onNoShow={gameStarted && !isCompleted && !isCancelled && (a.status === "accepted" || a.status === "needs_reconfirm") ? () => handleNoShow(a) : undefined}
               />
