@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { Text, View, Pressable, Alert } from "react-native";
+import { Text, View, Alert } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { choice, palette, radius } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { BackButton, IconButton } from "@/components/ui/Controls";
+import { Tappable } from "@/components/ui/Tappable";
+import { choiceLook } from "@/lib/ui/looks";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -91,12 +97,7 @@ export default function RoleSelect() {
     <View className="flex-1 bg-paper" style={{ paddingTop: insets.top }}>
       {/* Nav header */}
       <View className="flex-row items-center justify-between px-5 py-3">
-        <Pressable
-          onPress={handleBack}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Text className="text-ink font-mono-bold text-base">←</Text>
-        </Pressable>
+        <BackButton onPress={handleBack} />
         <Text
           className="text-ink-60 font-mono-bold text-[9px] uppercase"
           style={{ letterSpacing: 2 }}
@@ -104,12 +105,11 @@ export default function RoleSelect() {
           <Text className="text-signal">01</Text>
           {" / 02 · CHOOSE YOUR ROLE"}
         </Text>
-        <Pressable
+        <IconButton
+          accessibilityLabel="Exit setup"
           onPress={handleExit}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Text className="text-ink font-mono-bold text-base">✕</Text>
-        </Pressable>
+          icon={(color) => <Feather name="x" size={16} color={color} />}
+        />
       </View>
 
       <View className="h-0.5 bg-ink-20 mx-5 mb-5">
@@ -136,12 +136,23 @@ export default function RoleSelect() {
         {ROLES.map((role) => {
           const isSelected = selected === role.id;
           return (
-            <Pressable
+            <Tappable
               key={role.id}
+              accessibilityRole="radio"
+              accessibilityState={{ selected: isSelected }}
               onPress={() => handleSelect(role.id)}
-              className={`border-[2px] px-5 py-5 active:opacity-80 ${
-                isSelected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"
-              }`}
+              scaleTo={choice.scale.card}
+              style={({ pressed }) => {
+                const c = choiceLook({ selected: isSelected, pressed });
+                return {
+                  borderWidth: 1.5,
+                  borderRadius: radius.lg,
+                  borderColor: c.border,
+                  backgroundColor: c.bg,
+                  paddingHorizontal: 20,
+                  paddingVertical: 20,
+                };
+              }}
             >
               <View className="flex-row items-start justify-between mb-3">
                 <View>
@@ -153,7 +164,7 @@ export default function RoleSelect() {
                   </Text>
                   <Text
                     className={`font-mono-bold text-[9px] uppercase mt-1 ${
-                      isSelected ? "text-signal/70" : "text-ink-40"
+                      isSelected ? "text-signal" : "text-ink-60"
                     }`}
                     style={{ letterSpacing: 2.5 }}
                   >
@@ -161,23 +172,28 @@ export default function RoleSelect() {
                   </Text>
                 </View>
                 <View
-                  className={`w-6 h-6 border-2 items-center justify-center ${
-                    isSelected ? "border-signal bg-signal" : "border-ink-40 bg-paper"
-                  }`}
+                  style={{
+                    width: 24,
+                    height: 24,
+                    borderRadius: radius.full,
+                    borderWidth: 1.5,
+                    borderColor: isSelected ? palette.signal : palette.ink40,
+                    backgroundColor: isSelected ? palette.signal : palette.paper,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  {isSelected && (
-                    <Text className="text-paper font-mono-bold text-xs">✓</Text>
-                  )}
+                  {isSelected && <Feather name="check" size={14} color={palette.paper} />}
                 </View>
               </View>
               <Text
                 className={`font-mono text-[11px] leading-[16px] ${
-                  isSelected ? "text-signal/80" : "text-ink-60"
+                  isSelected ? "text-signal-deep" : "text-ink-60"
                 }`}
               >
                 {role.description}
               </Text>
-            </Pressable>
+            </Tappable>
           );
         })}
       </View>
@@ -187,25 +203,7 @@ export default function RoleSelect() {
         className="px-5 border-t border-ink bg-paper pt-4"
         style={{ paddingBottom: insets.bottom + 16 }}
       >
-        <Pressable
-          onPress={handleContinue}
-          disabled={!selected}
-          className={`py-4 flex-row justify-center items-center gap-2 ${
-            selected ? "bg-ink" : "bg-ink-20"
-          } active:opacity-80`}
-        >
-          <Text
-            className={`font-mono-bold ${selected ? "text-paper" : "text-ink-40"}`}
-            style={{ fontSize: 12, letterSpacing: 2.5 }}
-          >
-            CONTINUE
-          </Text>
-          <Text
-            className={`font-mono-bold text-base ${selected ? "text-paper" : "text-ink-40"}`}
-          >
-            →
-          </Text>
-        </Pressable>
+        <Button label="Continue" showArrow fullWidth disabled={!selected} onPress={handleContinue} />
       </View>
     </View>
   );

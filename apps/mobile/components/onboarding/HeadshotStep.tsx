@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Image, Text, View } from "react-native";
+import { Button } from "@/components/ui/Button";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { pickHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
@@ -76,26 +77,25 @@ export function HeadshotStep({
       </View>
 
       <View className="flex-row gap-3">
-        <Pressable
-          onPress={() => void choose("camera")}
-          disabled={busy}
-          className="flex-1 border border-ink bg-ink py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
-        >
-          <Feather name="camera" size={14} color={palette.paper} />
-          <Text className="text-paper font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
-            {photo ? "RETAKE" : "TAKE PHOTO"}
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => void choose("library")}
-          disabled={busy}
-          className="flex-1 border border-ink bg-chalk py-3.5 flex-row items-center justify-center gap-2 active:opacity-80"
-        >
-          <Feather name="image" size={14} color={palette.ink} />
-          <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
-            CHOOSE
-          </Text>
-        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Button
+            label={photo ? "Retake" : "Take photo"}
+            icon={<Feather name="camera" size={14} color={palette.paper} />}
+            fullWidth
+            disabled={busy}
+            onPress={() => void choose("camera")}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Choose"
+            variant="secondary"
+            icon={<Feather name="image" size={14} color={palette.ink} />}
+            fullWidth
+            disabled={busy}
+            onPress={() => void choose("library")}
+          />
+        </View>
       </View>
     </View>
   );

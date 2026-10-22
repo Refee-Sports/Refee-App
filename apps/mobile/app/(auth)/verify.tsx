@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Text,
-  TextInput,
   View,
-  Pressable,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -20,6 +18,7 @@ import {
   verifyEmailCode,
 } from "@/lib/auth/emailCode";
 import { palette } from "@refee/design";
+import { BackButton, CodeField, TextLink } from "@/components/ui/Controls";
 
 const RESEND_SECONDS = 60;
 
@@ -33,8 +32,6 @@ export default function Verify() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
-
-  const inputRef = useRef<TextInput>(null);
 
   // Countdown until "resend" unlocks.
   useEffect(() => {
@@ -62,7 +59,6 @@ export default function Verify() {
       setError(verifyError.message);
       setCode("");
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      inputRef.current?.focus();
       return;
     }
 
@@ -91,14 +87,9 @@ export default function Verify() {
       <View style={{ height: insets.top }} />
 
       <View className="flex-row items-center justify-between px-5 py-3">
-        <Pressable
-          onPress={() => router.back()}
-          className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-        >
-          <Text className="text-ink font-mono-bold text-base">←</Text>
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
         <Text className="text-ink-60 font-mono-bold text-[9px] uppercase" style={{ letterSpacing: 2 }}>
-          <Text className="text-ink">02</Text> / 08
+          <Text className="text-ink">02</Text> / 02 · SIGN IN
         </Text>
         <View className="w-9" />
       </View>
@@ -111,7 +102,7 @@ export default function Verify() {
         contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 24 }}
       >
         <Text className="text-signal font-mono-bold text-[10px] uppercase mt-4 mb-3" style={{ letterSpacing: 2 }}>
-          VERIFY · STEP 2
+          VERIFY · STEP 2 OF 2
         </Text>
         <Text className="text-ink font-display" style={{ fontSize: 40, lineHeight: 46, letterSpacing: -1.5 }}>
           CHECK YOUR{"\n"}
@@ -122,43 +113,13 @@ export default function Verify() {
           minute — check spam if it isn&apos;t there.
         </Text>
 
-        {/* Code cells — a hidden TextInput captures input, the cells are visual. */}
-        <View className="relative">
-          <TextInput
-            ref={inputRef}
-            value={code}
-            onChangeText={(v) => setCode(cleanCode(v))}
-            keyboardType="number-pad"
-            maxLength={EMAIL_CODE_LENGTH + 4}
-            textContentType="oneTimeCode"
-            autoComplete="one-time-code"
-            className="absolute opacity-0 top-0 left-0 right-0 bottom-0 z-10"
-            autoFocus
-          />
-          <Pressable onPress={() => inputRef.current?.focus()}>
-            <View className="flex-row justify-between gap-1.5">
-              {Array.from({ length: EMAIL_CODE_LENGTH }).map((_, i) => {
-                const filled = !!code[i];
-                const active = i === code.length;
-                return (
-                  <View
-                    key={i}
-                    className={`flex-1 aspect-square border-[1.5px] items-center justify-center ${
-                      filled ? "bg-ink border-ink" : "bg-chalk border-ink"
-                    }`}
-                  >
-                    <Text
-                      className={`font-display ${filled ? "text-paper" : "text-ink"}`}
-                      style={{ fontSize: 26, letterSpacing: -1 }}
-                    >
-                      {code[i] ?? (active ? "_" : "")}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
-          </Pressable>
-        </View>
+        <CodeField
+          value={code}
+          onChangeText={(v) => setCode(cleanCode(v))}
+          length={EMAIL_CODE_LENGTH}
+          error={!!error}
+          editable={!loading}
+        />
 
         {error && <Text className="text-foul-ink font-mono text-xs mt-3 uppercase text-center">{error}</Text>}
         {notice && !error && <Text className="text-court-ink font-mono text-xs mt-3 uppercase text-center">{notice}</Text>}
@@ -169,17 +130,9 @@ export default function Verify() {
               RESEND IN <Text className="text-ink">0:{secondsLeft.toString().padStart(2, "0")}</Text>
             </Text>
           ) : (
-            <Pressable onPress={handleResend}>
-              <Text className="text-signal font-mono-bold text-[11px] uppercase underline" style={{ letterSpacing: 1.5 }}>
-                RESEND CODE
-              </Text>
-            </Pressable>
+            <TextLink label="Resend code" tone="signal" size={11} onPress={handleResend} />
           )}
-          <Pressable onPress={() => router.back()}>
-            <Text className="text-signal font-mono-bold text-[11px] uppercase underline" style={{ letterSpacing: 1.5 }}>
-              WRONG EMAIL?
-            </Text>
-          </Pressable>
+          <TextLink label="Wrong email?" tone="signal" size={11} onPress={() => router.back()} />
         </View>
 
         {loading && (

@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { Button } from "@/components/ui/Button";
 import { waitlistAge } from "@refee/core/identity/age";
 import { joinUnder18Waitlist } from "@/lib/identity/waitlist";
-import { palette } from "@refee/design";
 
 type Status = "idle" | "saving" | "done";
 
@@ -46,19 +46,17 @@ export function UnderAgeNotice({ dateOfBirth }: { dateOfBirth: string }) {
           You&apos;re on the list. We&apos;ll use the email on your account.
         </Text>
       ) : (
-        <Pressable
-          onPress={join}
-          disabled={status === "saving"}
-          className="mt-3 border border-ink px-3 py-2.5 items-center active:opacity-70"
-        >
-          {status === "saving" ? (
-            <ActivityIndicator size="small" color={palette.ink} />
-          ) : (
-            <Text className="text-ink font-mono-bold text-[11px] uppercase" style={{ letterSpacing: 1.5 }}>
-              Email me if you build it
-            </Text>
-          )}
-        </Pressable>
+        <View className="mt-3">
+          <Button
+            label="Email me if you build it"
+            variant="secondary"
+            size="sm"
+            fullWidth
+            loading={status === "saving"}
+            loadingLabel="Saving"
+            onPress={join}
+          />
+        </View>
       )}
 
       {error ? (

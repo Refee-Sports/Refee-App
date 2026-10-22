@@ -1,12 +1,5 @@
 import { useState } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { Text, View, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -19,7 +12,10 @@ import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age
 import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
-import { palette } from "@refee/design";
+import { BackButton, IconButton } from "@/components/ui/Controls";
+import { Feather } from "@expo/vector-icons";
+import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 
 const STEPS = ["NAME", "LOCATION", "HEADSHOT"];
 
@@ -164,12 +160,7 @@ export default function AssignorOnboarding() {
       header={
         <>
           <View className="flex-row items-center justify-between px-5 py-3">
-            <Pressable
-              onPress={handleBack}
-              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-            >
-              <Text className="text-ink font-mono-bold text-base">←</Text>
-            </Pressable>
+            <BackButton onPress={handleBack} />
             <Text
               className="text-ink-60 font-mono-bold text-[9px] uppercase"
               style={{ letterSpacing: 2 }}
@@ -177,12 +168,11 @@ export default function AssignorOnboarding() {
               <Text className="text-ink">{String(step + 1).padStart(2, "0")}</Text>
               {` / ${String(STEPS.length).padStart(2, "0")} · ASSIGNOR`}
             </Text>
-            <Pressable
+            <IconButton
+              accessibilityLabel="Exit setup"
               onPress={handleExit}
-              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-            >
-              <Text className="text-ink font-mono-bold text-base">✕</Text>
-            </Pressable>
+              icon={(color) => <Feather name="x" size={16} color={color} />}
+            />
           </View>
           <View className="h-0.5 bg-ink-20 mx-5">
             <View
@@ -205,31 +195,15 @@ export default function AssignorOnboarding() {
               {error}
             </Text>
           )}
-          <Pressable
+          <Button
+            label={isLastStep ? "Create account" : "Next"}
+            showArrow
+            fullWidth
+            loading={loading}
+            loadingLabel={isLastStep ? "Creating account" : "Saving"}
+            disabled={!canAdvance[step]}
             onPress={isLastStep ? handleSubmit : handleNext}
-            disabled={!canAdvance[step] || loading}
-            className={`py-4 ${canAdvance[step] && !loading ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
-          >
-            <View className="flex-row justify-center items-center gap-2">
-              {loading ? (
-                <ActivityIndicator color={palette.paper} />
-              ) : (
-                <>
-                  <Text
-                    className={`font-mono-bold ${canAdvance[step] ? "text-paper" : "text-ink-40"}`}
-                    style={{ fontSize: 12, letterSpacing: 2.5 }}
-                  >
-                    {isLastStep ? "CREATE ACCOUNT" : "NEXT"}
-                  </Text>
-                  <Text
-                    className={`font-mono-bold text-base ${canAdvance[step] ? "text-paper" : "text-ink-40"}`}
-                  >
-                    →
-                  </Text>
-                </>
-              )}
-            </View>
-          </Pressable>
+          />
         </View>
       }
       contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 20 }}
@@ -361,25 +335,4 @@ function DLabel({ children, style }: { children: string; style?: object }) {
   );
 }
 
-function DInput({
-  error,
-  ...props
-}: React.ComponentProps<typeof TextInput> & { error?: string }) {
-  return (
-    <>
-      <TextInput
-        placeholderTextColor={palette.ink60}
-        className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${
-          error ? "border-foul" : "border-ink"
-        }`}
-        style={{ fontSize: 14 }}
-        {...props}
-      />
-      {error ? (
-        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {error}
-        </Text>
-      ) : null}
-    </>
-  );
-}
+const DInput = TextField;

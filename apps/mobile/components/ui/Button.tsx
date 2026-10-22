@@ -19,6 +19,8 @@ export interface ButtonProps extends Omit<PressableProps, "children" | "style"> 
   showArrow?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
+  /** `sm` for actions inside a card or row (e.g. Decline / Join roster). */
+  size?: "md" | "sm";
 }
 
 /**
@@ -38,6 +40,7 @@ export function Button({
   showArrow = false,
   fullWidth = false,
   icon,
+  size = "md",
   disabled,
   onPressIn,
   onPressOut,
@@ -47,6 +50,7 @@ export function Button({
   const v: ButtonVariant = isDone ? "court" : variant;
   const text = isDone ? doneLabel ?? label : label;
   const inactive = !!disabled || loading;
+  const sm = size === "sm";
 
   useEffect(() => {
     if (isDone) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -59,7 +63,7 @@ export function Button({
         accessibilityLabel={loading ? loadingLabel ?? label : text}
         accessibilityState={{ disabled: !!disabled, busy: loading }}
         disabled={inactive}
-        hitSlop={4}
+        hitSlop={sm ? 6 : 4}
         scaleTo={buttonPressScale}
         haptic="light"
         onPressIn={onPressIn}
@@ -67,9 +71,9 @@ export function Button({
         style={({ pressed }) => {
           const c = buttonLook(v, pressed);
           return {
-            minHeight: 48,
-            paddingHorizontal: 24,
-            paddingVertical: 15,
+            minHeight: sm ? 40 : 48,
+            paddingHorizontal: sm ? 14 : 24,
+            paddingVertical: sm ? 10 : 15,
             borderRadius: radius.md,
             borderWidth: 1.5,
             borderColor: c.border,
@@ -91,8 +95,8 @@ export function Button({
                 <Text
                   style={{
                     fontFamily: "JetBrainsMono_700Bold",
-                    fontSize: 12,
-                    letterSpacing: 1.68, // 0.14em
+                    fontSize: sm ? 10 : 12,
+                    letterSpacing: sm ? 1.4 : 1.68, // 0.14em
                     textTransform: "uppercase",
                     color: fg,
                   }}

@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import { Text as RNText, TextInput as RNTextInput, type TextProps, type TextInputProps } from "react-native";
 import { MAX_FONT_SCALE } from "@/lib/ui/typography";
 
@@ -11,6 +12,6 @@ export function Text(props: TextProps) {
   return <RNText maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
 }
 
-export function TextInput(props: TextInputProps) {
-  return <RNTextInput maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
-}
+export const TextInput = forwardRef<RNTextInput, TextInputProps>(function TextInput(props, ref) {
+  return <RNTextInput ref={ref} maxFontSizeMultiplier={MAX_FONT_SCALE} {...props} />;
+});

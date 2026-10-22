@@ -1,12 +1,6 @@
 import { useState } from "react";
-import {
-  Text,
-  TextInput,
-  View,
-  Pressable,
-  ActivityIndicator,
-  Alert,
-} from "react-native";
+import { Text, View, Alert } from "react-native";
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -20,7 +14,10 @@ import { dateOfBirthError, isAdult, usDateInput } from "@refee/core/identity/age
 import { UnderAgeNotice } from "@/components/onboarding/UnderAgeNotice";
 import { HeadshotStep } from "@/components/onboarding/HeadshotStep";
 import { uploadSignupHeadshot, type PickedHeadshot } from "@/lib/profile/avatar";
-import { palette } from "@refee/design";
+import { Button } from "@/components/ui/Button";
+import { OptionRow } from "@/components/ui/Choice";
+import { BackButton, IconButton, TextLink } from "@/components/ui/Controls";
+import { AffixField, TextField } from "@/components/ui/TextField";
 
 const SPORTS = [{ id: "basketball", label: "BASKETBALL" }];
 
@@ -42,7 +39,6 @@ const LEVELS = [
 ];
 
 const STEP_LABELS = ["NAME", "LOCATION", "SPORT", "RATE", "CERTIFICATIONS", "LEVELS", "HEADSHOT"];
-const STEP_NUMBERS = ["03", "04", "05", "06", "07", "08", "09"];
 const LAST_STEP = STEP_LABELS.length - 1;
 
 type StringFormKey = "firstName" | "lastName" | "city" | "state" | "homeZip" | "sportId" | "yearsExperience" | "leaguesWorked" | "minPay" | "travelRadius" | "dobDigits";
@@ -265,24 +261,19 @@ export default function Onboarding() {
       header={
         <>
           <View className="flex-row items-center justify-between px-5 py-3">
-            <Pressable
-              onPress={step === 0 ? handleExit : handleBack}
-              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-            >
-              <Text className="text-ink font-mono-bold text-base">←</Text>
-            </Pressable>
+            <BackButton onPress={step === 0 ? handleExit : handleBack} />
             <Text
               className="text-ink-60 font-mono-bold text-[9px] uppercase"
               style={{ letterSpacing: 2 }}
             >
-              <Text className="text-ink">{STEP_NUMBERS[step]}</Text> / {STEP_NUMBERS[LAST_STEP]}
+              <Text className="text-ink">{String(step + 1).padStart(2, "0")}</Text>
+              {` / ${String(STEP_LABELS.length).padStart(2, "0")} · REFEREE`}
             </Text>
-            <Pressable
+            <IconButton
+              accessibilityLabel="Exit setup"
               onPress={handleExit}
-              className="w-9 h-9 border border-ink bg-chalk items-center justify-center active:opacity-70"
-            >
-              <Text className="text-ink font-mono-bold text-base">✕</Text>
-            </Pressable>
+              icon={(color) => <Feather name="x" size={16} color={color} />}
+            />
           </View>
           <View className="h-0.5 bg-ink-20 mx-5">
             <View
@@ -305,40 +296,19 @@ export default function Onboarding() {
               {error}
             </Text>
           )}
-          <Pressable
+          <Button
+            label={isLastStep ? "Finish setup" : "Next"}
+            showArrow
+            fullWidth
+            loading={loading}
+            loadingLabel={isLastStep ? "Finishing setup" : "Saving"}
+            disabled={!canAdvance[step]}
             onPress={isLastStep ? handleSubmit : handleNext}
-            disabled={!canAdvance[step] || loading}
-            className={`py-4 ${canAdvance[step] && !loading ? "bg-ink" : "bg-ink-20"} active:opacity-80`}
-          >
-            <View className="flex-row justify-center items-center gap-2">
-              {loading ? (
-                <ActivityIndicator color={palette.paper} />
-              ) : (
-                <>
-                  <Text
-                    className={`font-mono-bold ${canAdvance[step] ? "text-paper" : "text-ink-40"}`}
-                    style={{ fontSize: 12, letterSpacing: 2.5 }}
-                  >
-                    {isLastStep ? "FINISH SETUP" : "NEXT"}
-                  </Text>
-                  <Text
-                    className={`font-mono-bold text-base ${canAdvance[step] ? "text-paper" : "text-ink-40"}`}
-                  >
-                    →
-                  </Text>
-                </>
-              )}
-            </View>
-          </Pressable>
+          />
           {step === 0 ? (
-            <Pressable onPress={handleExit} className="mt-3 py-2 active:opacity-70">
-              <Text
-                className="text-signal text-center font-mono-bold text-[11px] uppercase underline"
-                style={{ letterSpacing: 1.5 }}
-              >
-                Use a different account
-              </Text>
-            </Pressable>
+            <View className="mt-1">
+              <TextLink label="Use a different account" tone="signal" size={11} onPress={handleExit} />
+            </View>
           ) : null}
         </View>
       }
@@ -348,7 +318,7 @@ export default function Onboarding() {
         className="text-signal font-mono-bold text-[10px] uppercase mb-3"
         style={{ letterSpacing: 2 }}
       >
-        {STEP_LABELS[step]} · STEP {step + 3}
+        {STEP_LABELS[step]} · STEP {step + 1} OF {STEP_LABELS.length}
       </Text>
 
       {renderStep()}
@@ -486,22 +456,12 @@ function SportStep({ form, set }: { form: FormData; set: StringSetter }) {
         {SPORTS.map((s) => {
           const selected = form.sportId === s.id;
           return (
-            <Pressable
+            <OptionRow
               key={s.id}
+              label={s.label}
+              selected={selected}
               onPress={() => set("sportId")(s.id)}
-              className={`border-[1.5px] px-4 py-4 flex-row items-center justify-between active:opacity-70
-                ${selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"}`}
-            >
-              <Text
-                className={`font-mono-bold text-sm ${selected ? "text-signal" : "text-ink"}`}
-                style={{ letterSpacing: 1 }}
-              >
-                {s.label}
-              </Text>
-              {selected && (
-                <Text className="text-signal font-mono-bold text-base">✓</Text>
-              )}
-            </Pressable>
+            />
           );
         })}
       </View>
@@ -540,53 +500,27 @@ function RateStep({ form, set }: { form: FormData; set: StringSetter }) {
         Your minimum rate keeps low-ball offers off your feed. You can update this anytime.
       </Text>
 
-      <Label>MIN PAY PER GAME ($)</Label>
-      <View className="flex-row border-[1.5px] border-ink">
-        <View className="bg-ink px-4 justify-center">
-          <Text className="text-paper font-mono-bold text-base" style={{ letterSpacing: 0.5 }}>
-            $
-          </Text>
-        </View>
-        <TextInput
-          value={form.minPay}
-          onChangeText={(v) => set("minPay")(v.replace(/\D/g, "").slice(0, 4))}
-          placeholder="35"
-          placeholderTextColor={palette.ink60}
-          keyboardType="number-pad"
-          className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
-          style={{ fontSize: 14 }}
-        />
-      </View>
-      <Text
-        className="text-ink-60 font-mono text-[9px] mt-1.5 uppercase"
-        style={{ letterSpacing: 1.2 }}
-      >
-        JOBS BELOW THIS RATE WON&apos;T APPEAR IN YOUR FEED
-      </Text>
+      <AffixField
+        label="Min pay per game ($)"
+        prefix="$"
+        value={form.minPay}
+        onChangeText={(v) => set("minPay")(v.replace(/\D/g, "").slice(0, 4))}
+        placeholder="35"
+        keyboardType="number-pad"
+        hint="Jobs below this rate won't appear in your feed"
+      />
 
-      <Label style={{ marginTop: 20 }}>TRAVEL RADIUS (MILES)</Label>
-      <View className="flex-row border-[1.5px] border-ink">
-        <TextInput
+      <View style={{ marginTop: 20 }}>
+        <AffixField
+          label="Travel radius (miles)"
+          suffix="MI"
           value={form.travelRadius}
           onChangeText={(v) => set("travelRadius")(v.replace(/\D/g, "").slice(0, 3))}
           placeholder="25"
-          placeholderTextColor={palette.ink60}
           keyboardType="number-pad"
-          className="flex-1 bg-chalk px-4 py-3.5 text-ink font-mono"
-          style={{ fontSize: 14 }}
+          hint="How far you're willing to travel from your city"
         />
-        <View className="bg-ink px-4 justify-center">
-          <Text className="text-paper font-mono-bold text-sm" style={{ letterSpacing: 0.5 }}>
-            MI
-          </Text>
-        </View>
       </View>
-      <Text
-        className="text-ink-60 font-mono text-[9px] mt-1.5 uppercase"
-        style={{ letterSpacing: 1.2 }}
-      >
-        HOW FAR YOU&apos;RE WILLING TO TRAVEL FROM YOUR CITY
-      </Text>
     </View>
   );
 }
@@ -620,45 +554,21 @@ function CertStep({
           const selected = !!entry;
           return (
             <View key={body.id}>
-              <Pressable
+              <OptionRow
+                label={body.label}
+                sublabel={body.full}
+                selected={selected}
                 onPress={() => onToggle(body.id)}
-                className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                  ${selected ? "border-signal bg-signal-tint" : "border-ink bg-chalk"}`}
-              >
-                <View className="flex-1 pr-3">
-                  <Text
-                    className={`font-mono-bold text-sm ${selected ? "text-signal" : "text-ink"}`}
-                    style={{ letterSpacing: 1 }}
-                  >
-                    {body.label}
-                  </Text>
-                  <Text
-                    className={`font-mono text-[9px] mt-0.5 ${selected ? "text-signal/70" : "text-ink-60"}`}
-                    style={{ letterSpacing: 0.5 }}
-                    numberOfLines={1}
-                  >
-                    {body.full}
-                  </Text>
-                </View>
-                {selected && <Text className="text-signal font-mono-bold text-base">✓</Text>}
-              </Pressable>
+              />
 
               {selected && (
-                <View className="border-x-[1.5px] border-b-[1.5px] border-signal bg-chalk px-4 py-2.5">
-                  <Text
-                    className="text-ink-60 font-mono-bold text-[9px] uppercase mb-1.5"
-                    style={{ letterSpacing: 1.5 }}
-                  >
-                    LICENSE # (OPTIONAL)
-                  </Text>
-                  <TextInput
+                <View className="mt-2 ml-4">
+                  <TextField
+                    label="License # (optional)"
                     value={entry.licenseNumber}
                     onChangeText={(v) => onSetLicense(body.id, v)}
                     placeholder="e.g. 123456"
-                    placeholderTextColor={palette.ink60}
                     autoCapitalize="characters"
-                    className="text-ink font-mono border border-ink-20 bg-paper px-3 py-2"
-                    style={{ fontSize: 13 }}
                   />
                 </View>
               )}
@@ -713,20 +623,13 @@ function LevelStep({
               {tierLevels.map((level) => {
                 const selected = selectedLevels.includes(level.id);
                 return (
-                  <Pressable
+                  <OptionRow
                     key={level.id}
+                    label={level.label}
+                    selected={selected}
+                    dim
                     onPress={() => onToggle(level.id)}
-                    className={`border-[1.5px] px-4 py-3.5 flex-row items-center justify-between active:opacity-70
-                      ${selected ? "border-signal bg-signal-tint" : "border-ink-20 bg-chalk"}`}
-                  >
-                    <Text
-                      className={`font-mono text-sm ${selected ? "text-signal font-mono-bold" : "text-ink"}`}
-                      style={{ letterSpacing: 0.5 }}
-                    >
-                      {level.label}
-                    </Text>
-                    {selected && <Text className="text-signal font-mono-bold text-base">✓</Text>}
-                  </Pressable>
+                  />
                 );
               })}
             </View>
@@ -750,28 +653,4 @@ function Label({ children, style }: { children: string; style?: object }) {
   );
 }
 
-function StyledInput({
-  error,
-  hint,
-  ...props
-}: React.ComponentProps<typeof TextInput> & { error?: string; hint?: string }) {
-  return (
-    <>
-      <TextInput
-        placeholderTextColor={palette.ink60}
-        className={`border-[1.5px] bg-chalk px-4 py-3.5 text-ink font-mono ${error ? "border-foul" : "border-ink"}`}
-        style={{ fontSize: 14 }}
-        {...props}
-      />
-      {error ? (
-        <Text className="text-foul-ink font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {error}
-        </Text>
-      ) : hint ? (
-        <Text className="text-ink-60 font-mono text-[9px] mt-1 uppercase" style={{ letterSpacing: 1 }}>
-          {hint}
-        </Text>
-      ) : null}
-    </>
-  );
-}
+const StyledInput = TextField;
